@@ -1,0 +1,54 @@
+# AppLiveCaption - Python 3.11 or 3.12, Windows 10/11 x64.
+#
+#     pip install -r requirements.txt
+#
+# Packages only this app uses are pinned to the tested versions. Packages that
+# other software often shares (PyTorch, transformers, NumPy, ...) take a range
+# instead, so installing the app into an existing Python keeps the versions
+# already there whenever they work.
+
+# A fresh install gets PyTorch with CUDA 12 from the PyTorch index. An existing
+# torch is kept: torchvision and torchaudio require one exact torch version, so
+# replacing it would break them.
+--extra-index-url https://download.pytorch.org/whl/cu126
+
+# GUI
+PySide6==6.12.0
+PySide6-Fluent-Widgets[full]==1.11.3
+
+# Speech recognition (faster-whisper / CTranslate2, Silero VAD via onnxruntime)
+faster-whisper==1.2.1
+ctranslate2>=4.6,<5
+onnxruntime==1.31.0
+tokenizers>=0.22,<1
+# faster-whisper's file decoder doesn't work with PyAV 16+ (only used by the CLI for files).
+av==15.1.0
+
+# Breeze ASR 25 (transformers backend). PyTorch's CUDA 12 wheels also ship the
+# cuBLAS 12 / cuDNN 9 DLLs that CTranslate2 needs to run faster-whisper on the GPU.
+torch>=2.6
+transformers>=5.6,<6
+safetensors>=0.7
+
+# Audio capture: WASAPI loopback, per-app process loopback (comtypes), app list (pycaw)
+PyAudioWPatch==0.2.12.9
+comtypes==1.4.17
+pycaw==20260927
+psutil>=7.2
+soxr==1.1.0
+numpy>=2.3,<3
+
+# Model downloads
+huggingface_hub>=1.11,<3
+hf-xet>=1.4
+
+# Simplified -> Traditional Chinese (OpenCC s2twp). The pure-Python port gives the
+# same results as the OpenCC package and installs everywhere. Don't install both:
+# they share the "opencc" folder and overwrite each other's files.
+opencc-python-reimplemented>=0.1.7
+
+# Packaging (only needed to build the .exe). Older PyInstaller (6.12 tested) sets
+# module __file__ to a .pyc path that doesn't exist on disk; transformers scans
+# its own folder from __file__, so Breeze ASR 25 fails to load in the built app.
+pyinstaller>=6.22
+pyinstaller-hooks-contrib>=2026.7

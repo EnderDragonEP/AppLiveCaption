@@ -1,0 +1,119 @@
+{
+  "_comment": "Model catalog. Adding a model only needs a new entry. languages: list of codes, or \"whisper\" for every language the tokenizer supports. tier drives the real-time speed warning (tiny/base/small/medium/turbo/large). files: glob patterns to download (default: everything except docs).",
+  "models": [
+    {
+      "id": "whisper-large-v3-turbo",
+      "name": "Whisper large-v3-turbo",
+      "repo": "dropbox-dash/faster-whisper-large-v3-turbo",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 1622,
+      "license": "MIT",
+      "tier": "turbo",
+      "description": "Close to large-v3 accuracy and much faster. A good default for real-time captioning on a GPU. (Formerly mobiuslabsgmbh/faster-whisper-large-v3-turbo.)"
+    },
+    {
+      "id": "taiwan-tongues-asr-ce",
+      "name": "Taiwan Tongues ASR CE",
+      "repo": "adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0",
+      "backend": "faster-whisper",
+      "languages": ["zh", "en"],
+      "language_notes": {"zh": "Mandarin / Taiwanese Hokkien / Hakka"},
+      "size_mb": 3090,
+      "license": "TRAIL v0.1 (TWM Responsible AI License)",
+      "tier": "large",
+      "initial_prompt": "繁體中文",
+      "description": "Whisper large-v2 fine-tuned for Mandarin, Taiwanese Hokkien, Hakka and English (CTranslate2 inference build). The model has no separate nan/hak language tokens: Hokkien and Hakka are recognised under zh. (Formerly adi-gov-tw/Taiwan-Tongues-ASR-CE.)"
+    },
+    {
+      "id": "breeze-asr-25",
+      "name": "Breeze ASR 25",
+      "repo": "MediaTek-Research/Breeze-ASR-25",
+      "backend": "transformers",
+      "languages": ["zh", "en"],
+      "language_notes": {"zh": "Taiwanese Mandarin (with English code-switching)"},
+      "size_mb": 2950,
+      "license": "Apache-2.0",
+      "tier": "large",
+      "files": ["*.json", "merges.txt", "model.safetensors"],
+      "description": "Whisper large-v2 fine-tuned for Taiwanese Mandarin, English and switching between them mid-sentence. Runs with PyTorch + transformers."
+    },
+    {
+      "id": "whisper-tiny",
+      "name": "Whisper tiny",
+      "repo": "Systran/faster-whisper-tiny",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 78,
+      "license": "MIT",
+      "tier": "tiny",
+      "description": "Smallest and fastest; low accuracy."
+    },
+    {
+      "id": "whisper-base",
+      "name": "Whisper base",
+      "repo": "Systran/faster-whisper-base",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 148,
+      "license": "MIT",
+      "tier": "base",
+      "description": "Fast; fine for clear speech on the CPU."
+    },
+    {
+      "id": "whisper-small",
+      "name": "Whisper small",
+      "repo": "Systran/faster-whisper-small",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 486,
+      "license": "MIT",
+      "tier": "small",
+      "description": "Good balance for the CPU."
+    },
+    {
+      "id": "whisper-medium",
+      "name": "Whisper medium",
+      "repo": "Systran/faster-whisper-medium",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 1530,
+      "license": "MIT",
+      "tier": "medium",
+      "description": "More accurate; needs a GPU for comfortable real time."
+    },
+    {
+      "id": "whisper-large-v1",
+      "name": "Whisper large (v1)",
+      "repo": "Systran/faster-whisper-large-v1",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 3090,
+      "license": "MIT",
+      "tier": "large",
+      "description": "Original large model."
+    },
+    {
+      "id": "whisper-large-v2",
+      "name": "Whisper large-v2",
+      "repo": "Systran/faster-whisper-large-v2",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 3090,
+      "license": "MIT",
+      "tier": "large",
+      "description": "Large model, second version."
+    },
+    {
+      "id": "whisper-large-v3",
+      "name": "Whisper large-v3",
+      "repo": "Systran/faster-whisper-large-v3",
+      "backend": "faster-whisper",
+      "languages": "whisper",
+      "size_mb": 3091,
+      "license": "MIT",
+      "tier": "large",
+      "description": "Most accurate Whisper; needs a GPU."
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+.venv/
+__pycache__/
+*.pyc
+/build/
+/dist/
+build.log
+.ruff_cache/
+app/i18n/*.ts.bak
