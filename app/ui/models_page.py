@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt, QTimer, QVariantAnimation, Signal
-from PySide6.QtGui import QColor, QPainter, QPen
+from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, QVariantAnimation, Signal
+from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -46,6 +46,7 @@ class ModelCard(CardWidget):
     def __init__(self, info: ModelInfo, parent=None):
         super().__init__(parent)
         self.info = info
+        self.setCursor(Qt.CursorShape.PointingHandCursor)
         lay = QHBoxLayout(self)
         lay.setContentsMargins(20, 14, 16, 14)
         lay.setSpacing(16)
@@ -102,6 +103,17 @@ class ModelCard(CardWidget):
         side.addLayout(buttons)
         side.addStretch(1)
         lay.addLayout(side)
+
+    @property
+    def page_url(self) -> str:
+        return f"https://huggingface.co/{self.info.repo}"
+
+    def mouseReleaseEvent(self, e):  # noqa: N802 - Qt override
+        super().mouseReleaseEvent(e)
+        # Buttons on the card handle their own clicks; this is a click on the
+        # card itself. Ignore right-clicks and drags released outside the card.
+        if e.button() == Qt.MouseButton.LeftButton and self.rect().contains(e.position().toPoint()):
+            QDesktopServices.openUrl(QUrl(self.page_url))
 
     def flash(self) -> None:
         """Outline the card in the accent color for a moment, then fade it out."""

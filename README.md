@@ -160,6 +160,8 @@ Notes:
 - **Breeze ASR 25:** only the inference files are downloaded (≈ 2.9 GB); the
   repository's optimizer state and original Whisper checkpoints are skipped.
 
+Click a model's card on the **Models** page to open its page on Hugging Face.
+
 Models are stored in `%LOCALAPPDATA%\AppLiveCaption\models` (changeable in
 Settings). Downloads show bytes and speed, can be cancelled, resume from where
 they stopped, and check free disk space first.
