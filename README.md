@@ -101,8 +101,8 @@ python -m app.main --minimized     # start minimized, e.g. when launched at sign
 ```
 
 1. Pick a model in the **Model** dropdown. Models that aren't downloaded yet are
-   grayed out; picking one offers to download it, and the app switches to it
-   when the download finishes.
+   grayed out; picking one opens its card on the **Models** page, where you can
+   download it. The app switches to it when the download finishes.
 2. Click the source button (it reads *System audio* at first) to choose
    **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to
    caption; only their audio is used. Apps you tick are remembered by

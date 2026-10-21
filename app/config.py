@@ -69,7 +69,7 @@ class Config(QConfig):
     captionFont = ConfigItem("Captions", "FontFamily", "Microsoft JhengHei UI")
     captionFontSize = RangeConfigItem("Captions", "FontSize", 24, RangeValidator(10, 72))
     captionLines = RangeConfigItem("Captions", "Lines", 8, RangeValidator(1, 30))
-    customColors = ConfigItem("Captions", "CustomColors", False, BoolValidator())
+    # A caption color left at its default follows the light/dark theme instead.
     finalColor = ColorConfigItem("Captions", "FinalColor", QColor(32, 32, 32))
     partialColor = ColorConfigItem("Captions", "PartialColor", QColor(128, 128, 128))
 
@@ -84,5 +84,23 @@ class Config(QConfig):
     overlayBackground = ColorConfigItem("Overlay", "BackgroundColor", QColor(0, 0, 0))
 
 
+def _migrate_custom_colors_switch() -> None:
+    """Settings used to have a "Custom caption colors" switch. Each color card now
+    has its own Default/Custom choice, so with the switch off the colors go back
+    to their defaults (which follow the theme), as they looked before. Saving
+    drops the old key, so this runs once."""
+    cfg.set(cfg.finalColor, cfg.finalColor.defaultValue)
+    cfg.set(cfg.partialColor, cfg.partialColor.defaultValue)
+
+
 cfg = Config()
+_legacy_switch_off = False
+try:
+    import json as _json
+
+    _legacy_switch_off = _json.loads(config_file().read_text(encoding="utf-8")).get("Captions", {}).get("CustomColors") is False
+except (OSError, ValueError):
+    pass
 qconfig.load(str(config_file()), cfg)
+if _legacy_switch_off:
+    _migrate_custom_colors_switch()

@@ -2,7 +2,8 @@
 
 from __future__ import annotations
 
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import QRectF, Qt, QTimer, QVariantAnimation, Signal
+from PySide6.QtGui import QColor, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     BodyLabel,
@@ -19,6 +20,7 @@ from qfluentwidgets import (
     TitleLabel,
     ToolTipFilter,
     TransparentToolButton,
+    themeColor,
 )
 
 from ..asr.languages import language_name
@@ -101,6 +103,33 @@ class ModelCard(CardWidget):
         side.addStretch(1)
         lay.addLayout(side)
 
+    def flash(self) -> None:
+        """Outline the card in the accent color for a moment, then fade it out."""
+        anim = QVariantAnimation(self)
+        anim.setStartValue(1.0)
+        anim.setEndValue(0.0)
+        anim.setDuration(1600)
+        anim.valueChanged.connect(self._set_highlight)
+        self._highlight_anim = anim  # keep a reference while it runs
+        self._set_highlight(1.0)
+        QTimer.singleShot(900, anim.start)  # hold fully visible first
+
+    def _set_highlight(self, value) -> None:
+        self._highlight = float(value)
+        self.update()
+
+    def paintEvent(self, e):  # noqa: N802 - Qt override
+        super().paintEvent(e)
+        if getattr(self, "_highlight", 0.0) <= 0:
+            return
+        painter = QPainter(self)
+        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
+        color = QColor(themeColor())
+        color.setAlphaF(self._highlight)
+        painter.setPen(QPen(color, 2))
+        painter.setBrush(Qt.BrushStyle.NoBrush)
+        painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 6, 6)
+
     def update_state(self, downloading: bool, in_use: bool) -> None:
         info = self.info
         downloaded = is_downloaded(info)
@@ -150,7 +179,7 @@ class ModelsPage(QWidget):
 
         outer = QVBoxLayout(self)
         outer.setContentsMargins(0, 0, 0, 0)
-        scroll = ScrollArea(self)
+        self.scroll = scroll = ScrollArea(self)
         scroll.setWidgetResizable(True)
         scroll.setStyleSheet("QScrollArea{background:transparent;border:none}")
         body = QWidget()
@@ -174,6 +203,15 @@ class ModelsPage(QWidget):
         scroll.setWidget(body)
         outer.addWidget(scroll)
         self.refresh()
+
+    def show_model(self, model_id: str) -> None:
+        """Scroll ``model_id``'s card into view and highlight it."""
+        card = self.cards.get(model_id)
+        if card is None:
+            return
+        self.refresh()
+        # Wait for the page to be laid out after switching to it.
+        QTimer.singleShot(50, lambda: (self.scroll.ensureWidgetVisible(card, 0, 24), card.flash()))
 
     def refresh(self) -> None:
         self.folder_label.setText(self.tr("Models are stored in {path}").format(path=models_dir()))

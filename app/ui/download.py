@@ -6,7 +6,6 @@ import logging
 import threading
 
 from PySide6.QtCore import QObject, QThread, Signal
-from qfluentwidgets import MessageBox
 
 from ..i18n import tr
 from ..models.catalog import ModelInfo
@@ -21,17 +20,6 @@ def format_bytes(n: float) -> str:
             return f"{n:.1f} {unit}" if unit in ("MB", "GB") else f"{n:.0f} {unit}"
         n /= 1024
     return f"{n:.1f} GB"
-
-
-def confirm_download(info: ModelInfo, parent) -> bool:
-    box = MessageBox(
-        tr("Download model?"),
-        tr("Model {name} (≈ {size:.1f} GB) isn't downloaded. Download now?").format(name=info.name, size=info.size_gb),
-        parent,
-    )
-    box.yesButton.setText(tr("Download"))
-    box.cancelButton.setText(tr("Cancel"))
-    return bool(box.exec())
 
 
 def download_error_text(kind: str, message: str) -> str:
@@ -107,4 +95,4 @@ class DownloadManager(QObject):
         self.finished.emit(model_id, result, message)
 
 
-__all__ = ["DownloadManager", "Progress", "confirm_download", "download_error_text", "format_bytes"]
+__all__ = ["DownloadManager", "Progress", "download_error_text", "format_bytes"]

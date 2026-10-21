@@ -107,8 +107,6 @@ class SettingsPage(ScrollArea):
                                           self.tr("Font size on the Live captions page"), g))
         g.addSettingCard(RangeSettingCard(cfg.captionLines, FluentIcon.ALIGNMENT, self.tr("Caption lines"),
                                           self.tr("How many lines the Live captions page shows"), g))
-        g.addSettingCard(SwitchSettingCard(FluentIcon.PALETTE, self.tr("Custom caption colors"),
-                                           self.tr("Use the colors below instead of the theme colors"), cfg.customColors, g))
         g.addSettingCard(CustomColorSettingCard(cfg.finalColor, FluentIcon.PALETTE, self.tr("Caption color"),
                                                 self.tr("Finished lines"), g))
         g.addSettingCard(CustomColorSettingCard(cfg.partialColor, FluentIcon.PALETTE, self.tr("Partial caption color"),

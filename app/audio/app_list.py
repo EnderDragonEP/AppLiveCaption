@@ -73,6 +73,17 @@ _version.VerQueryValueW.restype = wintypes.BOOL
 _name_cache: dict[str, str] = {}
 
 
+def _clean_name(raw: str) -> str:
+    """Cut a version-resource string at its terminator and drop control characters.
+
+    Some executables (Spotify, for one) report a length that runs past the
+    string's end, so the raw value carries a NUL and stray bytes after it,
+    which render as boxes.
+    """
+    text = raw.split("\0", 1)[0]
+    return "".join(c for c in text if c.isprintable()).strip()
+
+
 def friendly_name(exe_path: str, fallback: str) -> str:
     """FileDescription (or ProductName) from the executable's version info."""
     if not exe_path:
@@ -97,7 +108,7 @@ def friendly_name(exe_path: str, fallback: str) -> str:
                     for lang in langs:
                         sub = rf"\StringFileInfo\{lang}\{field_name}"
                         if _version.VerQueryValueW(buf, sub, ctypes.byref(ptr), ctypes.byref(length)) and length.value > 1:
-                            value = ctypes.wstring_at(ptr, length.value - 1).strip()
+                            value = _clean_name(ctypes.wstring_at(ptr, length.value))
                             if value:
                                 return value
                     return ""

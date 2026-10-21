@@ -267,7 +267,7 @@ class SourcePickerView(FlyoutViewBase):
         self._loading = False
         self._apps = apps
         for a in apps:
-            self.sel.app_names.setdefault(a.key, a.name)
+            self.sel.app_names[a.key] = a.name  # refresh names saved by older versions
         self._rebuild_rows()
 
     def _rebuild_rows(self) -> None:

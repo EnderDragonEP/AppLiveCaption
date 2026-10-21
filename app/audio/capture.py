@@ -32,6 +32,11 @@ MODE_SYSTEM = "system"
 MODE_APPS = "apps"
 
 
+def _printable(name: str) -> str:
+    """App names saved by older versions could contain control characters."""
+    return "".join(c for c in name.split("\0", 1)[0] if c.isprintable()).strip()
+
+
 @dataclass
 class CaptureSelection:
     mode: str = MODE_SYSTEM
@@ -59,7 +64,7 @@ class CaptureSelection:
         sel.mic_device = d.get("mic_device", DEFAULT_DEVICE) or DEFAULT_DEVICE
         sel.system_device = d.get("system_device", DEFAULT_DEVICE) or DEFAULT_DEVICE
         sel.apps = [a.lower() for a in d.get("apps", []) if isinstance(a, str)]
-        sel.app_names = {k.lower(): v for k, v in (d.get("app_names") or {}).items()}
+        sel.app_names = {k.lower(): _printable(v) for k, v in (d.get("app_names") or {}).items() if isinstance(v, str)}
         sel.include_mic = bool(d.get("include_mic", False))
         return sel
 

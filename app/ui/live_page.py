@@ -139,7 +139,7 @@ class LivePage(QWidget):
         self.lang_combo.currentIndexChanged.connect(self._on_language_index)
         self.apply_style()
         qconfig.themeChanged.connect(lambda _t: self.apply_style())
-        for item in (cfg.captionFont, cfg.captionFontSize, cfg.captionLines, cfg.customColors, cfg.finalColor,
+        for item in (cfg.captionFont, cfg.captionFontSize, cfg.captionLines, cfg.finalColor,
                      cfg.partialColor):
             item.valueChanged.connect(lambda _v: self.apply_style())
         self.set_running(False)
@@ -147,12 +147,15 @@ class LivePage(QWidget):
     # -- appearance ---------------------------------------------------------
     def apply_style(self) -> None:
         font = QFont(cfg.get(cfg.captionFont), cfg.get(cfg.captionFontSize))
-        if cfg.get(cfg.customColors):
-            final, partial = QColor(cfg.get(cfg.finalColor)), QColor(cfg.get(cfg.partialColor))
-        elif isDarkTheme():
+        if isDarkTheme():
             final, partial = QColor(240, 240, 240), QColor(150, 150, 150)
         else:
             final, partial = QColor(26, 26, 26), QColor(130, 130, 130)
+        # A color still at its default ("Default color" in Settings) follows the theme.
+        if QColor(cfg.get(cfg.finalColor)) != QColor(cfg.finalColor.defaultValue):
+            final = QColor(cfg.get(cfg.finalColor))
+        if QColor(cfg.get(cfg.partialColor)) != QColor(cfg.partialColor.defaultValue):
+            partial = QColor(cfg.get(cfg.partialColor))
         self.view.set_style(font, final, partial, cfg.get(cfg.captionLines))
 
     # -- models -------------------------------------------------------------

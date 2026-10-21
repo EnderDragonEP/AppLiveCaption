@@ -170,7 +170,7 @@ class MainWindow(FluentWindow):
             self.live.set_device(self.tr("No model loaded"))
 
     def request_model(self, model_id: str) -> None:
-        """The user picked a model: load it, or offer to download it first."""
+        """The user picked a model: load it, or show its card on the Models page to download it."""
         info = get_model(model_id)
         if info is None:
             return
@@ -182,17 +182,18 @@ class MainWindow(FluentWindow):
             self.live.select_model(model_id)
             c.load_model(model_id, cfg.get(cfg.device))
             return
-        # Keep the dropdown on the model that is actually in use.
+        # Keep the dropdown on the model that is actually in use, and show the
+        # model's card so the user can read about it and download it from there.
         self.live.select_model(self.controller.model_id or cfg.get(cfg.modelId))
-        self.download_model(model_id, ask=True)
+        self.show_model_card(model_id)
 
-    def download_model(self, model_id: str, ask: bool = False) -> None:
-        from .download import confirm_download
+    def show_model_card(self, model_id: str) -> None:
+        self.switchTo(self.models_page)
+        self.models_page.show_model(model_id)
 
+    def download_model(self, model_id: str) -> None:
         info = get_model(model_id)
         if info is None:
-            return
-        if ask and not confirm_download(info, self):
             return
         self._pending_model = model_id
         self.models_page.start_download(info)
@@ -244,8 +245,8 @@ class MainWindow(FluentWindow):
         if c.model_state not in (MODEL_READY, MODEL_LOADING):
             info = get_model(cfg.get(cfg.modelId))
             if info and not is_downloaded(info):
-                # First run: offer to download the selected model instead of failing.
-                self.download_model(info.id, ask=True)
+                # First run: show where to download the selected model instead of failing.
+                self.show_model_card(info.id)
                 return
         sel = self.live.selection
         lang = self.live.selected_language()

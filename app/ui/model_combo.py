@@ -27,8 +27,8 @@ class ModelComboBox(ComboBox):
     """Dropdown whose dimmed items are grayed out in the menu but still selectable.
 
     Disabling the items would gray them out too, but disabled items can't be
-    picked, and picking a model that isn't downloaded is how its download
-    starts.
+    picked, and picking a model that isn't downloaded opens its card on the
+    Models page, where it can be downloaded.
     """
 
     def __init__(self, parent=None):
