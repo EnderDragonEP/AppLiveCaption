@@ -44,10 +44,26 @@ def _languages_text(info: ModelInfo) -> str:
 class _ItemCard(CardWidget):
     """A card that opens ``page_url`` when clicked and can be highlighted for a moment.
 
-    Subclasses add ``progress`` (a ProgressBar) and ``detail`` (a label) for ``set_progress``.
+    Subclasses call ``_build_frame`` and add ``detail`` (a label) for ``set_progress``.
     """
 
     page_url = ""
+
+    def _build_frame(self) -> QHBoxLayout:
+        """Lay out the card: a row for the icon, text and status columns (returned
+        for the subclass to fill), and under it the download progress bar across
+        the whole card, hidden until a download runs."""
+        outer = QVBoxLayout(self)
+        outer.setContentsMargins(20, 14, 16, 14)
+        outer.setSpacing(12)
+        row = QHBoxLayout()
+        row.setSpacing(16)
+        outer.addLayout(row)
+        self.progress = ProgressBar(self)
+        self.progress.setRange(0, 1000)
+        self.progress.hide()
+        outer.addWidget(self.progress)
+        return row
 
     def mouseReleaseEvent(self, e):  # noqa: N802 - Qt override
         super().mouseReleaseEvent(e)
@@ -83,6 +99,14 @@ class _ItemCard(CardWidget):
         painter.setBrush(Qt.BrushStyle.NoBrush)
         painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 6, 6)
 
+    def reserve_progress_width(self, downloading: bool) -> None:
+        """While downloading, keep the detail label as wide as the widest progress
+        text, so the columns don't change width (and the description doesn't
+        re-wrap, changing the card's height) with every progress update."""
+        mb = format_bytes(1023.9 * 2**20)  # "1023.9 MB", the widest size format_bytes() writes
+        widest = f"{mb} / {format_bytes(99.9 * 2**30)} · {mb}/s · " + self.tr("{m}:{s:02d} left").format(m=99, s=59)
+        self.detail.setMinimumWidth(self.detail.fontMetrics().horizontalAdvance(widest) + 4 if downloading else 0)
+
     def set_progress(self, done: int, total: int, speed: float) -> None:
         self.progress.setValue(int(done * 1000 / total) if total else 0)
         eta = ""
@@ -102,9 +126,7 @@ class ModelCard(_ItemCard):
         super().__init__(parent)
         self.info = info
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(20, 14, 16, 14)
-        lay.setSpacing(16)
+        lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.ROBOT, self)
         icon.setFixedSize(28, 28)
@@ -127,10 +149,6 @@ class ModelCard(_ItemCard):
         meta.setToolTip(info.repo)
         meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
-        self.progress = ProgressBar(self)
-        self.progress.setRange(0, 1000)
-        self.progress.hide()
-        text.addWidget(self.progress)
         lay.addLayout(text, 1)
 
         side = QVBoxLayout()
@@ -168,6 +186,7 @@ class ModelCard(_ItemCard):
         downloaded = is_downloaded(info)
         partial = has_partial_download(info)
         self.progress.setVisible(downloading)
+        self.reserve_progress_width(downloading)
         self.cancel_btn.setVisible(downloading)
         self.download_btn.setVisible(not downloaded and not downloading)
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
@@ -201,9 +220,7 @@ class GpuSupportCard(_ItemCard):
         self.gpu_name = ""
         self.usable = False  # CTranslate2 can use the GPU
         self.setCursor(Qt.CursorShape.PointingHandCursor)
-        lay = QHBoxLayout(self)
-        lay.setContentsMargins(20, 14, 16, 14)
-        lay.setSpacing(16)
+        lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.SPEED_HIGH, self)
         icon.setFixedSize(28, 28)
@@ -225,10 +242,6 @@ class GpuSupportCard(_ItemCard):
         meta.setToolTip(self.page_url)
         meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
-        self.progress = ProgressBar(self)
-        self.progress.setRange(0, 1000)
-        self.progress.hide()
-        text.addWidget(self.progress)
         lay.addLayout(text, 1)
 
         side = QVBoxLayout()
@@ -287,6 +300,7 @@ class GpuSupportCard(_ItemCard):
         partial = not downloading and cuda_libs.has_partial_download()
         elsewhere = not installed and not scheduled and not self._in_use() and cuda_libraries_found()
         self.progress.setVisible(downloading)
+        self.reserve_progress_width(downloading)
         self.cancel_btn.setVisible(downloading)
         self.download_btn.setVisible(not (downloading or installed or scheduled or elsewhere))
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
