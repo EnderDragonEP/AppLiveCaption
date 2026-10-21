@@ -34,10 +34,11 @@ ROOT = os.path.abspath(SPECPATH)  # noqa: F821 - defined by PyInstaller
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from build_excludes import unused_modules  # noqa: E402
 
-# Name and version come from app/__init__.py, the single place they're defined.
+# Name, version and author come from app/__init__.py, the single place they're defined.
 _meta: dict = {}
 exec(Path(ROOT, "app", "__init__.py").read_text(encoding="utf-8"), _meta)
 APP_NAME, APP_VERSION = _meta["APP_NAME"], _meta["__version__"]
+AUTHOR, DESCRIPTION = _meta["__author__"], _meta["DESCRIPTION"]
 _numeric = tuple(int(p) for p in APP_VERSION.split(".")[:4])
 _numeric += (0,) * (4 - len(_numeric))
 # Shown in the .exe's Properties > Details.
@@ -51,6 +52,9 @@ VERSION_INFO = VSVersionInfo(
             StringStruct("ProductVersion", APP_VERSION),
             StringStruct("InternalName", APP_NAME),
             StringStruct("OriginalFilename", f"{APP_NAME}.exe"),
+            StringStruct("CompanyName", AUTHOR),  # shown as "Publisher" in Task Manager's Startup apps
+            StringStruct("LegalCopyright", f"Copyright (C) 2026 {AUTHOR}"),
+            StringStruct("Comments", DESCRIPTION),
         ])]),
         VarFileInfo([VarStruct("Translation", [0x0409, 1200])]),
     ],

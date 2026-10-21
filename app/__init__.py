@@ -2,3 +2,5 @@
 
 APP_NAME = "AppLiveCaption"
 __version__ = "1.0.0"
+__author__ = "Ender Yang"
+DESCRIPTION = "Offline live captions for Windows"
