@@ -100,8 +100,9 @@ python -m app.main --start         # start captioning as soon as the model has l
 python -m app.main --minimized     # start minimized, e.g. when launched at sign-in
 ```
 
-1. Pick a model in the **Model** dropdown. If it isn't downloaded yet, the app
-   offers to download it and switches to it when the download finishes.
+1. Pick a model in the **Model** dropdown. Models that aren't downloaded yet are
+   grayed out; picking one offers to download it, and the app switches to it
+   when the download finishes.
 2. Click the source button (it reads *System audio* at first) to choose
    **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to
    caption; only their audio is used. Apps you tick are remembered by
@@ -176,7 +177,7 @@ caption.
 | --- | --- |
 | Settings | `%APPDATA%\AppLiveCaption\config.json` |
 | History | `%APPDATA%\AppLiveCaption\history\*.json` |
-| Logs (rotating) | `%APPDATA%\AppLiveCaption\logs\app.log` |
+| Logs (rotating) | `%APPDATA%\AppLiveCaption\logs\app.log` (Settings → Advanced → Logs opens the folder) |
 | Models | `%LOCALAPPDATA%\AppLiveCaption\models` |
 
 ## Console tools
@@ -229,6 +230,13 @@ With PyTorch included the folder is about 4.4 GB, mostly CUDA libraries. A full
 build takes about 3–6 minutes. Without the script, the equivalent is
 `pyinstaller AppLiveCaption.spec --noconfirm` (set `ALC_INCLUDE_TORCH=0` or
 `ALC_CONSOLE=1` in the environment for the options above).
+
+### Version
+
+The app's name and version live in [app/\_\_init\_\_.py](app/__init__.py)
+(`__version__`, currently 1.0.0). Settings → About shows them, and the build
+writes them into the `.exe`'s file properties (Properties → Details). To release
+a new version, change `__version__` there and rebuild.
 
 ## Translating the UI
 

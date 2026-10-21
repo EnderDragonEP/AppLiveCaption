@@ -6,6 +6,7 @@ from PySide6.QtCore import Signal
 from PySide6.QtWidgets import QSystemTrayIcon
 from qfluentwidgets import Action, FluentIcon, SystemTrayMenu
 
+from .. import APP_NAME
 from ..config import cfg
 from .icons import app_icon
 
@@ -20,7 +21,7 @@ class TrayIcon(QSystemTrayIcon):
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setIcon(app_icon())
-        self.setToolTip("AppLiveCaption")
+        self.setToolTip(APP_NAME)
         self.menu = SystemTrayMenu(parent=parent)
         self.show_action = Action(FluentIcon.HOME, self.tr("Show window"), triggered=self.showWindowRequested)
         self.caption_action = Action(FluentIcon.PLAY_SOLID, self.tr("Start captions"), triggered=self.captionToggled)

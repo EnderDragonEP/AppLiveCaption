@@ -30,6 +30,7 @@ from ..models.catalog import ModelInfo, get_model, load_catalog
 from ..models.storage import is_downloaded
 from .caption_model import CaptionModel
 from .caption_view import CaptionView
+from .model_combo import ModelComboBox
 from .source_picker import SourceButton, SourcePickerView
 
 
@@ -85,8 +86,8 @@ class LivePage(QWidget):
         bar2 = QHBoxLayout()
         bar2.setSpacing(10)
         bar2.addWidget(BodyLabel(self.tr("Model"), self))
-        self.model_combo = ComboBox(self)
-        self.model_combo.setMinimumWidth(360)
+        self.model_combo = ModelComboBox(self)
+        self.model_combo.setMinimumWidth(280)
         self.model_combo.setToolTip(self.tr("Speech recognition model"))
         self.model_combo.installEventFilter(ToolTipFilter(self.model_combo))
         bar2.addWidget(self.model_combo)
@@ -162,8 +163,9 @@ class LivePage(QWidget):
         self.model_combo.clear()
         self._model_ids = []
         for m in load_catalog():
-            status = self.tr("Downloaded") if is_downloaded(m) else self.tr("Not downloaded")
-            self.model_combo.addItem(f"{m.name}  ·  {format_size(m.size_mb)}  ·  {status}")
+            # Models that aren't downloaded are grayed out; picking one offers to download it.
+            self.model_combo.addItem(f"{m.name}  ·  {format_size(m.size_mb)}")
+            self.model_combo.set_item_dimmed(self.model_combo.count() - 1, not is_downloaded(m))
             self._model_ids.append(m.id)
         if current in self._model_ids:
             self.model_combo.setCurrentIndex(self._model_ids.index(current))

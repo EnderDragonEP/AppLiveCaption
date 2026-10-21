@@ -20,10 +20,41 @@ import sys
 from pathlib import Path
 
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules, copy_metadata
+from PyInstaller.utils.win32.versioninfo import (
+    FixedFileInfo,
+    StringFileInfo,
+    StringStruct,
+    StringTable,
+    VarFileInfo,
+    VarStruct,
+    VSVersionInfo,
+)
 
 ROOT = os.path.abspath(SPECPATH)  # noqa: F821 - defined by PyInstaller
 sys.path.insert(0, os.path.join(ROOT, "tools"))
 from build_excludes import unused_modules  # noqa: E402
+
+# Name and version come from app/__init__.py, the single place they're defined.
+_meta: dict = {}
+exec(Path(ROOT, "app", "__init__.py").read_text(encoding="utf-8"), _meta)
+APP_NAME, APP_VERSION = _meta["APP_NAME"], _meta["__version__"]
+_numeric = tuple(int(p) for p in APP_VERSION.split(".")[:4])
+_numeric += (0,) * (4 - len(_numeric))
+# Shown in the .exe's Properties > Details.
+VERSION_INFO = VSVersionInfo(
+    ffi=FixedFileInfo(filevers=_numeric, prodvers=_numeric),
+    kids=[
+        StringFileInfo([StringTable("040904B0", [
+            StringStruct("ProductName", APP_NAME),
+            StringStruct("FileDescription", APP_NAME),
+            StringStruct("FileVersion", APP_VERSION),
+            StringStruct("ProductVersion", APP_VERSION),
+            StringStruct("InternalName", APP_NAME),
+            StringStruct("OriginalFilename", f"{APP_NAME}.exe"),
+        ])]),
+        VarFileInfo([VarStruct("Translation", [0x0409, 1200])]),
+    ],
+)
 INCLUDE_TORCH = os.environ.get("ALC_INCLUDE_TORCH", "1") != "0"
 CONSOLE = os.environ.get("ALC_CONSOLE", "0") == "1"
 
@@ -118,7 +149,7 @@ exe = EXE(  # noqa: F821
     console=CONSOLE,
     disable_windowed_traceback=False,
     upx=False,
-    version=None,
+    version=VERSION_INFO,
 )
 
 coll = COLLECT(  # noqa: F821

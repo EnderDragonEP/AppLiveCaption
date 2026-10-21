@@ -49,15 +49,18 @@ def main() -> int:
     _install_exception_hooks()
     import logging
 
-    logging.getLogger("app").info("Starting AppLiveCaption (frozen=%s)", getattr(sys, "frozen", False))
+    from app import APP_NAME, __version__
+
+    logging.getLogger("app").info("Starting %s %s (frozen=%s)", APP_NAME, __version__, getattr(sys, "frozen", False))
 
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication
 
     QApplication.setHighDpiScaleFactorRoundingPolicy(Qt.HighDpiScaleFactorRoundingPolicy.PassThrough)
     app = QApplication(sys.argv)
-    app.setApplicationName("AppLiveCaption")
-    app.setOrganizationName("AppLiveCaption")
+    app.setApplicationName(APP_NAME)
+    app.setOrganizationName(APP_NAME)
+    app.setApplicationVersion(__version__)
 
     from app.i18n import install_translator
 

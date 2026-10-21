@@ -8,6 +8,7 @@ from PySide6.QtCore import QSize, QTimer
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon, FluentWindow, NavigationItemPosition, SplashScreen
 
+from .. import APP_NAME
 from ..asr.hardware import gpu_info
 from ..config import cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_READY, PAUSED, RUNNING, CaptionController
@@ -22,7 +23,7 @@ from .source_picker import selection_summary
 
 log = logging.getLogger(__name__)
 
-APP_TITLE = "AppLiveCaption"
+APP_TITLE = APP_NAME
 
 
 def warm_up_native_libraries() -> None:
