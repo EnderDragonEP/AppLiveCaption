@@ -301,6 +301,16 @@ app/
   (finals take 1–2.5 s on an RTX 4070 Laptop).
 - Translation, speaker identification and cloud speech APIs are out of scope.
 
+## Disclaimer
+
+This software is provided "as is", without warranty of any kind. Use it at your own risk; the author is not responsible for any damage or data loss resulting from its use.
+
+Captions are generated automatically and can be incomplete or wrong. Don't rely on them where accuracy matters, such as medical, legal or safety-critical situations.
+
+AppLiveCaption started as a personal project. It is not affiliated with or endorsed by Microsoft, OpenAI, MediaTek, Hugging Face or NVIDIA. The speech recognition models are made by their respective authors and used under their own licenses.
+
+Claude Code was used in the development of this software.
+
 ## License
 
 [GPL-3.0](LICENSE) © 2026 Ender Yang. Dependency information is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
