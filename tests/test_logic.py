@@ -5,7 +5,6 @@
 
 from __future__ import annotations
 
-import json
 import os
 import sys
 import tempfile
@@ -113,34 +112,28 @@ class CatalogTests(unittest.TestCase):
         self.assertIn("whisper-large-v3-turbo", ids)
         self.assertEqual(get_model("taiwan-tongues-asr-ce").languages, ("zh", "en"))
 
-    def test_breeze_downloads_only_inference_files(self):
-        files = [("model.safetensors", 3), ("optimizer.bin", 4), ("config.json", 1), ("merges.txt", 1),
-                 ("whisper-github/x/breeze-asr-25.pt", 6), ("random_states_0.pkl", 1), ("BreezeASR25.png", 1)]
-        picked = {n for n, _ in _selected_files(get_model("breeze-asr-25"), files)}
-        self.assertEqual(picked, {"model.safetensors", "config.json", "merges.txt"})
+    def test_every_model_runs_on_faster_whisper(self):
+        # PyTorch/transformers were dropped; Breeze ASR 25 uses a CTranslate2 conversion.
+        self.assertEqual({m.backend for m in load_catalog()}, {"faster-whisper"})
+        self.assertEqual(get_model("breeze-asr-25").repo, "SoybeanMilk/faster-whisper-Breeze-ASR-25")
 
     def test_default_ignore_patterns(self):
         files = [("model.bin", 1), ("README.md", 1), (".gitattributes", 1), ("tokenizer.json", 1)]
         picked = {n for n, _ in _selected_files(get_model("whisper-tiny"), files)}
         self.assertEqual(picked, {"model.bin", "tokenizer.json"})
 
-    def test_sharded_model_counts_as_downloaded_only_with_every_shard(self):
-        # Any transformers model may ship its weights split into several files.
+    def test_model_counts_as_downloaded_with_its_weights(self):
         info = get_model("breeze-asr-25")
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
             d = model_path(info, base)
             d.mkdir()
             (d / "config.json").write_text("{}")
-            index = {"weight_map": {"a": "model-00001-of-00002.safetensors", "b": "model-00002-of-00002.safetensors"}}
-            (d / "model.safetensors.index.json").write_text(json.dumps(index))
-            (d / "model-00001-of-00002.safetensors").write_bytes(b"x")
             self.assertFalse(is_downloaded(info, base))
-            self.assertEqual(verify(info, base), "missing file model-00002-of-00002.safetensors")
-            (d / "model-00002-of-00002.safetensors").write_bytes(b"x")
+            self.assertEqual(verify(info, base), "missing file model.bin")
+            (d / "model.bin").write_bytes(b"x")
             self.assertTrue(is_downloaded(info, base))
             self.assertIsNone(verify(info, base))
-
 
 if __name__ == "__main__":
     os.environ.setdefault("HF_HUB_OFFLINE", "1")

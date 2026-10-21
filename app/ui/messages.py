@@ -25,9 +25,7 @@ def error_text(kind: str, detail: str) -> tuple[str, str]:
     if kind == "oom":
         return tr("Not enough memory"), tr("{detail} does not fit in memory. Pick a smaller model.").format(detail=detail)
     if kind == "backend_missing":
-        return tr("Model needs PyTorch"), tr(
-            "This model runs with PyTorch + transformers, which are not installed ({detail})."
-        ).format(detail=detail)
+        return tr("Model not supported"), tr("This model's format isn't supported ({detail}).").format(detail=detail)
     if kind == "language_unsupported":
         return tr("Language not supported"), tr(
             "The selected model does not support language '{code}'. Switched to auto-detect."

@@ -25,7 +25,6 @@ def setup_logging(console: bool = False, level: int = logging.INFO) -> None:
         root.addHandler(sh)
     # comtypes logs every AddRef/Release at DEBUG; keep it quiet.
     # faster_whisper logs every call ("Processing audio with duration ...").
-    for noisy in ("comtypes", "httpx", "httpcore", "urllib3", "huggingface_hub", "filelock", "PIL", "faster_whisper",
-                  "transformers"):
+    for noisy in ("comtypes", "httpx", "httpcore", "urllib3", "huggingface_hub", "filelock", "PIL", "faster_whisper"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
     root._alc_configured = True  # type: ignore[attr-defined]

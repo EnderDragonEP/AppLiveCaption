@@ -24,27 +24,22 @@ model is downloaded, it works with no network connection.
 | OS | Windows 10 or 11, 64-bit. Captioning individual apps needs Windows build 20348 or later (in practice Windows 11); on older builds that option is hidden and microphone/system audio still work. |
 | Python | 3.11 or 3.12 (64-bit) |
 | GPU (optional) | NVIDIA GPU with a recent driver (R525 or newer, any driver that supports CUDA 12). Without one, models run on the CPU (int8). |
-| Disk | ~1 GB for the app's own Python packages, ~3 GB more if PyTorch with CUDA isn't installed yet, plus 0.1–3 GB per model |
+| Disk | ~3 GB for the Python packages (about 2 GB of it NVIDIA's CUDA libraries), plus 0.1–3 GB per model |
 
 ### CUDA
 
-You do **not** need to install the CUDA Toolkit. faster-whisper (CTranslate2)
-needs cuBLAS 12 and cuDNN 9, and every CUDA 12 build of PyTorch ships those
-DLLs; the app adds `torch\lib` to the DLL search path at start-up
-(`app/asr/cuda_setup.py`). Only the NVIDIA display driver is required. Tested
-with torch 2.6.0+cu124 / CTranslate2 4.6.2 and torch 2.14.1+cu126 / CTranslate2
-4.8.3. A CPU-only PyTorch has no CUDA DLLs, so the models then run on the CPU.
+You do **not** need to install the CUDA Toolkit, and the app doesn't use
+PyTorch. faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9, which
+`requirements.txt` installs from NVIDIA's pip packages (`nvidia-cublas-cu12`,
+`nvidia-cudnn-cu12`, `nvidia-cuda-nvrtc-cu12`); the app adds their folders to
+the DLL search path at start-up (`app/asr/cuda_setup.py`). Only the NVIDIA
+display driver is required.
 
-If you skip PyTorch (see below) and still want GPU inference for the Whisper
-models, install the NVIDIA runtime wheels instead:
-
-```powershell
-pip install nvidia-cublas-cu12 nvidia-cudnn-cu12==9.10.2.21
-```
-
-(CTranslate2 bundles a cuDNN dispatcher, `cudnn64_9.dll`; the cuDNN wheel should
-match its version, which is 9.10.2.21 for CTranslate2 4.8.3.) A CUDA 12.x
-Toolkit install (`CUDA_PATH_V12_*`) is also picked up if present.
+The versions are pinned to CUDA 12.4 / cuDNN 9.1.0.70 to match the cuDNN loader
+that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than
+that loader. If those packages aren't installed, the app falls back to the same
+libraries in PyTorch's `torch\lib` (when PyTorch is installed for something
+else) or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`).
 
 ## Setup
 
@@ -61,24 +56,15 @@ py -3.12 -m pip install -r requirements.txt
 
 - Packages only this app uses (PySide6, faster-whisper, onnxruntime, the audio
   libraries, …) are pinned to the tested versions.
-- Packages that other software commonly shares (PyTorch, transformers, NumPy,
-  huggingface_hub, CTranslate2, …) take a version range, so the versions you
-  already have are kept whenever they work. In particular an existing PyTorch
-  is never replaced: torchvision and torchaudio require one exact torch version.
-  A Python without PyTorch gets the CUDA 12.6 build from the PyTorch index.
-- Building the `.exe` needs PyInstaller 6.22 or newer: with older versions
-  transformers can't load inside the built app, so Breeze ASR 25 fails there.
-  `build.ps1` checks this before building.
+- Packages that other software commonly shares (NumPy, huggingface_hub,
+  CTranslate2, …) take a version range, so the versions you already have are
+  kept whenever they work. PyTorch isn't needed; if it's installed for other
+  projects, it's left alone (the app even keeps CTranslate2 from importing it).
 - To see what pip would change before installing anything, run
   `py -3.12 -m pip install --dry-run -r requirements.txt`.
 - Chinese conversion uses `opencc-python-reimplemented`, which gives the same
   results as the `OpenCC` package. Don't install both: they share the `opencc`
   folder and overwrite each other's files.
-
-PyTorch and transformers are only needed for **Breeze ASR 25**. To leave them
-out, delete the `torch`, `transformers` and `safetensors` lines before
-installing; Breeze then shows a "needs PyTorch" message and every other model
-works normally.
 
 If you'd rather keep the app's packages separate, a virtual environment still
 works: create one, install `requirements.txt` into it, and run the app or
@@ -135,14 +121,16 @@ oldest audio is dropped instead of letting the delay grow.
 
 All models are listed in [app/models/catalog.json](app/models/catalog.json).
 Adding a model only takes a new entry there (display name, Hugging Face repo,
-backend, languages, approximate size, license). Models stored as one weights
-file or split into several (`model.safetensors.index.json` + shards) both work.
+backend, languages, approximate size, license). Every model runs on
+faster-whisper, so it must be in CTranslate2 format; a model published only in
+Hugging Face transformers format can be converted with CTranslate2's
+`ct2-transformers-converter` (`--quantization float16`).
 
 | Model | Repository | Backend |
 | --- | --- | --- |
 | Whisper large-v3-turbo | `dropbox-dash/faster-whisper-large-v3-turbo` | faster-whisper |
 | Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` | faster-whisper |
-| Breeze ASR 25 | `MediaTek-Research/Breeze-ASR-25` | transformers |
+| Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` | faster-whisper |
 | Whisper tiny / base / small / medium | `Systran/faster-whisper-{size}` | faster-whisper |
 | Whisper large v1 / v2 / v3 | `Systran/faster-whisper-large-{v1,v2,v3}` | faster-whisper |
 
@@ -157,8 +145,13 @@ Notes:
   tokens. Hokkien and Hakka are recognised under `zh`, so the app offers
   *Auto-detect*, *Mandarin / Taiwanese Hokkien / Hakka* (`zh`) and *English*.
   Its license is the TRAIL v0.1 responsible-AI license.
-- **Breeze ASR 25:** only the inference files are downloaded (≈ 2.9 GB); the
-  repository's optimizer state and original Whisper checkpoints are skipped.
+- **Breeze ASR 25:** MediaTek Research publishes it only in transformers
+  format (`MediaTek-Research/Breeze-ASR-25`), so the app uses SoybeanMilk's
+  float16 CTranslate2 conversion. Its `model.bin` is byte-for-byte identical to a
+  conversion made locally with `ct2-transformers-converter --quantization
+  float16`, and on 27 test utterances it gave the same transcripts as the
+  original on PyTorch for all Mandarin and English speech, at about half the
+  decoding time.
 
 Click a model's card on the **Models** page to open its page on Hugging Face.
 
@@ -216,7 +209,6 @@ them from inside the app.
 | Option | Effect |
 | --- | --- |
 | `-Python <path>` | Build with this `python.exe` instead of finding one. |
-| `-NoTorch` | Leave out PyTorch and transformers (no Breeze models, much smaller build). The NVIDIA wheels mentioned under [CUDA](#cuda) are bundled if installed, so the Whisper models can still use the GPU. |
 | `-Console` | Keep a console window in the built app, for debugging. |
 | `-Clean` | Delete earlier build output and PyInstaller's cache first. |
 | `-Install` | Run `pip install -r requirements.txt` for that Python before building. |
@@ -231,12 +223,15 @@ packages installed: the spec reads `requirements.txt`, follows the installed
 packages' dependencies, and excludes everything else
 ([tools/build_excludes.py](tools/build_excludes.py); run it to see the list).
 Without that, PyInstaller would follow optional imports into unrelated packages
-(transformers alone refers to datasets, accelerate, torchvision, …).
+(CTranslate2 alone would pull in an installed PyTorch).
 
-With PyTorch included the folder is about 4.4 GB, mostly CUDA libraries. A full
-build takes about 3–6 minutes. Without the script, the equivalent is
-`pyinstaller AppLiveCaption.spec --noconfirm` (set `ALC_INCLUDE_TORCH=0` or
-`ALC_CONSOLE=1` in the environment for the options above).
+The folder is about 1.6 GB, three quarters of it NVIDIA's CUDA libraries. The
+spec leaves out what the app never loads: cuDNN's RNN/attention library, Qt's
+software OpenGL renderer, Qt Quick/QML, Qt's own translations, unused image
+formats and plugins, and the optional SciPy/Pillow extras of the widget library.
+A build takes about 1–2 minutes. Without the script, the equivalent is
+`pyinstaller AppLiveCaption.spec --noconfirm` (set `ALC_CONSOLE=1` in the
+environment for a console window).
 
 ### Version
 
@@ -268,8 +263,8 @@ app/
   audio/               capture (PyAudioWPatch, process loopback via comtypes),
                        app list (pycaw), resampling (soxr), mixer + limiter, Silero VAD
   asr/                 backend interface, faster_whisper_backend.py,
-                       transformers_backend.py, streaming.py (partials/finals,
-                       LocalAgreement, prompts), hallucination filter, OpenCC
+                       streaming.py (partials/finals, LocalAgreement, prompts),
+                       hallucination filter, OpenCC
   models/              catalog, downloader, local storage
   core/                controller (worker thread) and history
   ui/                  main window, pages, source flyout, overlay, tray
@@ -297,8 +292,6 @@ app/
 
 - Speech that overlaps between several selected apps is transcribed as one
   stream, so the louder speaker usually wins.
-- Breeze ASR 25 runs on PyTorch and is slower than the CTranslate2 models
-  (finals take 1–2.5 s on an RTX 4070 Laptop).
 - Translation, speaker identification and cloud speech APIs are out of scope.
 
 ## Disclaimer

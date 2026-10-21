@@ -14,12 +14,12 @@ import sys
 # No network at runtime: models load from local folders only. The downloader
 # lifts this flag for its own requests while a download runs.
 os.environ["HF_HUB_OFFLINE"] = "1"
-os.environ["TRANSFORMERS_OFFLINE"] = "1"
 os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
-# transformers copies weights on 4 threads that hold the GIL in turn, which can
-# stall the UI while Breeze loads; loading them one by one is as fast here.
-os.environ.setdefault("HF_DEACTIVATE_ASYNC_LOAD", "1")
+# The app doesn't use PyTorch. CTranslate2 imports it when it's installed (only
+# its model converters need it), which costs over a second at start-up and
+# loads PyTorch's own CUDA libraries instead of the ones the app ships with.
+sys.modules.setdefault("torch", None)
 
 if __package__ in (None, ""):
     sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

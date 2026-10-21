@@ -10,7 +10,6 @@ from pathlib import Path
 from ..asr.languages import WHISPER_LANGUAGES
 
 BACKEND_FASTER_WHISPER = "faster-whisper"
-BACKEND_TRANSFORMERS = "transformers"
 
 # Rough relative compute cost, used for the "too slow for real time" warning.
 TIER_COST = {"tiny": 1, "base": 2, "small": 5, "medium": 12, "turbo": 10, "large": 25}

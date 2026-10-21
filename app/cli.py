@@ -108,6 +108,7 @@ def cmd_transcribe(args) -> None:
 
 
 def main(argv: list[str] | None = None) -> None:
+    sys.modules.setdefault("torch", None)  # unused; see app/main.py
     _utf8_console()
     from .logging_setup import setup_logging
 

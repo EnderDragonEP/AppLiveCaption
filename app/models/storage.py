@@ -6,7 +6,7 @@ import json
 import shutil
 from pathlib import Path
 
-from .catalog import BACKEND_FASTER_WHISPER, ModelInfo
+from .catalog import ModelInfo
 
 MARKER = ".alc_complete.json"
 PARTIAL_SUFFIX = ".part"
@@ -31,25 +31,8 @@ def model_path(info: ModelInfo, base: Path | None = None) -> Path:
     return (base or models_dir()) / info.folder_name
 
 
-SHARD_INDEX = "model.safetensors.index.json"
-
-
-def _weight_files(d: Path) -> list[str]:
-    """safetensors weights: one file, or the shards listed in the index of a split model."""
-    index = d / SHARD_INDEX
-    if index.is_file() and not (d / "model.safetensors").is_file():
-        try:
-            shards = sorted(set(json.loads(index.read_text(encoding="utf-8"))["weight_map"].values()))
-        except (OSError, ValueError, KeyError, AttributeError):
-            return [SHARD_INDEX, "model.safetensors"]  # unreadable index: report the weights missing
-        return [SHARD_INDEX, *shards]
-    return ["model.safetensors"]
-
-
-def _essential_files(info: ModelInfo, d: Path) -> list[str]:
-    if info.backend == BACKEND_FASTER_WHISPER:
-        return ["config.json", "model.bin"]
-    return ["config.json", *_weight_files(d)]
+def _essential_files(info: ModelInfo) -> list[str]:
+    return ["config.json", "model.bin"]  # a CTranslate2 (faster-whisper) model
 
 
 def is_downloaded(info: ModelInfo, base: Path | None = None) -> bool:
@@ -62,7 +45,7 @@ def is_downloaded(info: ModelInfo, base: Path | None = None) -> bool:
     # download is half-finished.
     if any(d.rglob(f"*{PARTIAL_SUFFIX}")):
         return False
-    return all((d / f).is_file() for f in _essential_files(info, d))
+    return all((d / f).is_file() for f in _essential_files(info))
 
 
 def has_partial_download(info: ModelInfo, base: Path | None = None) -> bool:
@@ -92,7 +75,7 @@ def verify(info: ModelInfo, base: Path | None = None) -> str | None:
                 return f"missing file {name}"
             if size and p.stat().st_size != size:
                 return f"incomplete file {name}"
-    for f in _essential_files(info, d):
+    for f in _essential_files(info):
         if not (d / f).is_file():
             return f"missing file {f}"
     return None

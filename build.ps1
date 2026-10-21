@@ -11,11 +11,6 @@
 .PARAMETER Python
     Path to the python.exe to build with, instead of finding one.
 
-.PARAMETER NoTorch
-    Leave out PyTorch and transformers. Breeze ASR 25 won't be available, but the
-    build is much smaller. The Whisper models can still use the GPU if the
-    nvidia-cublas-cu12 / nvidia-cudnn-cu12 wheels are installed.
-
 .PARAMETER Console
     Keep a console window in the built app, for debugging.
 
@@ -33,7 +28,7 @@
     .\build.ps1
 
 .EXAMPLE
-    .\build.ps1 -NoTorch -Clean
+    .\build.ps1 -Clean
 
 .EXAMPLE
     .\build.ps1 -Python C:\Python312\python.exe
@@ -41,7 +36,6 @@
 [CmdletBinding()]
 param(
     [string]$Python,
-    [switch]$NoTorch,
     [switch]$Console,
     [switch]$Clean,
     [switch]$Install,
@@ -95,7 +89,6 @@ function Find-Python {
 
 $timer = [Diagnostics.Stopwatch]::StartNew()
 $savedEnv = @{
-    ALC_INCLUDE_TORCH = $env:ALC_INCLUDE_TORCH
     ALC_CONSOLE       = $env:ALC_CONSOLE
     HF_HUB_OFFLINE    = $env:HF_HUB_OFFLINE
 }
@@ -118,21 +111,13 @@ try {
         Invoke-Checked $Python @('-m', 'pip', 'install', '--disable-pip-version-check', '-r', 'requirements.txt')
     }
 
-    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub PyInstaller'
-    if (-not $NoTorch) { $modules += ' torch transformers' }
+    # nvidia.cublas / nvidia.cudnn: CUDA libraries for the GPU (nvidia-*-cu12 packages).
+    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub nvidia.cublas nvidia.cudnn PyInstaller'
     $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m) is None))"
     $missing = Get-Output $Python @('-c', $check)
     if ($null -eq $missing) { throw "Could not run $Python." }
-    $installHint = "Run:  & `"$Python`" -m pip install -r requirements.txt   (or .\build.ps1 -Install)"
     if ($missing) {
-        $hint = $installHint
-        if (-not $NoTorch -and ($missing -match 'torch|transformers')) { $hint += ', or build without Breeze ASR 25 using -NoTorch' }
-        throw "This Python is missing: $missing. $hint"
-    }
-    # Older PyInstaller builds an app in which transformers (Breeze ASR 25) can't load.
-    $pyiVersion = Get-Output $Python @('-c', 'import PyInstaller as p; print(*p.__version__.split(chr(46))[:2], sep=chr(46))')
-    if (-not $NoTorch -and $pyiVersion -and [version]$pyiVersion -lt [version]'6.22') {
-        throw "PyInstaller $pyiVersion is too old for a build with Breeze ASR 25 (needs 6.22 or newer). $installHint, or build with -NoTorch."
+        throw "This Python is missing: $missing. Run:  & `"$Python`" -m pip install -r requirements.txt   (or .\build.ps1 -Install)"
     }
 
     # 2. Tests
@@ -152,11 +137,10 @@ try {
             if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
         }
     }
-    $env:ALC_INCLUDE_TORCH = if ($NoTorch) { '0' } else { '1' }
     $env:ALC_CONSOLE = if ($Console) { '1' } else { '0' }
     $pyiArgs = @('-m', 'PyInstaller', 'AppLiveCaption.spec', '--noconfirm')
     if ($Clean) { $pyiArgs += '--clean' }
-    Write-Host "Building (PyTorch included: $(-not $NoTorch), console: $Console)..."
+    Write-Host "Building (console: $Console)..."
     Invoke-Checked $Python $pyiArgs
 
     $exe = Join-Path $distDir 'AppLiveCaption.exe'

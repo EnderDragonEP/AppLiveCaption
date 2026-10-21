@@ -28,15 +28,14 @@
     {
       "id": "breeze-asr-25",
       "name": "Breeze ASR 25",
-      "repo": "MediaTek-Research/Breeze-ASR-25",
-      "backend": "transformers",
+      "repo": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+      "backend": "faster-whisper",
       "languages": ["zh", "en"],
       "language_notes": {"zh": "Taiwanese Mandarin (with English code-switching)"},
-      "size_mb": 2950,
+      "size_mb": 2949,
       "license": "Apache-2.0",
       "tier": "large",
-      "files": ["*.json", "merges.txt", "model.safetensors"],
-      "description": "Whisper large-v2 fine-tuned for Taiwanese Mandarin, English and switching between them mid-sentence. Runs with PyTorch + transformers."
+      "description": "Whisper large-v2 fine-tuned by MediaTek Research for Taiwanese Mandarin, English and switching between them mid-sentence. CTranslate2 conversion of MediaTek-Research/Breeze-ASR-25 by SoybeanMilk."
     },
     {
       "id": "whisper-tiny",

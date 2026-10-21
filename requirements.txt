@@ -3,14 +3,9 @@
 #     pip install -r requirements.txt
 #
 # Packages only this app uses are pinned to the tested versions. Packages that
-# other software often shares (PyTorch, transformers, NumPy, ...) take a range
-# instead, so installing the app into an existing Python keeps the versions
-# already there whenever they work.
-
-# A fresh install gets PyTorch with CUDA 12 from the PyTorch index. An existing
-# torch is kept: torchvision and torchaudio require one exact torch version, so
-# replacing it would break them.
---extra-index-url https://download.pytorch.org/whl/cu126
+# other software often shares (NumPy, huggingface_hub, CTranslate2, ...) take a
+# range instead, so installing the app into an existing Python keeps the
+# versions already there whenever they work. PyTorch is not needed.
 
 # GUI
 PySide6==6.12.0
@@ -18,17 +13,19 @@ PySide6-Fluent-Widgets[full]==1.11.3
 
 # Speech recognition (faster-whisper / CTranslate2, Silero VAD via onnxruntime)
 faster-whisper==1.2.1
-ctranslate2>=4.6,<5
+# CTranslate2 4.6 bundles the cuDNN 9.1 loader, matching nvidia-cudnn-cu12 below.
+ctranslate2>=4.6,<4.7
 onnxruntime==1.31.0
 tokenizers>=0.22,<1
 # faster-whisper's file decoder doesn't work with PyAV 16+ (only used by the CLI for files).
 av==15.1.0
 
-# Breeze ASR 25 (transformers backend). PyTorch's CUDA 12 wheels also ship the
-# cuBLAS 12 / cuDNN 9 DLLs that CTranslate2 needs to run faster-whisper on the GPU.
-torch>=2.6
-transformers>=5.6,<6
-safetensors>=0.7
+# NVIDIA's CUDA 12 libraries that CTranslate2 needs to run on the GPU. The
+# cuDNN version must not be older than the loader CTranslate2 bundles (9.1).
+nvidia-cublas-cu12==12.4.5.8
+nvidia-cudnn-cu12==9.1.0.70
+# cuDNN's dependency; pinned to CUDA 12.4 like the others (the latest is twice the size).
+nvidia-cuda-nvrtc-cu12==12.4.127
 
 # Audio capture: WASAPI loopback, per-app process loopback (comtypes), app list (pycaw)
 PyAudioWPatch==0.2.12.9
@@ -47,8 +44,6 @@ hf-xet>=1.4
 # they share the "opencc" folder and overwrite each other's files.
 opencc-python-reimplemented>=0.1.7
 
-# Packaging (only needed to build the .exe). Older PyInstaller (6.12 tested) sets
-# module __file__ to a .pyc path that doesn't exist on disk; transformers scans
-# its own folder from __file__, so Breeze ASR 25 fails to load in the built app.
+# Packaging (only needed to build the .exe; 6.22 is the tested version).
 pyinstaller>=6.22
 pyinstaller-hooks-contrib>=2026.7

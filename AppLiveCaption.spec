@@ -6,18 +6,14 @@
 Output: dist/AppLiveCaption/AppLiveCaption.exe. Models are not bundled; the
 app downloads them into %LOCALAPPDATA%\\AppLiveCaption\\models.
 
-Environment switches:
-    ALC_INCLUDE_TORCH=0   leave out PyTorch + transformers (no Breeze ASR 25, much
-                          smaller build). GPU inference for faster-whisper then needs
-                          the nvidia-cublas-cu12 / nvidia-cudnn-cu12 wheels installed
-                          at build time; they are bundled automatically if present.
+Environment switch:
     ALC_CONSOLE=1         keep a console window for debugging.
 """
 
 import glob
 import os
 import sys
-from pathlib import Path
+from pathlib import Path, PurePath
 
 from PyInstaller.utils.hooks import collect_data_files, collect_dynamic_libs, collect_submodules, copy_metadata
 from PyInstaller.utils.win32.versioninfo import (
@@ -59,7 +55,6 @@ VERSION_INFO = VSVersionInfo(
         VarFileInfo([VarStruct("Translation", [0x0409, 1200])]),
     ],
 )
-INCLUDE_TORCH = os.environ.get("ALC_INCLUDE_TORCH", "1") != "0"
 CONSOLE = os.environ.get("ALC_CONSOLE", "0") == "1"
 
 datas = [
@@ -72,7 +67,18 @@ datas += collect_data_files("faster_whisper")  # bundled Silero VAD model
 datas += collect_data_files("opencc")  # s2twp profile and dictionaries
 datas += copy_metadata("faster-whisper") + copy_metadata("huggingface_hub") + copy_metadata("tokenizers")
 
-binaries = collect_dynamic_libs("ctranslate2")  # ctranslate2.dll, cudnn64_9.dll, libiomp5md.dll
+binaries = collect_dynamic_libs("ctranslate2")  # ctranslate2.dll, cudnn64_9.dll (cuDNN's loader), libiomp5md.dll
+
+# NVIDIA's CUDA 12 libraries for running on the GPU, from the nvidia-* pip packages.
+# Left out: cuDNN's own loader (CTranslate2 bundles the same one), cuDNN's
+# "adv" library (RNN/attention kernels CTranslate2 never loads, 230 MB) and the
+# nvblas BLAS wrapper.
+CUDA_SKIP = {"cudnn64_9.dll", "cudnn_adv64_9.dll", "nvblas64_12.dll"}
+_cuda = [(src, ".") for pkg in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_nvrtc")
+         for src, _dst in collect_dynamic_libs(pkg) if os.path.basename(src).lower() not in CUDA_SKIP]
+if not any(os.path.basename(src).lower() == "cublas64_12.dll" for src, _ in _cuda):
+    raise SystemExit("NVIDIA's CUDA packages are missing; run: pip install -r requirements.txt")
+binaries += _cuda
 
 hiddenimports = collect_submodules("app") + [
     "pyaudiowpatch",
@@ -96,37 +102,40 @@ excludes = [
     "PySide6.QtMultimedia", "PySide6.QtMultimediaWidgets", "PySide6.QtPositioning", "PySide6.QtLocation",
     "PySide6.QtBluetooth", "PySide6.QtNfc", "PySide6.QtSensors", "PySide6.QtSerialPort", "PySide6.QtTest",
     "PySide6.QtDesigner", "PySide6.QtHelp", "PySide6.QtSql", "PySide6.QtRemoteObjects", "PySide6.QtScxml",
+    # qfluentwidgets' [full] extras, only used by its blurred AcrylicLabel (the app has none;
+    # the widget falls back to a plain image without them)
+    "scipy", "PIL", "colorthief",
+    # pywin32's MFC UI and COM code generator (pulled in via win32com, never used)
+    "win32ui", "pywin", "win32com.client.makepy",
 ]
 
-if INCLUDE_TORCH:
-    hiddenimports += [
-        "transformers.models.whisper",
-        "transformers.models.whisper.modeling_whisper",
-        "transformers.models.whisper.processing_whisper",
-        "transformers.models.whisper.feature_extraction_whisper",
-        "transformers.models.whisper.tokenization_whisper",
-        "transformers.models.whisper.configuration_whisper",
-        "transformers.models.whisper.generation_whisper",
-    ]
-    datas += copy_metadata("transformers") + copy_metadata("safetensors") + copy_metadata("torch")
-    datas += collect_data_files("transformers", include_py_files=False)
-else:
-    excludes += ["torch", "transformers", "torchvision", "torchaudio"]
-    # CUDA 12 runtime for CTranslate2 from the NVIDIA pip wheels, if installed.
-    for pkg in ("nvidia.cublas", "nvidia.cudnn"):
-        try:
-            binaries += [(src, ".") for src, _dst in collect_dynamic_libs(pkg)]
-        except Exception:  # noqa: BLE001 - optional
-            pass
+# Qt files a widgets-only English app never loads (as in HorizontalScroll's spec):
+# the software OpenGL renderer, Qt's own translations, unused image formats and
+# plugins. The on-screen keyboard plugin alone pulls in Qt Quick, QML and OpenGL.
+# The update check uses HTTPS through Windows' TLS (qschannelbackend), so Qt's
+# OpenSSL backends can go; model downloads use Python's own ssl module.
+DROP_FILES = {
+    "opengl32sw.dll", "d3dcompiler_47.dll", "qt6pdf.dll", "qopensslbackend.dll", "qcertonlybackend.dll",
+    "qt6quick.dll", "qt6qml.dll", "qt6qmlmodels.dll", "qt6qmlmeta.dll", "qt6qmlworkerscript.dll",
+    "qt6opengl.dll", "qt6virtualkeyboard.dll",
+}
+DROP_PLUGIN_DIRS = {"networkinformation", "platforminputcontexts", "generic"}
+DROP_IMAGE_PLUGINS = {"qgif", "qjpeg", "qtiff", "qwebp", "qicns", "qtga", "qwbmp", "qpdf"}
+
+
+def keep(entry) -> bool:
+    dest = PurePath(entry[0])
+    if dest.name.lower() in DROP_FILES or "translations" in dest.parts:
+        return False
+    if dest.parent.name in DROP_PLUGIN_DIRS:
+        return False
+    return not (dest.parent.name == "imageformats" and dest.stem.lower() in DROP_IMAGE_PLUGINS)
+
 
 # Leave out installed packages the app doesn't depend on. Built with a Python
 # shared with other projects, PyInstaller would otherwise follow optional
-# imports into them (transformers -> datasets, accelerate, torchvision, ...).
-_unused = unused_modules(
-    Path(ROOT) / "requirements.txt",
-    drop=() if INCLUDE_TORCH else ("torch", "transformers", "safetensors"),
-    extra_roots=() if INCLUDE_TORCH else ("nvidia-cublas-cu12", "nvidia-cudnn-cu12"),
-)
+# imports into them (CTranslate2 -> torch, huggingface_hub -> ...).
+_unused = unused_modules(Path(ROOT) / "requirements.txt")
 print(f"AppLiveCaption.spec: excluding {len(_unused)} installed modules the app doesn't use")
 excludes += _unused
 
@@ -141,6 +150,8 @@ a = Analysis(  # noqa: F821
     excludes=excludes,
     noarchive=False,
 )
+a.binaries = [b for b in a.binaries if keep(b)]
+a.datas = [d for d in a.datas if keep(d)]
 pyz = PYZ(a.pure)  # noqa: F821
 
 exe = EXE(  # noqa: F821

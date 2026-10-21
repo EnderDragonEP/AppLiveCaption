@@ -14,9 +14,7 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (includes the Silero VAD model) | 1.2.1 | MIT | <https://github.com/SYSTRAN/faster-whisper> |
 | [CTranslate2](https://github.com/OpenNMT/CTranslate2) | 4.6.2 | MIT | <https://github.com/OpenNMT/CTranslate2> |
 | [ONNX Runtime](https://onnxruntime.ai) | 1.31.0 | MIT | <https://github.com/microsoft/onnxruntime> |
-| [PyTorch](https://pytorch.org/) | 2.6.0+cu124 | BSD-3-Clause | <https://github.com/pytorch/pytorch> |
-| [NVIDIA CUDA runtime, cuBLAS, cuDNN](https://developer.nvidia.com/cuda-toolkit) (via PyTorch) | CUDA 12.4, cuDNN 9 | NVIDIA Software License | see [below](#nvidia-cuda-and-cudnn) |
-| [Transformers](https://github.com/huggingface/transformers) | 5.6.1 | Apache-2.0 | <https://github.com/huggingface/transformers> |
+| [NVIDIA cuBLAS, cuDNN and NVRTC](https://developer.nvidia.com/cuda-toolkit) (nvidia-cublas-cu12, nvidia-cudnn-cu12, nvidia-cuda-nvrtc-cu12) | cuBLAS 12.4.5.8, cuDNN 9.1.0.70, NVRTC 12.4.127 | NVIDIA Software License | see [below](#nvidia-cuda-and-cudnn) |
 | [PyAV](https://github.com/PyAV-Org/PyAV) | 15.1.0 | BSD-3-Clause | <https://github.com/PyAV-Org/PyAV> |
 | [FFmpeg](https://ffmpeg.org/) and its codec libraries (via PyAV) | 7.1.1 | LGPL-3.0-or-later; x264, x265 GPL-2.0-or-later | see [below](#ffmpeg-via-pyav) |
 | [PyAudioWPatch](https://github.com/s0d3s/PyAudioWPatch) | 0.2.12.9 | Apache-2.0 | <https://github.com/s0d3s/PyAudioWPatch> |
@@ -34,11 +32,9 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | certifi | 2025.1.31 | MPL-2.0 | <https://github.com/certifi/python-certifi> |
 | click | 8.3.1 | BSD-3-Clause | <https://github.com/pallets/click> |
 | colorama | 0.4.6 | BSD-3-Clause | <https://github.com/tartley/colorama> |
-| colorthief | 0.2.1 | BSD-3-Clause | <https://github.com/fengsp/color-thief-py> |
 | comtypes | 1.4.17 | MIT | <https://github.com/enthought/comtypes> |
 | darkdetect | 0.8.0 | BSD-3-Clause | <https://github.com/albertosottile/darkdetect> |
 | filelock | 3.20.0 | Unlicense | <https://github.com/tox-dev/py-filelock> |
-| flatbuffers | 25.12.19 | Apache-2.0 | <https://github.com/google/flatbuffers> |
 | fsspec | 2025.12.0 | BSD-3-Clause | <https://github.com/fsspec/filesystem_spec> |
 | h11 | 0.16.0 | MIT | <https://github.com/python-hyper/h11> |
 | hf-xet | 1.4.3 | Apache-2.0 | <https://github.com/huggingface/xet-core> |
@@ -46,30 +42,20 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | httpx | 0.28.1 | BSD-3-Clause | <https://github.com/encode/httpx> |
 | huggingface_hub | 1.11.0 | Apache-2.0 | <https://github.com/huggingface/huggingface_hub> |
 | idna | 3.10 | BSD-3-Clause | <https://github.com/kjd/idna> |
-| Jinja2 | 3.1.6 | BSD-3-Clause | <https://github.com/pallets/jinja> |
 | markdown-it-py | 3.0.0 | MIT | <https://github.com/executablebooks/markdown-it-py> |
-| MarkupSafe | 2.1.5 | BSD-3-Clause | <https://github.com/pallets/markupsafe> |
 | mdurl | 0.1.2 | MIT | <https://github.com/executablebooks/mdurl> |
-| mpmath | 1.3.0 | BSD-3-Clause | <https://github.com/fredrik-johansson/mpmath> |
-| networkx | 3.6.1 | BSD-3-Clause | <https://github.com/networkx/networkx> |
 | NumPy (includes OpenBLAS) | 2.3.5 | BSD-3-Clause | <https://github.com/numpy/numpy> |
 | opencc-python-reimplemented | 0.1.7 | Apache-2.0 | <https://github.com/yichen0831/opencc-python> |
 | packaging | 24.2 | Apache-2.0 OR BSD-2-Clause | <https://github.com/pypa/packaging> |
-| Pillow | 12.0.0 | MIT-CMU | <https://github.com/python-pillow/Pillow> |
-| protobuf | 6.33.2 | BSD-3-Clause | <https://github.com/protocolbuffers/protobuf> |
 | psutil | 7.2.2 | BSD-3-Clause | <https://github.com/giampaolo/psutil> |
 | pycaw | 20260927 | MIT | <https://github.com/AndreMiras/pycaw> |
 | Pygments | 2.20.0 | BSD-2-Clause | <https://github.com/pygments/pygments> |
 | pywin32 | 310 | PSF-2.0 / BSD-3-Clause style | <https://github.com/mhammond/pywin32> |
 | PyYAML | 6.0.3 | MIT | <https://github.com/yaml/pyyaml> |
-| regex | 2025.11.3 | Apache-2.0 AND CNRI-Python | <https://github.com/mrabarnett/mrab-regex> |
 | rich | 14.3.4 | MIT | <https://github.com/Textualize/rich> |
-| safetensors | 0.7.0 | Apache-2.0 | <https://github.com/huggingface/safetensors> |
-| SciPy | 1.18.1 | BSD-3-Clause | <https://github.com/scipy/scipy> |
 | setuptools | 75.8.1 | MIT | <https://github.com/pypa/setuptools> |
 | shellingham | 1.5.4 | ISC | <https://github.com/sarugaku/shellingham> |
 | sniffio | 1.3.1 | MIT OR Apache-2.0 | <https://github.com/python-trio/sniffio> |
-| SymPy | 1.13.1 | BSD-3-Clause | <https://github.com/sympy/sympy> |
 | tokenizers | 0.22.2 | Apache-2.0 | <https://github.com/huggingface/tokenizers> |
 | tqdm | 4.67.1 | MPL-2.0 AND MIT | <https://github.com/tqdm/tqdm> |
 | typer | 0.24.2 | MIT | <https://github.com/fastapi/typer> |
@@ -84,7 +70,7 @@ The models are not part of the app. Each one is downloaded from Hugging Face on 
 | Model | License |
 | --- | --- |
 | Whisper tiny, base, small, medium, large v1/v2/v3, large-v3-turbo (CTranslate2 conversions of OpenAI Whisper) | MIT |
-| Breeze ASR 25 (MediaTek Research) | Apache-2.0 |
+| Breeze ASR 25 (MediaTek Research; CTranslate2 conversion by SoybeanMilk) | Apache-2.0 |
 | Taiwan Tongues ASR CE (adi-gov-tw) | TRAIL v0.1 (TWM Responsible AI License) |
 
 ## GPL-3.0 components
@@ -107,7 +93,7 @@ The source code for these builds is available from FFmpeg (<https://ffmpeg.org/d
 
 ## NVIDIA CUDA and cuDNN
 
-PyTorch's CUDA build, and through it the exe, contains NVIDIA's CUDA runtime, cuBLAS, cuFFT, cuRAND, cuSOLVER, cuSPARSE, NVRTC and cuDNN libraries, Copyright (c) NVIDIA Corporation.
+The exe contains NVIDIA's cuBLAS, cuDNN and NVRTC libraries, Copyright (c) NVIDIA Corporation, from NVIDIA's `nvidia-cublas-cu12`, `nvidia-cudnn-cu12` and `nvidia-cuda-nvrtc-cu12` packages.
 They are redistributed under the [NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/) and the [cuDNN Software License Agreement](https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html). They are not open source.
 
 ## Python (PSF License Agreement)

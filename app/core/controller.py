@@ -9,7 +9,6 @@ from __future__ import annotations
 import gc
 import logging
 import queue
-import sys
 import time
 
 import numpy as np
@@ -20,7 +19,7 @@ from ..asr.factory import BackendUnavailable, create_backend
 from ..asr.hardware import gpu_info, realtime_risk, resolve_device
 from ..asr.streaming import StreamingTranscriber
 from ..audio.capture import CaptureManager, CaptureSelection
-from ..models.catalog import BACKEND_TRANSFORMERS, ModelInfo, get_model
+from ..models.catalog import ModelInfo, get_model
 from ..models.storage import is_downloaded, model_path, verify
 from .history import HistoryLine, HistorySession, HistoryStore
 
@@ -220,15 +219,6 @@ class AsrWorker(QThread):
             log.debug("warm-up decode failed", exc_info=True)
 
     def _pick_device(self, info: ModelInfo, pref: str) -> str:
-        if info.backend == BACKEND_TRANSFORMERS:
-            if pref == "cpu":
-                return "cpu"
-            try:
-                import torch
-
-                return "cuda" if torch.cuda.is_available() else "cpu"
-            except Exception:  # noqa: BLE001
-                return "cpu"
         return resolve_device(pref)
 
     def _unload(self) -> None:
@@ -246,13 +236,7 @@ class AsrWorker(QThread):
 
     @staticmethod
     def _free_gpu() -> None:
-        gc.collect()
-        torch = sys.modules.get("torch")
-        if torch is not None:
-            try:
-                torch.cuda.empty_cache()
-            except Exception:  # noqa: BLE001
-                pass
+        gc.collect()  # CTranslate2 frees the model's GPU memory once nothing refers to it
 
     def _move_to_cpu(self, notice: str) -> None:
         """The GPU ran out of memory or failed mid-session: reload the model on the CPU."""
