@@ -113,7 +113,9 @@ try {
 
     # nvidia.cublas / nvidia.cudnn: CUDA libraries for the GPU (nvidia-*-cu12 packages).
     $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub nvidia.cublas nvidia.cudnn PyInstaller'
-    $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m) is None))"
+    # Check the top-level package first: find_spec('nvidia.cublas') raises instead
+    # of returning None when 'nvidia' itself isn't installed.
+    $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m.split('.')[0]) is None or u.find_spec(m) is None))"
     $missing = Get-Output $Python @('-c', $check)
     if ($null -eq $missing) { throw "Could not run $Python." }
     if ($missing) {
