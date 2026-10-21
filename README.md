@@ -29,7 +29,7 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 
 ## Quick start
 
-1. Download the zip from the [Releases](../../releases) page, unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Python isn't needed.
+1. Download the zip from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Python isn't needed.
 2. Pick a model in the **Model** dropdown. If it isn't downloaded yet, the app shows its card on the **Models** page; download it there and the app switches to it when it's done.
 3. Click the source button (it says *System audio* at first) and choose **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to caption. They're remembered and picked up again whenever they start.
 4. Choose **Auto-detect** or a language, then press **Start**. 🎉
@@ -58,12 +58,12 @@ To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB
 - The card's delete button removes them again. Windows locks DLLs that are in use, so they're deleted the next time the app starts.
 - No internet on that PC? Copy the app folder (or just its `cuda` folder) from another PC.
 
-<details>
+<details markdown="1">
 <summary>Technical details</summary>
 
-faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9. The download ([app/asr/cuda_libs.py](app/asr/cuda_libs.py)) fetches `nvidia-cublas-cu12` 12.4.5.8, `nvidia-cudnn-cu12` 9.1.0.70 and `nvidia-cuda-nvrtc-cu12` 12.4.127, resumes after an interruption, and keeps only the ten DLLs CTranslate2 loads. The versions match the cuDNN loader that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than that loader.
+faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9. The download ([app/asr/cuda_libs.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_libs.py)) fetches `nvidia-cublas-cu12` 12.4.5.8, `nvidia-cudnn-cu12` 9.1.0.70 and `nvidia-cuda-nvrtc-cu12` 12.4.127, resumes after an interruption, and keeps only the ten DLLs CTranslate2 loads. The versions match the cuDNN loader that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than that loader.
 
-The app also uses the same libraries when they're already on the PC, in this order: the downloaded `cuda` folder, NVIDIA's pip packages (handy when running from source), PyTorch's `torch\lib`, or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`) ([app/asr/cuda_setup.py](app/asr/cuda_setup.py)). Only a complete set counts; otherwise models run on the CPU. `python -m app.cli cuda --download` downloads GPU support from a terminal.
+The app also uses the same libraries when they're already on the PC, in this order: the downloaded `cuda` folder, NVIDIA's pip packages (handy when running from source), PyTorch's `torch\lib`, or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`) ([app/asr/cuda_setup.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_setup.py)). Only a complete set counts; otherwise models run on the CPU. `python -m app.cli cuda --download` downloads GPU support from a terminal.
 
 </details>
 
@@ -119,7 +119,7 @@ python -m app.main --minimized     # start minimized, e.g. when launched at sign
 
 When run from source, the app keeps its settings, history, logs, models and GPU support in the project folder (git ignores them).
 
-<details>
+<details markdown="1">
 <summary>About requirements.txt</summary>
 
 `requirements.txt` is written to share a Python with other software:
@@ -168,14 +168,14 @@ If PowerShell refuses to run the script because of the execution policy, run `po
 
 The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, zip only `AppLiveCaption.exe` and `_internal\`, and tag it like `v1.0.1` so the update check finds it.
 
-The app's name and version live in [app/\_\_init\_\_.py](app/__init__.py) (`__version__`, currently 1.0.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.0.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
-<details>
+<details markdown="1">
 <summary>What the build leaves out, and why</summary>
 
-The build only bundles what the app needs, even when your Python has many other packages installed: the spec reads `requirements.txt`, follows the installed packages' dependencies and excludes everything else ([tools/build_excludes.py](tools/build_excludes.py); run it to see the list). Without that, PyInstaller would follow optional imports into unrelated packages (CTranslate2 alone would pull in an installed PyTorch).
+The build only bundles what the app needs, even when your Python has many other packages installed: the spec reads `requirements.txt`, follows the installed packages' dependencies and excludes everything else ([tools/build_excludes.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_excludes.py); run it to see the list). Without that, PyInstaller would follow optional imports into unrelated packages (CTranslate2 alone would pull in an installed PyTorch).
 
-It also leaves out what the app never loads: NVIDIA's CUDA libraries (downloaded in the app instead), PyAV and FFmpeg (faster-whisper only needs them to read audio files; [tools/pyi_rth_no_av.py](tools/pyi_rth_no_av.py) stands in for the import), Hugging Face's Xet client, Qt's software OpenGL renderer, Qt Quick/QML, Qt's own translations, unused image formats and plugins, and the optional SciPy/Pillow extras of the widget library.
+It also leaves out what the app never loads: NVIDIA's CUDA libraries (downloaded in the app instead), PyAV and FFmpeg (faster-whisper only needs them to read audio files; [tools/pyi_rth_no_av.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/pyi_rth_no_av.py) stands in for the import), Hugging Face's Xet client, Qt's software OpenGL renderer, Qt Quick/QML, Qt's own translations, unused image formats and plugins, and the optional SciPy/Pillow extras of the widget library.
 
 PyInstaller replaces the whole output folder, so `build.ps1` moves everything that isn't build output to `dist\AppLiveCaption.kept\` during the build and back afterwards. Without the script, the equivalent build command is `pyinstaller AppLiveCaption.spec --noconfirm` (set `ALC_CONSOLE=1` for a console window), but then nothing is kept.
 
@@ -191,7 +191,7 @@ python -m unittest discover -s tests
 
 ## Adding a model
 
-All models are listed in [app/models/catalog.json](app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Every model runs on faster-whisper, so it must be in CTranslate2 format; a model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. Clicking a model's card on the Models page opens its page on Hugging Face.
+All models are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Every model runs on faster-whisper, so it must be in CTranslate2 format; a model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. Clicking a model's card on the Models page opens its page on Hugging Face.
 
 | Model | Repository |
 | --- | --- |
@@ -202,7 +202,7 @@ All models are listed in [app/models/catalog.json](app/models/catalog.json). Add
 | Whisper tiny / base / small / medium | `Systran/faster-whisper-{size}` |
 | Whisper large v1 / v2 / v3 | `Systran/faster-whisper-large-{v1,v2,v3}` |
 
-<details>
+<details markdown="1">
 <summary>Notes on the models</summary>
 
 - Two repositories were renamed on Hugging Face, and the catalog uses the current names: `mobiuslabsgmbh/faster-whisper-large-v3-turbo` → `dropbox-dash/faster-whisper-large-v3-turbo`, and `adi-gov-tw/Taiwan-Tongues-ASR-CE` → `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0`.
@@ -242,10 +242,10 @@ app/
   ui/                  main window, pages, source flyout, overlay, tray
 ```
 
-<details>
+<details markdown="1">
 <summary>The interesting parts</summary>
 
-- **Per-app capture** uses the Windows process loopback API (`ActivateAudioInterfaceAsync` with `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK` and `PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE`), implemented in pure Python with comtypes ([app/audio/process_loopback.py](app/audio/process_loopback.py)). Each app is captured from its root process, so child renderer processes are included.
+- **Per-app capture** uses the Windows process loopback API (`ActivateAudioInterfaceAsync` with `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK` and `PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE`), implemented in pure Python with comtypes ([app/audio/process_loopback.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/audio/process_loopback.py)). Each app is captured from its root process, so child renderer processes are included.
 - **Mixing:** every source is converted to 16 kHz mono, then a wall-clock mixer sums them and a peak limiter prevents clipping. Silence is inserted for sources that deliver nothing (loopback endpoints send no data while nothing plays), so the end of an utterance is still detected.
 - **Streaming:** Silero VAD (the ONNX model bundled with faster-whisper) gates the audio. The current utterance is re-transcribed every ~0.6 s for the partial caption; LocalAgreement fixes the start of the partial once two hypotheses agree. After 0.6 s of silence, or at 18 s, a final caption is decoded with beam search, and the next utterance starts, prompted with the previous final caption.
 - **Hallucination filter:** drops stock phrases such as "Thank you for watching", 謝謝觀看 and 字幕由…提供, collapses repeated phrases, drops repeated lines, and retries without the prompt when Whisper echoes it.
