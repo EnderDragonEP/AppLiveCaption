@@ -12,3 +12,4 @@ app/i18n/*.ts.bak
 /logs/
 /models/
 /cuda/
+/_site/

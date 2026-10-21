@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AppLiveCaption – Live captions for everything you hear</title>
+  <meta name="description" content="Free, open-source live captions for Windows 10/11. Caption your microphone, your speakers or just the apps you pick, right on your PC, with no cloud and no account.">
+  <meta name="theme-color" content="#f3f3f3" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#202020" media="(prefers-color-scheme: dark)">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="AppLiveCaption – Live captions for everything you hear">
+  <meta property="og:description" content="Free, open-source live captions for Windows 10/11, made right on your PC. No cloud, no account.">
+  <meta property="og:url" content="https://enderdragonep.github.io/AppLiveCaption/">
+  <meta property="og:image" content="https://enderdragonep.github.io/AppLiveCaption/img/screenshot-live.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="stylesheet" href="styles.css">
+  <script>
+    // Apply the saved theme before the page paints (otherwise it follows Windows / the OS).
+    (function () {
+      var theme = null;
+      try { theme = localStorage.getItem("theme"); } catch (e) {}
+      if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
+      document.documentElement.classList.add("js");
+    })();
+  </script>
+</head>
+<body>
+<svg class="sprite" aria-hidden="true" focusable="false">
+<!-- Fluent UI System Icons (MIT), https://github.com/microsoft/fluentui-system-icons -->
+<defs>
+  <symbol id="i-headphones" viewBox="0 0 24 24"><path d="M22 12V19C22 20.5977 20.7511 21.9037 19.1763 21.9949L19 22H16C15.4872 22 15.0645 21.614 15.0067 21.1166L15 21V15C15 14.4872 15.386 14.0645 15.8834 14.0067L16 14H20.5V12C20.5 7.30558 16.6944 3.5 12 3.5C7.30558 3.5 3.5 7.30558 3.5 12V14H8C8.55228 14 9 14.4477 9 15V21C9 21.5523 8.55228 22 8 22H5C3.34315 22 2 20.6569 2 19V12C2 6.47715 6.47715 2 12 2C17.5228 2 22 6.47715 22 12V19V12ZM7.5 15.5H3.5V19C3.5 19.8284 4.17157 20.5 5 20.5H7.5V15.5ZM20.5 15.5H16.5V20.5H19C19.7797 20.5 20.4204 19.9051 20.4931 19.1445L20.5 19V15.5Z"/></symbol>
+  <symbol id="i-flash" viewBox="0 0 24 24"><path d="M7.42505 2.83052C7.60245 2.33254 8.07392 2 8.60256 2H15.0562C15.9094 2 16.5118 2.83587 16.242 3.64528L14.7905 8H18.7492C19.8534 8 20.4153 9.32683 19.647 10.1198L8.586 21.536C7.53226 22.6236 5.71405 21.6422 6.04495 20.1645L7.31418 14.4964L5.74573 14.4904C4.53898 14.4858 3.69895 13.2899 4.10392 12.1532L7.42505 2.83052ZM8.77889 3.5L5.51693 12.6565C5.45908 12.8189 5.57909 12.9898 5.75148 12.9904L8.25277 13C8.47997 13.0009 8.69453 13.1047 8.83621 13.2823C8.97789 13.4599 9.03142 13.6922 8.98177 13.9139L7.50871 20.4923L18.1589 9.5H13.7499C13.5088 9.5 13.2824 9.38411 13.1415 9.18853C13.0005 8.99296 12.9622 8.74154 13.0384 8.51283L14.7093 3.5H8.77889Z"/></symbol>
+  <symbol id="i-pip" viewBox="0 0 24 24"><path d="M2 6.25C2 4.45507 3.45507 3 5.25 3H18.75C20.5449 3 22 4.45507 22 6.25V12H20.5V6.25C20.5 5.2835 19.7165 4.5 18.75 4.5H5.25C4.2835 4.5 3.5 5.2835 3.5 6.25V15.75C3.5 16.7165 4.2835 17.5 5.25 17.5H11V19H5.25C3.45507 19 2 17.5449 2 15.75V6.25ZM14 13C12.8954 13 12 13.8954 12 15V20C12 21.1046 12.8954 22 14 22H21C22.1046 22 23 21.1046 23 20V15C23 13.8954 22.1046 13 21 13H14Z"/></symbol>
+  <symbol id="i-shield" viewBox="0 0 24 24"><path d="M3 5.75C3 5.33579 3.33579 5 3.75 5C6.41341 5 9.00797 4.05652 11.55 2.15C11.8167 1.95 12.1833 1.95 12.45 2.15C14.992 4.05652 17.5866 5 20.25 5C20.6642 5 21 5.33579 21 5.75V11C21 11.3381 20.9865 11.6701 20.9595 11.9961C20.5062 11.7106 20.0152 11.4795 19.4955 11.3121C19.4985 11.2087 19.5 11.1047 19.5 11V6.47793C16.9227 6.32585 14.4192 5.38829 12 3.67782C9.58084 5.38829 7.07735 6.32585 4.5 6.47793V11C4.5 15.1488 6.83178 18.2214 11.625 20.2846C11.8882 20.839 12.2276 21.3503 12.6297 21.8048C12.5126 21.8531 12.3944 21.9007 12.2749 21.9478C12.0982 22.0174 11.9018 22.0174 11.7251 21.9478C5.95756 19.6757 3 16.0012 3 11V5.75ZM23 17.5C23 20.5376 20.5376 23 17.5 23C14.4624 23 12 20.5376 12 17.5C12 14.4624 14.4624 12 17.5 12C20.5376 12 23 14.4624 23 17.5ZM20.8536 15.1464C20.6583 14.9512 20.3417 14.9512 20.1464 15.1464L16.5 18.7929L14.8536 17.1464C14.6583 16.9512 14.3417 16.9512 14.1464 17.1464C13.9512 17.3417 13.9512 17.6583 14.1464 17.8536L16.1464 19.8536C16.3417 20.0488 16.6583 20.0488 16.8536 19.8536L20.8536 15.8536C21.0488 15.6583 21.0488 15.3417 20.8536 15.1464Z"/></symbol>
+  <symbol id="i-brain" viewBox="0 0 24 24"><path d="M14.5 2C16.1405 2 17.4964 3.21548 17.7178 4.79492C19.5765 5.08024 21 6.68645 21 8.625C21 9.72785 20.5383 10.7221 19.7988 11.4277C21.1042 12.0863 22 13.4381 22 15V15.25C22 17.2437 20.5412 18.8958 18.6328 19.1992C18.2015 20.8129 16.7319 21.9998 15.0059 22C13.7782 22 12.686 21.4091 12 20.4961C11.314 21.4091 10.2218 22 8.99414 22C7.26809 21.9998 5.79853 20.8129 5.36719 19.1992C3.45883 18.8958 2 17.2437 2 15.25V15C2 13.4384 2.89526 12.0865 4.2002 11.4277C3.46102 10.7221 3 9.7276 3 8.625C3 6.68645 4.42349 5.08024 6.28223 4.79492C6.50358 3.21548 7.85955 2 9.5 2C10.5054 2 11.4038 2.45677 12 3.17383C12.5962 2.45677 13.4946 2 14.5 2ZM9.5 3.5C8.5335 3.5 7.75 4.2835 7.75 5.25V5.5C7.75 5.91421 7.41421 6.25 7 6.25H6.875C5.56332 6.25 4.5 7.31332 4.5 8.625C4.5 9.93668 5.56332 11 6.875 11H7C8.16483 11 9.12286 11.8852 9.23828 13.0195L9.25 13.25V13.6465C9.98275 13.9433 10.5 14.6608 10.5 15.5C10.5 16.6046 9.60457 17.5 8.5 17.5C7.39543 17.5 6.5 16.6046 6.5 15.5C6.5 14.6608 7.01725 13.9433 7.75 13.6465V13.25L7.74609 13.1729C7.70747 12.7949 7.38817 12.5 7 12.5H6C4.61929 12.5 3.5 13.6193 3.5 15V15.25C3.5 16.6307 4.61929 17.75 6 17.75C6.33862 17.7509 6.62814 17.9771 6.71875 18.292L6.74512 18.4316H6.74707C6.85289 19.5956 7.83586 20.4998 8.99414 20.5C10.2385 20.5 11.25 19.4909 11.25 18.25V9.25H10.3535C10.0567 9.98275 9.3392 10.5 8.5 10.5C7.39543 10.5 6.5 9.60457 6.5 8.5C6.5 7.39543 7.39543 6.5 8.5 6.5C9.3392 6.5 10.0567 7.01725 10.3535 7.75H11.25V5.25C11.25 4.2835 10.4665 3.5 9.5 3.5ZM17.7305 12.5C17.5087 12.883 17.1642 13.1847 16.75 13.3525V14.25C16.75 15.4926 15.7426 16.5 14.5 16.5H12.75V18.25C12.75 19.4909 13.7615 20.5 15.0059 20.5C16.1641 20.4998 17.1471 19.5956 17.2529 18.4316H17.2549L17.2812 18.292C17.3719 17.9771 17.6614 17.7509 18 17.75C19.3807 17.75 20.5 16.6307 20.5 15.25V15C20.5 13.6193 19.3807 12.5 18 12.5H17.7305ZM8.5 15C8.22386 15 8 15.2239 8 15.5C8 15.7761 8.22386 16 8.5 16C8.77614 16 9 15.7761 9 15.5C9 15.2239 8.77614 15 8.5 15ZM14.5 3.5C13.5364 3.5 12.7547 4.27876 12.75 5.24121V15H14.5C14.9142 15 15.25 14.6642 15.25 14.25V13.3525C14.5174 13.0557 14 12.3391 14 11.5C14 10.3954 14.8954 9.5 16 9.5C16.8839 9.5 17.6321 10.074 17.8965 10.8691C18.829 10.5486 19.5 9.6663 19.5 8.625C19.5 7.31332 18.4367 6.25 17.125 6.25H17C16.5858 6.25 16.25 5.91421 16.25 5.5V5.25C16.25 4.2835 15.4665 3.5 14.5 3.5ZM16 11C15.7239 11 15.5 11.2239 15.5 11.5C15.5 11.7761 15.7239 12 16 12C16.2761 12 16.5 11.7761 16.5 11.5C16.5 11.2239 16.2761 11 16 11ZM8.5 8C8.22386 8 8 8.22386 8 8.5C8 8.77614 8.22386 9 8.5 9C8.77614 9 9 8.77614 9 8.5C9 8.22386 8.77614 8 8.5 8Z"/></symbol>
+  <symbol id="i-rocket" viewBox="0 0 24 24"><path d="M13.0572 7.43077C14.0335 6.45446 15.6164 6.45446 16.5927 7.43077C17.569 8.40708 17.569 9.98999 16.5927 10.9663C15.6164 11.9426 14.0335 11.9426 13.0572 10.9663C12.0809 9.98999 12.0809 8.40708 13.0572 7.43077ZM15.532 8.49143C15.1415 8.10091 14.5084 8.1009 14.1178 8.49143C13.7273 8.88195 13.7273 9.51512 14.1178 9.90564C14.5084 10.2962 15.1415 10.2962 15.532 9.90564C15.9226 9.51512 15.9226 8.88195 15.532 8.49143ZM21.5086 4.32216C21.2398 3.45736 20.5625 2.78032 19.6976 2.5119L19.0355 2.30643C16.642 1.5636 14.034 2.20802 12.2618 3.98013L11.266 4.97601C9.89622 3.94737 7.94316 4.05621 6.69685 5.30253L5.45432 6.54506C5.16142 6.83795 5.16142 7.31283 5.45432 7.60572L7.04529 9.19669L6.86548 9.3765C6.18206 10.0599 6.18206 11.168 6.86548 11.8514L7.36083 12.3467L5.96527 13.1427C5.76212 13.2585 5.62465 13.4625 5.59352 13.6943C5.56238 13.9261 5.64115 14.1591 5.80651 14.3245L9.69562 18.2136C9.86086 18.3788 10.0937 18.4576 10.3253 18.4267C10.557 18.3957 10.7609 18.2585 10.877 18.0557L11.6749 16.6608L12.1721 17.1579C12.8555 17.8414 13.9635 17.8414 14.6469 17.1579L14.8237 16.9812L16.4133 18.5708C16.7062 18.8636 17.1811 18.8636 17.474 18.5708L18.7165 17.3282C19.9623 16.0824 20.0716 14.1303 19.0442 12.7607L20.0421 11.7627C21.8149 9.98994 22.4591 7.38062 21.715 4.98647L21.5086 4.32216ZM19.253 3.94449C19.6461 4.0665 19.954 4.37425 20.0762 4.76734L20.2826 5.43165C20.8613 7.29377 20.3603 9.32324 18.9815 10.7021L13.5863 16.0973C13.4886 16.1949 13.3303 16.1949 13.2327 16.0973L7.92614 10.7907C7.82851 10.6931 7.82851 10.5348 7.92614 10.4372L13.3225 5.04079C14.7008 3.66249 16.7293 3.16127 18.5909 3.73902L19.253 3.94449ZM17.9641 13.8408C18.4166 14.6065 18.3139 15.6095 17.6558 16.2676L16.9436 16.9798L15.8844 15.9205L17.9641 13.8408ZM7.75751 6.36319C8.41602 5.70468 9.42005 5.60227 10.186 6.05596L8.10595 8.13603L7.04531 7.07539L7.75751 6.36319ZM10.5756 15.5615L10.0623 16.4589L7.56209 13.9588L8.46047 13.4464L10.5756 15.5615ZM6.68987 18.3942C6.98276 18.1013 6.98276 17.6264 6.68987 17.3335C6.39697 17.0406 5.9221 17.0406 5.62921 17.3335L3.15433 19.8084C2.86144 20.1013 2.86144 20.5762 3.15433 20.8691C3.44723 21.162 3.9221 21.162 4.21499 20.8691L6.68987 18.3942ZM4.74529 15.389C5.03818 15.6819 5.03818 16.1568 4.74529 16.4497L3.68463 17.5103C3.39173 17.8032 2.91686 17.8032 2.62397 17.5103C2.33107 17.2174 2.33107 16.7425 2.62397 16.4497L3.68463 15.389C3.97752 15.0961 4.45239 15.0961 4.74529 15.389ZM8.63238 20.3408C8.92528 20.0479 8.92528 19.5731 8.63239 19.2802C8.33951 18.9873 7.86463 18.9873 7.57173 19.2802L6.51313 20.3387C6.22023 20.6316 6.22023 21.1065 6.51312 21.3994C6.80601 21.6923 7.28088 21.6923 7.57378 21.3994L8.63238 20.3408Z"/></symbol>
+  <symbol id="i-translate" viewBox="0 0 24 24"><path d="M3.38512 5.99684C3.95773 5.68087 5.72117 4.87812 7.96084 5.52973L7.96246 5.5302C9.19434 5.89161 9.86774 6.64077 10.1986 7.46992C10.4993 8.22357 10.4988 9.00607 10.4985 9.46019L10.4985 15.2499C10.4985 15.6641 10.1627 15.9999 9.7485 15.9999C9.33429 15.9999 8.9985 15.6641 8.9985 15.2499V14.9493C8.87408 15.0233 8.74209 15.098 8.60343 15.1716C7.65146 15.6771 6.2756 16.1903 4.84609 15.933C3.26232 15.648 2.27037 14.3381 2.04591 12.9814C1.81748 11.6007 2.36169 10.0442 3.94794 9.2844C5.38792 8.59465 6.93793 8.656 8.07049 8.85729C8.41199 8.91798 8.72336 8.99277 8.99259 9.06798C8.97952 8.71671 8.93783 8.35777 8.80538 8.02581C8.63905 7.60895 8.31403 7.19678 7.54098 6.96977C5.84606 6.47698 4.51469 7.08675 4.10982 7.31016C3.74715 7.51028 3.29093 7.37851 3.09081 7.01585C2.89069 6.65319 3.02245 6.19696 3.38512 5.99684ZM7.80802 10.3341C6.82165 10.1588 5.63338 10.1403 4.59594 10.6372C3.70477 11.0641 3.3884 11.9061 3.52579 12.7366C3.66714 13.5909 4.26739 14.3048 5.11177 14.4567C6.0502 14.6256 7.05912 14.2933 7.89995 13.8468C8.3091 13.6295 8.6526 13.399 8.89337 13.2228C8.93112 13.1952 8.96621 13.169 8.9985 13.1445V10.6384C8.70564 10.54 8.29139 10.4201 7.80802 10.3341ZM16.4851 7.03816C16.8782 7.16867 17.0911 7.59315 16.9606 7.98627C16.8712 8.25548 16.7758 8.59615 16.6897 8.92595C17.638 8.83768 18.5598 8.70023 19.3278 8.5198C19.731 8.42507 20.1347 8.67517 20.2294 9.0784C20.3242 9.48164 20.0741 9.88532 19.6708 9.98005C18.6981 10.2085 17.519 10.3717 16.3347 10.4611C16.2253 11.0074 16.1409 11.5056 16.0776 11.9612C16.6648 11.7941 17.2249 11.7192 17.7498 11.7233C17.7638 11.3214 18.0941 10.9999 18.4994 10.9999C18.9136 10.9999 19.2494 11.3357 19.2494 11.7499C19.2494 11.8244 19.2485 11.8983 19.2466 11.9718C20.4505 12.3851 21.3377 13.2795 21.7509 14.3954C22.1153 15.3793 22.091 16.5028 21.5972 17.5227C21.101 18.5477 20.1568 19.4168 18.7703 19.95C18.3837 20.0986 17.9497 19.9057 17.8011 19.5191C17.6524 19.1325 17.8453 18.6986 18.2319 18.5499C19.3147 18.1336 19.9396 17.5044 20.2472 16.8691C20.5572 16.2287 20.5716 15.53 20.3443 14.9164C20.1355 14.3526 19.704 13.8292 19.0663 13.5171C18.6958 15.2554 17.8044 16.6281 16.7811 17.5638C16.8378 17.6964 16.8948 17.8361 16.9514 17.9877C17.0963 18.3758 16.8991 18.8078 16.511 18.9526C16.123 19.0975 15.691 18.9003 15.5461 18.5122C15.5404 18.4969 15.5345 18.4814 15.5284 18.4658C15.1137 18.6917 14.6937 18.8529 14.2882 18.94C13.5672 19.0948 12.7306 19.0388 12.1588 18.4545C11.293 17.5681 11.3404 16.1773 11.9536 15.0116C12.431 14.1039 13.2772 13.2417 14.4921 12.5993C14.5511 11.9846 14.6486 11.3011 14.7923 10.5354C14.1383 10.5486 13.5112 10.5367 12.9481 10.4982C12.5349 10.4699 12.2228 10.112 12.251 9.69875C12.2793 9.2855 12.6372 8.97341 13.0505 9.00167C13.6717 9.04416 14.3812 9.05131 15.1174 9.02611C15.233 8.55361 15.3891 7.95914 15.537 7.51365C15.6675 7.12053 16.092 6.90765 16.4851 7.03816ZM14.427 14.4102C13.881 14.8235 13.5074 15.2797 13.2811 15.7099C12.8375 16.5533 12.9922 17.1609 13.231 17.4054C13.2861 17.4617 13.4885 17.5775 13.9734 17.4734C14.3185 17.3993 14.6448 17.2708 14.95 17.0996C14.7998 16.7011 14.6582 16.2459 14.5639 15.7273C14.4926 15.3354 14.4442 14.9012 14.427 14.4102ZM16.1816 16.0705C16.8948 15.2445 17.3862 14.1891 17.5952 13.2224C17.1917 13.235 16.7484 13.313 16.2668 13.4719C16.1504 13.5104 16.0374 13.5507 15.9279 13.5928C15.8999 14.367 15.9506 14.9693 16.0397 15.4589C16.081 15.686 16.1288 15.8869 16.1816 16.0705Z"/></symbol>
+  <symbol id="i-history" viewBox="0 0 24 24"><path d="M12 4.5C16.1421 4.5 19.5 7.85786 19.5 12C19.5 16.1421 16.1421 19.5 12 19.5C7.85786 19.5 4.5 16.1421 4.5 12C4.5 11.6236 4.52772 11.2538 4.58123 10.8923C4.64845 10.4382 4.31609 10 3.85708 10C3.48623 10 3.161 10.2562 3.10471 10.6228C3.03576 11.0718 3 11.5317 3 12C3 16.9706 7.02944 21 12 21C16.9706 21 21 16.9706 21 12C21 7.02944 16.9706 3 12 3C9.69494 3 7.59227 3.86656 6 5.29168V4.25C6 3.83579 5.66421 3.5 5.25 3.5C4.83579 3.5 4.5 3.83579 4.5 4.25V7.25C4.5 7.66421 4.83579 8 5.25 8H8.25C8.66421 8 9 7.66421 9 7.25C9 6.83579 8.66421 6.5 8.25 6.5H6.90093C8.23907 5.25883 10.0309 4.5 12 4.5ZM12.5 7.75C12.5 7.33579 12.1642 7 11.75 7C11.3358 7 11 7.33579 11 7.75V12.25C11 12.6642 11.3358 13 11.75 13H14.75C15.1642 13 15.5 12.6642 15.5 12.25C15.5 11.8358 15.1642 11.5 14.75 11.5H12.5V7.75Z"/></symbol>
+  <symbol id="i-usb" viewBox="0 0 24 24"><path d="M15.2673 1.99707C15.647 1.99707 15.9608 2.27922 16.0104 2.6453L16.0173 2.74707L16.0176 7.13263C16.8335 7.42689 17.4304 8.17932 17.4978 9.07937L17.5042 9.24978V19.7498C17.5042 20.9406 16.579 21.9154 15.4082 21.9946L15.2542 21.9998H8.75415C7.56329 21.9998 6.58851 21.0746 6.50934 19.9038L6.50415 19.7498V9.24978C6.50415 8.26529 7.13644 7.42848 8.01709 7.12329L8.01648 2.74707C8.01648 2.36737 8.29864 2.05358 8.66471 2.00392L8.76648 1.99707H15.2673ZM15.2542 8.49978H8.75415C8.37446 8.49978 8.06066 8.78194 8.011 9.14801L8.00415 9.24978V19.7498C8.00415 20.1295 8.2863 20.4433 8.65238 20.4929L8.75415 20.4998H15.2542C15.6338 20.4998 15.9476 20.2176 15.9973 19.8516L16.0042 19.7498V9.24978C16.0042 8.87009 15.722 8.55629 15.3559 8.50663L15.2542 8.49978ZM14.517 3.49678H9.51601V6.99878H14.517V3.49678Z"/></symbol>
+  <symbol id="i-sync" viewBox="0 0 24 24"><path d="M16.2506 5.18011C15.9994 5.50947 16.0627 5.9801 16.3921 6.23128C18.1804 7.59515 19.25 9.70821 19.25 12C19.25 15.736 16.4242 18.812 12.7933 19.2071L13.4697 18.5303C13.7626 18.2374 13.7626 17.7626 13.4697 17.4697C13.2034 17.2034 12.7867 17.1792 12.4931 17.3971L12.409 17.4697L10.409 19.4697C10.1427 19.7359 10.1185 20.1526 10.3364 20.4462L10.409 20.5303L12.409 22.5303C12.7019 22.8232 13.1768 22.8232 13.4697 22.5303C13.7359 22.2641 13.7601 21.8474 13.5423 21.5538L13.4697 21.4697L12.7194 20.7208C17.2154 20.355 20.75 16.5903 20.75 12C20.75 9.23526 19.4582 6.68321 17.3017 5.03856C16.9724 4.78738 16.5017 4.85075 16.2506 5.18011ZM10.5303 1.46967C10.2374 1.76256 10.2374 2.23744 10.5303 2.53033L11.2796 3.27923C6.78409 3.6456 3.25 7.41008 3.25 12C3.25 14.6445 4.43126 17.0974 6.43081 18.7491C6.75016 19.0129 7.22289 18.9679 7.48669 18.6485C7.75048 18.3292 7.70545 17.8564 7.3861 17.5926C5.72793 16.2229 4.75 14.1922 4.75 12C4.75 8.26436 7.57532 5.18861 11.2057 4.79301L10.5303 5.46967C10.2374 5.76256 10.2374 6.23744 10.5303 6.53033C10.8232 6.82322 11.2981 6.82322 11.591 6.53033L13.591 4.53033C13.8839 4.23744 13.8839 3.76256 13.591 3.46967L11.591 1.46967C11.2981 1.17678 10.8232 1.17678 10.5303 1.46967Z"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M18.2498 20.5009C18.664 20.5008 19 20.8365 19 21.2507C19 21.6649 18.6644 22.0008 18.2502 22.0009L5.25022 22.0047C4.836 22.0048 4.5 21.6691 4.5 21.2549C4.5 20.8407 4.83557 20.5048 5.24978 20.5047L18.2498 20.5009ZM11.6482 2.01271L11.75 2.00586C12.1297 2.00586 12.4435 2.28801 12.4932 2.65409L12.5 2.75586L12.499 16.4409L16.2208 12.7205C16.4871 12.4543 16.9038 12.4301 17.1974 12.648L17.2815 12.7206C17.5477 12.9869 17.5719 13.4036 17.354 13.6972L17.2814 13.7813L12.2837 18.7779C12.0176 19.044 11.6012 19.0683 11.3076 18.8507L11.2235 18.7782L6.22003 13.7816C5.92694 13.4889 5.92661 13.014 6.21931 12.7209C6.48539 12.4545 6.90204 12.43 7.1958 12.6477L7.27997 12.7202L10.999 16.4339L11 2.75586C11 2.37616 11.2822 2.06237 11.6482 2.01271L11.75 2.00586L11.6482 2.01271Z"/></symbol>
+  <symbol id="i-sun" viewBox="0 0 24 24"><path d="M12 2C12.4142 2 12.75 2.33579 12.75 2.75V4.25C12.75 4.66421 12.4142 5 12 5C11.5858 5 11.25 4.66421 11.25 4.25V2.75C11.25 2.33579 11.5858 2 12 2ZM12 17C14.7614 17 17 14.7614 17 12C17 9.23858 14.7614 7 12 7C9.23858 7 7 9.23858 7 12C7 14.7614 9.23858 17 12 17ZM12 15.5C10.067 15.5 8.5 13.933 8.5 12C8.5 10.067 10.067 8.5 12 8.5C13.933 8.5 15.5 10.067 15.5 12C15.5 13.933 13.933 15.5 12 15.5ZM21.25 12.75C21.6642 12.75 22 12.4142 22 12C22 11.5858 21.6642 11.25 21.25 11.25H19.75C19.3358 11.25 19 11.5858 19 12C19 12.4142 19.3358 12.75 19.75 12.75H21.25ZM12 19C12.4142 19 12.75 19.3358 12.75 19.75V21.25C12.75 21.6642 12.4142 22 12 22C11.5858 22 11.25 21.6642 11.25 21.25V19.75C11.25 19.3358 11.5858 19 12 19ZM4.25 12.75C4.66421 12.75 5 12.4142 5 12C5 11.5858 4.66421 11.25 4.25 11.25H2.75C2.33579 11.25 2 11.5858 2 12C2 12.4142 2.33579 12.75 2.75 12.75H4.25ZM4.21967 4.22004C4.51256 3.92715 4.98744 3.92715 5.28033 4.22004L6.78033 5.72004C7.07322 6.01294 7.07322 6.48781 6.78033 6.7807C6.48744 7.0736 6.01256 7.0736 5.71967 6.7807L4.21967 5.2807C3.92678 4.98781 3.92678 4.51294 4.21967 4.22004ZM5.28033 19.7807C4.98744 20.0736 4.51256 20.0736 4.21967 19.7807C3.92678 19.4878 3.92678 19.0129 4.21967 18.72L5.71967 17.22C6.01256 16.9271 6.48744 16.9271 6.78033 17.22C7.07322 17.5129 7.07322 17.9878 6.78033 18.2807L5.28033 19.7807ZM19.7803 4.22004C19.4874 3.92715 19.0126 3.92715 18.7197 4.22004L17.2197 5.72004C16.9268 6.01294 16.9268 6.48781 17.2197 6.7807C17.5126 7.0736 17.9874 7.0736 18.2803 6.7807L19.7803 5.2807C20.0732 4.98781 20.0732 4.51294 19.7803 4.22004ZM18.7197 19.7807C19.0126 20.0736 19.4874 20.0736 19.7803 19.7807C20.0732 19.4878 20.0732 19.0129 19.7803 18.72L18.2803 17.22C17.9874 16.9271 17.5126 16.9271 17.2197 17.22C16.9268 17.5129 16.9268 17.9878 17.2197 18.2807L18.7197 19.7807Z"/></symbol>
+  <symbol id="i-moon" viewBox="0 0 24 24"><path d="M20.0258 17.0014C17.2639 21.7851 11.1471 23.4241 6.3634 20.6622C5.06068 19.9101 3.964 18.8926 3.12872 17.6797C2.84945 17.2741 3.0301 16.7141 3.49369 16.5482C7.26112 15.1997 9.27892 13.6372 10.4498 11.4021C11.6825 9.04908 12.001 6.47162 11.1387 2.93862C11.0195 2.45008 11.4053 1.98492 11.9075 2.01186C13.4645 2.09539 14.9856 2.54263 16.3649 3.33903C21.1486 6.10088 22.7876 12.2177 20.0258 17.0014ZM11.7785 12.0981C10.5272 14.4867 8.46706 16.1972 4.96104 17.597C5.5693 18.2929 6.29275 18.8894 7.1134 19.3632C11.1796 21.7108 16.3791 20.3176 18.7267 16.2514C21.0744 12.1852 19.6812 6.98571 15.6149 4.63807C14.7379 4.1317 13.7951 3.79168 12.8228 3.62253C13.4699 7.00652 13.0525 9.66622 11.7785 12.0981Z"/></symbol>
+  <symbol id="i-apps" viewBox="0 0 24 24"><path d="M18.4923 2.33088L21.671 5.50966C22.5497 6.38834 22.5497 7.81296 21.671 8.69164L19.0866 11.2756C20.1696 11.438 21 12.3723 21 13.5006V18.7506C21 19.9932 19.9926 21.0006 18.75 21.0006H5.25C4.00736 21.0006 3 19.9932 3 18.7506V5.25055C3 4.00791 4.00736 3.00055 5.25 3.00055H10.5C11.6289 3.00055 12.5637 3.83201 12.7253 4.91596L15.3103 2.33088C16.189 1.45221 17.6136 1.45221 18.4923 2.33088ZM4.5 18.7506C4.5 19.1648 4.83579 19.5006 5.25 19.5006L11.249 19.4999L11.25 12.7506L4.5 12.7499V18.7506ZM12.749 19.4999L18.75 19.5006C19.1642 19.5006 19.5 19.1648 19.5 18.7506V13.5006C19.5 13.0863 19.1642 12.7506 18.75 12.7506L12.749 12.7499V19.4999ZM10.5 4.50055H5.25C4.83579 4.50055 4.5 4.83634 4.5 5.25055V11.2499H11.25V5.25055C11.25 4.83634 10.9142 4.50055 10.5 4.50055ZM12.75 9.30988V11.2506L14.69 11.2499L12.75 9.30988ZM16.3709 3.39154L13.1922 6.57032C12.8993 6.86321 12.8993 7.33808 13.1922 7.63098L16.3709 10.8097C16.6638 11.1026 17.1387 11.1026 17.4316 10.8097L20.6104 7.63098C20.9033 7.33808 20.9033 6.86321 20.6104 6.57032L17.4316 3.39154C17.1387 3.09865 16.6638 3.09865 16.3709 3.39154Z"/></symbol>
+  <symbol id="i-chevron" viewBox="0 0 20 20"><path d="M15.8537 7.64582C16.0493 7.84073 16.0499 8.15731 15.855 8.35292L10.39 13.8374C10.1751 14.0531 9.82574 14.0531 9.6108 13.8374L4.14582 8.35292C3.9509 8.15731 3.95147 7.84073 4.14708 7.64582C4.34269 7.4509 4.65927 7.45147 4.85418 7.64708L10.0004 12.8117L15.1466 7.64708C15.3415 7.45147 15.6581 7.4509 15.8537 7.64582Z"/></symbol>
+  <symbol id="i-play" viewBox="0 0 24 24"><path d="M7.60846 4.61489C7.1087 4.34296 6.5 4.70472 6.5 5.27368V18.726C6.5 19.2949 7.1087 19.6567 7.60846 19.3848L19.97 12.6586C20.4921 12.3746 20.4921 11.6251 19.97 11.341L7.60846 4.61489ZM5 5.27368C5 3.56682 6.82609 2.48151 8.32538 3.2973L20.687 10.0235C22.2531 10.8756 22.2531 13.124 20.687 13.9762L8.32538 20.7024C6.82609 21.5181 5 20.4328 5 18.726V5.27368Z"/></symbol>
+  <symbol id="i-zip" viewBox="0 0 24 24"><path d="M8.12891 3C8.72556 3.00006 9.29782 3.23728 9.71973 3.65918L11.5605 5.5H18.75C20.5449 5.5 22 6.95507 22 8.75V17.75C22 19.4608 20.6781 20.8616 19 20.9893V22.3848L18.9873 22.5088C18.9381 22.749 18.749 22.9381 18.5088 22.9873L18.3848 23H13.6152C13.318 22.9999 13.0701 22.7891 13.0127 22.5088L13 22.3848V21H5.25C3.45507 21 2 19.5449 2 17.75V6.25C2 4.45507 3.45507 3 5.25 3H8.12891ZM16 16.5C15.1716 16.5 14.5 17.1716 14.5 18V21.5H17.5V18C17.5 17.1716 16.8284 16.5 16 16.5ZM9.71973 8.84082C9.29782 9.26272 8.72556 9.49994 8.12891 9.5H3.5V17.75C3.5 18.7165 4.2835 19.5 5.25 19.5H13V18C13 16.956 13.5338 16.0374 14.3428 15.5H13.75C13.3358 15.5 13 15.1642 13 14.75C13 14.3358 13.3358 14 13.75 14H16V15C17.6569 15 19 16.3431 19 18V19.4795C19.8479 19.358 20.5 18.6315 20.5 17.75V8.75C20.5 7.7835 19.7165 7 18.75 7H11.5605L9.71973 8.84082ZM18.25 12.5C18.6642 12.5 19 12.8358 19 13.25C19 13.6642 18.6642 14 18.25 14H16V12.5H18.25ZM16 12.5H13.75C13.3358 12.5 13 12.1642 13 11.75C13 11.3358 13.3358 11 13.75 11H16V12.5ZM18.25 9.5C18.6642 9.5 19 9.83579 19 10.25C19 10.6642 18.6642 11 18.25 11H16V9.5H18.25ZM16 9.5H13.75C13.3358 9.5 13 9.16421 13 8.75C13 8.33579 13.3358 8 13.75 8H16V9.5ZM5.25 4.5C4.2835 4.5 3.5 5.2835 3.5 6.25V8H8.12891C8.32774 7.99994 8.51858 7.92087 8.65918 7.78027L10.1895 6.25L8.65918 4.71973C8.51858 4.57913 8.32774 4.50006 8.12891 4.5H5.25Z"/></symbol>
+  <symbol id="i-cloud-off" viewBox="0 0 24 24"><path d="M3.28034 2.21968C2.98745 1.92678 2.51257 1.92677 2.21968 2.21966C1.92678 2.51255 1.92677 2.98743 2.21966 3.28032L6.85339 7.91414C6.47198 8.54894 6.20466 9.26014 6.07981 10.0194C3.79155 10.2313 2 12.1564 2 14.5C2 16.9853 4.01472 19 6.5 19H17.5C17.6415 19 17.7815 18.9935 17.9197 18.9807L20.7194 21.7805C21.0123 22.0734 21.4872 22.0734 21.7801 21.7805C22.073 21.4876 22.073 21.0127 21.7801 20.7198L3.28034 2.21968ZM16.4391 17.5H6.5C4.84315 17.5 3.5 16.1569 3.5 14.5C3.5 12.8431 4.84315 11.5 6.5 11.5H6.75585C7.15641 11.5 7.48627 11.1852 7.50502 10.7851C7.53463 10.1537 7.69446 9.55623 7.95827 9.01904L16.4391 17.5ZM20.5 14.5C20.5 15.2822 20.2007 15.9944 19.7103 16.5285L20.7716 17.5898C21.5331 16.7838 22 15.6964 22 14.5C22 12.1564 20.2085 10.2313 17.9202 10.0194C17.4519 7.17189 14.9798 5 12 5C10.9031 5 9.875 5.29431 8.99031 5.80828L10.1011 6.91911C10.6781 6.65018 11.3215 6.5 12 6.5C14.4132 6.5 16.3832 8.39994 16.495 10.7851C16.5137 11.1852 16.8436 11.5 17.2442 11.5H17.5C19.1569 11.5 20.5 12.8431 20.5 14.5Z"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M12 2C17.5228 2 22 6.47715 22 12C22 17.5228 17.5228 22 12 22C6.47715 22 2 17.5228 2 12C2 6.47715 6.47715 2 12 2ZM12 3.5C7.30558 3.5 3.5 7.30558 3.5 12C3.5 16.6944 7.30558 20.5 12 20.5C16.6944 20.5 20.5 16.6944 20.5 12C20.5 7.30558 16.6944 3.5 12 3.5ZM10.75 13.4393L15.2197 8.96967C15.5126 8.67678 15.9874 8.67678 16.2803 8.96967C16.5466 9.23594 16.5708 9.6526 16.3529 9.94621L16.2803 10.0303L11.2803 15.0303C11.0141 15.2966 10.5974 15.3208 10.3038 15.1029L10.2197 15.0303L7.71967 12.5303C7.42678 12.2374 7.42678 11.7626 7.71967 11.4697C7.98594 11.2034 8.4026 11.1792 8.69621 11.3971L8.78033 11.4697L10.75 13.4393L15.2197 8.96967L10.75 13.4393Z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24"><path d="M15.0461 1.49224C15.1885 1.10338 15.6191 0.903659 16.008 1.04595C16.3967 1.18841 16.5965 1.619 16.4543 2.00786L8.95427 22.5079C8.81191 22.8967 8.38124 23.0963 7.99236 22.9542C7.60349 22.8118 7.40378 22.3812 7.54607 21.9922L15.0461 1.49224ZM6.2072 6.23247C6.4929 5.93284 6.96791 5.92152 7.26775 6.20708C7.5673 6.49276 7.57861 6.9678 7.29314 7.26763L2.78533 12.0001L7.29314 16.7325C7.57857 17.0323 7.56733 17.5074 7.26775 17.793C6.96793 18.0786 6.4929 18.0672 6.2072 17.7676L1.2072 12.5176C0.93134 12.228 0.93134 11.7721 1.2072 11.4825L6.2072 6.23247ZM16.7326 6.20708C17.0325 5.92158 17.5075 5.93279 17.7931 6.23247L22.7931 11.4825C23.0688 11.7721 23.0689 12.228 22.7931 12.5176L17.7931 17.7676C17.5075 18.0673 17.0325 18.0785 16.7326 17.793C16.4329 17.5073 16.4216 17.0323 16.7072 16.7325L21.215 12.0001L16.7072 7.26763C16.4216 6.96776 16.4329 6.49277 16.7326 6.20708Z"/></symbol>
+</defs>
+</svg>
+
+<a class="skip-link" href="#main">Skip to content</a>
+
+<header class="nav" id="top">
+  <div class="container nav-inner">
+    <a class="brand" href="#top" aria-label="AppLiveCaption home">
+      <img src="icon.svg" alt="" width="28" height="28">
+      <span>AppLiveCaption</span>
+    </a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#features">Features</a>
+      <a href="#screenshots">Screenshots</a>
+      <a href="#models">Models</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#faq">FAQ</a>
+    </nav>
+    <div class="nav-actions">
+      <a class="btn btn-subtle btn-icon" href="https://github.com/EnderDragonEP/AppLiveCaption" aria-label="Source code on GitHub" title="Source code on GitHub">
+        <svg class="icon"><use href="#i-code"/></svg>
+      </a>
+      <button class="btn btn-subtle btn-icon theme-toggle" type="button" aria-label="Switch to dark theme" title="Switch theme">
+        <svg class="icon icon-moon"><use href="#i-moon"/></svg>
+        <svg class="icon icon-sun"><use href="#i-sun"/></svg>
+      </button>
+      <a class="btn btn-primary btn-medium nav-download" href="https://github.com/EnderDragonEP/AppLiveCaption/releases/latest" data-download>
+        <svg class="icon"><use href="#i-download"/></svg><span>Download</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="main">
+
+  <section class="hero">
+    <div class="container hero-grid">
+      <div class="hero-text reveal">
+        <span class="badge">Free and open source · Windows 10/11</span>
+        <h1>Live captions for everything you hear.</h1>
+        <p class="lead">
+          AppLiveCaption turns speech from your microphone, your speakers or just the apps you pick into captions,
+          right on your PC. No cloud, no account, and no internet once a model is downloaded.
+        </p>
+        <div class="button-row">
+          <a class="btn btn-primary btn-large" href="https://github.com/EnderDragonEP/AppLiveCaption/releases/latest" data-download>
+            <svg class="icon"><use href="#i-download"/></svg><span data-download-label>Download for Windows</span>
+          </a>
+          <a class="btn btn-secondary btn-large" href="https://github.com/EnderDragonEP/AppLiveCaption">
+            <svg class="icon"><use href="#i-code"/></svg><span>View on GitHub</span>
+          </a>
+        </div>
+        <ul class="hero-meta">
+          <li><svg class="icon"><use href="#i-check"/></svg><span>Version <span data-version>{{version}}</span></span></li>
+          <li><svg class="icon"><use href="#i-check"/></svg><span>No installer: unzip and run</span></li>
+          <li><svg class="icon"><use href="#i-check"/></svg><span>GPL-3.0</span></li>
+        </ul>
+      </div>
+
+      <div class="hero-visual reveal">
+        <img class="shot shot-main" src="img/screenshot-live.png" width="2200" height="1440" fetchpriority="high"
+             alt="AppLiveCaption's Live captions page showing captions of a video playing in Google Chrome">
+        <div class="caption-demo" aria-hidden="true">
+          <div class="caption-demo-label"><span class="dot"></span>Live</div>
+          <p class="caption-final" data-demo-final>Hi everyone, and welcome back to the channel!</p>
+          <p class="caption-partial" data-demo-partial>Today we're building a tiny weather station</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="features">
+    <div class="container">
+      <header class="section-head reveal">
+        <h2>Everything you need to follow along</h2>
+        <p>Made for videos, meetings, games and lectures, in English, Mandarin and the languages of Taiwan.</p>
+      </header>
+      <div class="feature-grid">
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-headphones"/></svg></span>
+          <h3>Caption anything</h3>
+          <p>Your microphone, everything playing on the PC, or only the apps you tick (Chrome, Teams, VLC, …), mixed together.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-flash"/></svg></span>
+          <h3>Live as people talk</h3>
+          <p>Captions update while someone speaks and settle into a final line when they pause.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-pip"/></svg></span>
+          <h3>Floating overlay</h3>
+          <p>An always-on-top caption bar for videos, games and calls. Drag it anywhere, resize it, or let clicks pass through it.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-shield"/></svg></span>
+          <h3>Private by design</h3>
+          <p>Speech is recognized on your PC and never uploaded. No account, no cloud.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-brain"/></svg></span>
+          <h3>Pick your model</h3>
+          <p>Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 and 26, and Taiwan Tongues.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-rocket"/></svg></span>
+          <h3>GPU boost</h3>
+          <p>Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-translate"/></svg></span>
+          <h3>Traditional Chinese</h3>
+          <p>Simplified Chinese output is turned into Traditional (OpenCC s2twp), on by default.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-history"/></svg></span>
+          <h3>History</h3>
+          <p>Every session is saved. Copy it, or export it as TXT or SRT subtitles.</p>
+        </article>
+        <article class="card feature reveal">
+          <span class="icon-tile"><svg class="icon"><use href="#i-usb"/></svg></span>
+          <h3>Portable</h3>
+          <p>Settings, history and models stay in the app's folder. Move the folder, even to a USB stick, and it all comes along.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tinted">
+    <div class="container split">
+      <div class="split-media reveal">
+        <img class="shot" src="img/screenshot-overlay.jpg" width="2200" height="920" loading="lazy"
+             alt="The floating caption overlay showing Traditional Chinese captions over a video">
+      </div>
+      <div class="split-text reveal">
+        <span class="eyebrow">Floating overlay</span>
+        <h2>Captions on top of everything</h2>
+        <p>Turn on the overlay and the latest lines float above whatever you're watching or playing.</p>
+        <ul class="checklist">
+          <li><svg class="icon"><use href="#i-check"/></svg>Stays on top of videos, games and full-screen calls</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>Drag it to move it, drag its edges to resize it</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>Click-through, so clicks reach the window below</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>One to three lines, in the size, colors and opacity you like</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="screenshots">
+    <div class="container">
+      <header class="section-head reveal">
+        <h2>Feels right at home on Windows</h2>
+        <p>Fluent Design with Mica, light and dark mode, and your accent color.</p>
+      </header>
+      <div class="tabs reveal">
+        <div class="tab-list" role="tablist" aria-label="Screenshots">
+          <button class="tab" role="tab" id="tab-live" aria-controls="panel-live" aria-selected="true" type="button">Live captions</button>
+          <button class="tab" role="tab" id="tab-models" aria-controls="panel-models" aria-selected="false" tabindex="-1" type="button">Models</button>
+          <button class="tab" role="tab" id="tab-history" aria-controls="panel-history" aria-selected="false" tabindex="-1" type="button">History</button>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-live" aria-labelledby="tab-live" tabindex="0">
+          <img class="shot" src="img/screenshot-live.png" width="2200" height="1440" loading="lazy"
+               alt="The Live captions page: Stop button, the selected app, model and language, and the captions">
+          <p class="tab-caption">Pick a model, choose what to listen to and press Start. The status line shows the latency and the device in use.</p>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0" hidden>
+          <img class="shot" src="img/screenshot-models.png" width="2200" height="1440" loading="lazy"
+               alt="The Models page with GPU support installed, a model in use and another one downloading">
+          <p class="tab-caption">Download models with one click, see how much space they take, and turn on GPU support.</p>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" hidden>
+          <img class="shot" src="img/screenshot-history.png" width="2200" height="1440" loading="lazy"
+               alt="The History page with three saved sessions and the transcript of the newest one">
+          <p class="tab-caption">Every session is saved with timestamps. Copy it, or export TXT or SRT subtitles.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section-tinted" id="start">
+    <div class="container">
+      <header class="section-head reveal">
+        <h2>Up and running in a minute</h2>
+        <p>No installer and no Python. Just unzip it and go.</p>
+      </header>
+      <ol class="steps">
+        <li class="card step reveal">
+          <span class="step-number">1</span>
+          <svg class="icon step-icon"><use href="#i-zip"/></svg>
+          <h3>Download and unzip</h3>
+          <p>Put the folder anywhere you like: Documents, another drive, a USB stick.</p>
+        </li>
+        <li class="card step reveal">
+          <span class="step-number">2</span>
+          <svg class="icon step-icon"><use href="#i-brain"/></svg>
+          <h3>Pick a model</h3>
+          <p>Choose one in the Model dropdown and download it from the Models page.</p>
+        </li>
+        <li class="card step reveal">
+          <span class="step-number">3</span>
+          <svg class="icon step-icon"><use href="#i-apps"/></svg>
+          <h3>Choose what to listen to</h3>
+          <p>Microphone, system audio, or just the apps you tick. Ticked apps are picked up whenever they start.</p>
+        </li>
+        <li class="card step reveal">
+          <span class="step-number">4</span>
+          <svg class="icon step-icon"><use href="#i-play"/></svg>
+          <h3>Press Start</h3>
+          <p>Captions appear as people talk. Turn on the overlay to keep them on top.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section" id="models">
+    <div class="container">
+      <header class="section-head reveal">
+        <h2>Which model should I use?</h2>
+        <p>Every model runs on your PC. The app warns you when one will probably be too slow for real time.</p>
+      </header>
+      <div class="model-grid">
+        <article class="card model reveal">
+          <div class="model-top"><h3>Whisper large-v3-turbo</h3><span class="chip chip-brand">GPU</span></div>
+          <p class="model-use">The default, for an NVIDIA GPU with 6 GB or more</p>
+          <p>Close to large-v3 accuracy and much faster: partial captions in about 0.3 s on an RTX 4070 Laptop. 100 languages.</p>
+        </article>
+        <article class="card model reveal">
+          <div class="model-top"><h3>Breeze ASR 25</h3><span class="chip chip-brand">GPU</span></div>
+          <p class="model-use">Taiwanese Mandarin, or Mandarin mixed with English</p>
+          <p>Fine-tuned by MediaTek Research for switching between Mandarin and English mid-sentence.</p>
+        </article>
+        <article class="card model reveal">
+          <div class="model-top"><h3>Breeze ASR 26</h3><span class="chip chip-brand">GPU</span></div>
+          <p class="model-use">Taiwanese Hokkien (Taigi)</p>
+          <p>Trained on about 10,000 hours of Taigi speech. Writes it as Mandarin Chinese characters.</p>
+        </article>
+        <article class="card model reveal">
+          <div class="model-top"><h3>Taiwan Tongues ASR CE</h3><span class="chip chip-brand">GPU</span></div>
+          <p class="model-use">Hakka, Hokkien, Mandarin and English</p>
+          <p>Whisper large-v2 fine-tuned for the languages of Taiwan.</p>
+        </article>
+        <article class="card model reveal">
+          <div class="model-top"><h3>Whisper base or small</h3><span class="chip">CPU</span></div>
+          <p class="model-use">PCs without an NVIDIA GPU</p>
+          <p>Light enough for real time on the CPU, with good accuracy for clear speech.</p>
+        </article>
+      </div>
+      <aside class="callout reveal">
+        <span class="icon-tile icon-tile-large"><svg class="icon"><use href="#i-rocket"/></svg></span>
+        <div>
+          <h3>Have an NVIDIA GPU?</h3>
+          <p>
+            Open the Models page and click <strong>Download</strong> on the NVIDIA GPU support card (about 1 GB, once).
+            A model that's already loaded moves to the GPU as soon as it finishes. Only the display driver is needed;
+            you don't have to install the CUDA Toolkit.
+          </p>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="section section-tinted" id="privacy">
+    <div class="container split split-reverse">
+      <div class="split-text reveal">
+        <span class="eyebrow">Privacy</span>
+        <h2>Your audio stays on your PC</h2>
+        <p>Speech is recognized locally and never uploaded. The app goes online only when you ask it to:</p>
+        <ul class="checklist">
+          <li><svg class="icon"><use href="#i-download"/></svg>Downloading a model from Hugging Face</li>
+          <li><svg class="icon"><use href="#i-rocket"/></svg>Downloading GPU support from PyPI</li>
+          <li><svg class="icon"><use href="#i-sync"/></svg>Checking GitHub for a new version</li>
+        </ul>
+        <p>Everything else, from starting the app to captioning, works without internet.</p>
+      </div>
+      <div class="privacy-art reveal" aria-hidden="true">
+        <div class="privacy-ring"><svg class="icon"><use href="#i-cloud-off"/></svg></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq">
+    <div class="container narrow">
+      <header class="section-head reveal">
+        <h2>Questions and answers</h2>
+      </header>
+      <div class="faq reveal">
+        <details>
+          <summary>Which versions of Windows does it work on?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Windows 10 and 11, 64-bit. Captioning individual apps needs Windows build 20348 or later (in practice Windows 11); on older versions the microphone and system audio still work.</p>
+        </details>
+        <details>
+          <summary>Do I need a graphics card?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>No. Without an NVIDIA GPU, models run on the CPU; pick Whisper base or small for real time. With an NVIDIA GPU and a recent driver, download GPU support on the Models page and use the bigger models.</p>
+        </details>
+        <details>
+          <summary>Does it need the internet?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Only to download models and GPU support, and when you check for updates. After that it works completely offline.</p>
+        </details>
+        <details>
+          <summary>Where does it keep my settings and transcripts?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Next to AppLiveCaption.exe: settings in config.json, transcripts in history, plus the logs, models and GPU support folders. Nothing goes to AppData, so moving or deleting the folder moves or removes everything. (In a folder Windows won't let it write to, such as C:\Program Files, it uses %LOCALAPPDATA%\AppLiveCaption instead.)</p>
+        </details>
+        <details>
+          <summary>Can it caption just one app, like a browser or Discord?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Yes. Choose Apps as the source and tick the apps you want; only their audio is used, optionally mixed with your microphone.</p>
+        </details>
+        <details>
+          <summary>Does it translate?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>No. It writes down what is said, in the language it's said in. Translation and speaker identification are out of scope.</p>
+        </details>
+        <details>
+          <summary>How much does it cost?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Nothing. AppLiveCaption is free and open source under the GPL-3.0 license. The speech recognition models are made by their authors and come with their own licenses, shown on the Models page.</p>
+        </details>
+        <details>
+          <summary>Is it made with AI?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
+          <p>Yes, it's vibe-coded! I built it with Claude Code, Anthropic's AI coding assistant, running Claude Opus 5.5. Without this amazing tool, I wouldn't have been able to build the app I wanted in such a short time.</p>
+        </details>
+      </div>
+    </div>
+  </section>
+
+  <section class="section">
+    <div class="container">
+      <div class="cta reveal">
+        <img src="icon.svg" alt="" width="64" height="64">
+        <h2>See what's being said</h2>
+        <p>Free for Windows 10 and 11. Unzip it and you're ready.</p>
+        <div class="button-row">
+          <a class="btn btn-primary btn-large" href="https://github.com/EnderDragonEP/AppLiveCaption/releases/latest" data-download>
+            <svg class="icon"><use href="#i-download"/></svg><span data-download-label>Download for Windows</span>
+          </a>
+          <a class="btn btn-secondary btn-large" href="https://github.com/EnderDragonEP/AppLiveCaption/releases">
+            <svg class="icon"><use href="#i-history"/></svg><span>All releases</span>
+          </a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <div class="container footer-grid">
+    <div>
+      <a class="brand" href="#top"><img src="icon.svg" alt="" width="24" height="24"><span>AppLiveCaption</span></a>
+      <p class="footer-note">© 2026 Ender Yang · <a href="https://github.com/EnderDragonEP/AppLiveCaption/blob/main/LICENSE">GPL-3.0</a></p>
+    </div>
+    <nav class="footer-links" aria-label="Project links">
+      <a href="https://github.com/EnderDragonEP/AppLiveCaption">Source code</a>
+      <a href="https://github.com/EnderDragonEP/AppLiveCaption/releases">Releases</a>
+      <a href="https://github.com/EnderDragonEP/AppLiveCaption/issues">Report a problem</a>
+      <a href="https://github.com/EnderDragonEP/AppLiveCaption/blob/main/THIRD_PARTY_NOTICES.md">Third-party notices</a>
+    </nav>
+    <p class="footer-disclaimer">
+      Captions are generated automatically and can be incomplete or wrong; don't rely on them where accuracy matters, such as medical, legal or safety-critical situations.
+      AppLiveCaption is a personal project and is not affiliated with or endorsed by Microsoft, OpenAI, MediaTek, Hugging Face or NVIDIA.
+      Icons: <a href="https://github.com/microsoft/fluentui-system-icons">Fluent UI System Icons</a> (MIT).
+    </p>
+  </div>
+</footer>
+
+<script src="main.js" defer></script>
+</body>
+</html>

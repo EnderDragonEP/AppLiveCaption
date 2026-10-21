@@ -1,7 +1,0 @@
-# Jekyll settings for the project page that GitHub Pages builds from README.md
-# (.github/workflows/jekyll-gh-pages.yml).
-
-# Jekyll leaves out folders whose names start with a dot, and the README's
-# banner and screenshots live in .asset.
-include:
-  - .asset

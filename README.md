@@ -189,6 +189,17 @@ python -m unittest discover -s tests
 
 `build.ps1` runs them before every build.
 
+## Website
+
+The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest zip. To preview it:
+
+```powershell
+python tools/build_site.py
+python -m http.server -d _site
+```
+
+Then open <http://localhost:8000>.
+
 ## Adding a model
 
 All models are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Every model runs on faster-whisper, so it must be in CTranslate2 format; a model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. Clicking a model's card on the Models page opens its page on Hugging Face.
