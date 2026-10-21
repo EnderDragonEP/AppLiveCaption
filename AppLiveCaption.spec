@@ -73,9 +73,13 @@ binaries = collect_dynamic_libs("ctranslate2")  # ctranslate2.dll, cudnn64_9.dll
 # Left out: cuDNN's own loader (CTranslate2 bundles the same one), cuDNN's
 # "adv" library (RNN/attention kernels CTranslate2 never loads, 230 MB) and the
 # nvblas BLAS wrapper.
+# They keep their package folders (nvidia/cublas/bin, ...): PyInstaller also
+# collects cuBLAS and cuDNN as dependencies of the other cuDNN DLLs and puts
+# those copies there, so any other destination would bundle them twice
+# (an extra 550 MB). app/asr/cuda_setup.py adds these folders to the DLL path.
 CUDA_SKIP = {"cudnn64_9.dll", "cudnn_adv64_9.dll", "nvblas64_12.dll"}
-_cuda = [(src, ".") for pkg in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_nvrtc")
-         for src, _dst in collect_dynamic_libs(pkg) if os.path.basename(src).lower() not in CUDA_SKIP]
+_cuda = [(src, dst) for pkg in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_nvrtc")
+         for src, dst in collect_dynamic_libs(pkg) if os.path.basename(src).lower() not in CUDA_SKIP]
 if not any(os.path.basename(src).lower() == "cublas64_12.dll" for src, _ in _cuda):
     raise SystemExit("NVIDIA's CUDA packages are missing; run: pip install -r requirements.txt")
 binaries += _cuda
