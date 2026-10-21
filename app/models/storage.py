@@ -32,7 +32,9 @@ def model_path(info: ModelInfo, base: Path | None = None) -> Path:
 
 
 def _essential_files(info: ModelInfo) -> list[str]:
-    return ["config.json", "model.bin"]  # a CTranslate2 (faster-whisper) model
+    # A CTranslate2 (faster-whisper) model. Without tokenizer.json faster-whisper
+    # would fetch a tokenizer from the internet, which offline use can't allow.
+    return ["config.json", "model.bin", "tokenizer.json"]
 
 
 def is_downloaded(info: ModelInfo, base: Path | None = None) -> bool:

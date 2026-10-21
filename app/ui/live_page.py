@@ -203,7 +203,9 @@ class LivePage(QWidget):
     # -- languages -----------------------------------------------------------
     def set_languages(self, codes: list[str], info: ModelInfo | None = None) -> None:
         info = info or get_model(cfg.get(cfg.modelId))
-        self._languages = ["auto"] + sorted(codes, key=lambda c: (c not in ("zh", "en"), language_name(c)))
+        detect = info is None or info.auto_detect
+        ordered = sorted(codes, key=lambda c: (c not in ("zh", "en"), language_name(c)))
+        self._languages = (["auto"] if detect else []) + ordered
         current = cfg.get(cfg.language)
         self.lang_combo.blockSignals(True)
         self.lang_combo.clear()
@@ -214,10 +216,13 @@ class LivePage(QWidget):
                 label = info.language_label(code) if info else language_name(code)
                 self.lang_combo.addItem(self.tr(label))
         if current not in self._languages:
-            current = "auto"
-        self.lang_combo.setCurrentIndex(self._languages.index(current))
+            # Without auto-detect the model uses its own language. The saved choice
+            # is kept for the next model that can auto-detect.
+            current = "auto" if detect else (info.default_language or self._languages[0])
+        if self._languages:
+            self.lang_combo.setCurrentIndex(self._languages.index(current))
         self.lang_combo.blockSignals(False)
-        if cfg.get(cfg.language) != current:
+        if detect and cfg.get(cfg.language) != current:
             cfg.set(cfg.language, current)
         # Tell the worker what the dropdown now shows, so the two never disagree.
         self.languageChanged.emit(current)

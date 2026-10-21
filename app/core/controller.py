@@ -200,9 +200,18 @@ class AsrWorker(QThread):
         allowed = [c for c in info.languages if langs is None or c in langs]
         self.languagesChanged.emit(allowed)
         if self.language and self.language not in allowed:
-            self.error.emit("language_unsupported", self.language)
+            # A model without auto-detect just uses its own language; that's
+            # expected, not an error worth a notice.
+            if info.auto_detect:
+                self.error.emit("language_unsupported", self.language)
             self.language = None
         return True
+
+    def _effective_language(self) -> str | None:
+        """The user's language, or the model's fixed one for "auto" when it can't auto-detect."""
+        if self.language:
+            return self.language
+        return self.model.default_language if self.model else None
 
     @staticmethod
     def _warm_up(backend: ASRBackend) -> None:
@@ -258,7 +267,7 @@ class AsrWorker(QThread):
 
     def _start(self) -> None:
         assert self.backend is not None and self.model is not None
-        self.transcriber = StreamingTranscriber(self.backend, language=self.language,
+        self.transcriber = StreamingTranscriber(self.backend, language=self._effective_language(),
                                                 convert_chinese=self.opencc, base_prompt=self.model.initial_prompt)
         try:
             self.capture.start(self.selection)
@@ -303,7 +312,7 @@ class AsrWorker(QThread):
         self.language = language
         if self.transcriber is not None:
             self._flush()
-            self.transcriber.language = self.language
+            self.transcriber.language = self._effective_language()
 
     def _cmd_set_opencc(self, enabled: bool) -> None:
         self.opencc = enabled

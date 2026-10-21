@@ -31,6 +31,16 @@ class ModelInfo:
     language_notes: dict[str, str] = field(default_factory=dict, hash=False, compare=False)
     initial_prompt: str = ""
     files: tuple[str, ...] = ()  # allow patterns; empty means "everything except docs"
+    # Files fetched from another repo, {file name: repo}, for a repo that lacks one.
+    extra_files: dict[str, str] = field(default_factory=dict, hash=False, compare=False)
+    # False when Whisper's language detection doesn't work for the model's
+    # language (e.g. Taigi): the model then always uses its first language.
+    auto_detect: bool = True
+
+    @property
+    def default_language(self) -> str | None:
+        """The language to decode with when the user picked "auto" (None = detect)."""
+        return None if self.auto_detect or not self.languages else self.languages[0]
 
     @property
     def folder_name(self) -> str:
@@ -79,6 +89,8 @@ def load_catalog() -> tuple[ModelInfo, ...]:
             language_notes=dict(m.get("language_notes", {})),
             initial_prompt=m.get("initial_prompt", ""),
             files=tuple(m.get("files", ())),
+            extra_files=dict(m.get("extra_files", {})),
+            auto_detect=bool(m.get("auto_detect", True)),
         ))
     return tuple(out)
 

@@ -48,6 +48,7 @@ def run_console_transcription(args, selection) -> None:
     backend.load(str(model_path(info)), device)
     print(f"Loaded in {time.monotonic() - t0:.1f} s")
     language = None if args.language in ("", "auto") else args.language
+    language = language or info.default_language
     st = StreamingTranscriber(backend, language=language, convert_chinese=not args.no_opencc,
                               base_prompt=info.initial_prompt)
 

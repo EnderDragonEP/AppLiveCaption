@@ -122,7 +122,7 @@ class CatalogTests(unittest.TestCase):
         picked = {n for n, _ in _selected_files(get_model("whisper-tiny"), files)}
         self.assertEqual(picked, {"model.bin", "tokenizer.json"})
 
-    def test_model_counts_as_downloaded_with_its_weights(self):
+    def test_model_counts_as_downloaded_with_its_files(self):
         info = get_model("breeze-asr-25")
         with tempfile.TemporaryDirectory() as tmp:
             base = Path(tmp)
@@ -132,8 +132,22 @@ class CatalogTests(unittest.TestCase):
             self.assertFalse(is_downloaded(info, base))
             self.assertEqual(verify(info, base), "missing file model.bin")
             (d / "model.bin").write_bytes(b"x")
+            # Without its tokenizer, faster-whisper would fetch one from the internet.
+            self.assertFalse(is_downloaded(info, base))
+            self.assertEqual(verify(info, base), "missing file tokenizer.json")
+            (d / "tokenizer.json").write_text("{}")
             self.assertTrue(is_downloaded(info, base))
             self.assertIsNone(verify(info, base))
+
+    def test_breeze_26_fixed_language_and_borrowed_tokenizer(self):
+        taigi = get_model("breeze-asr-26")
+        self.assertFalse(taigi.auto_detect)
+        self.assertEqual(taigi.default_language, "zh")
+        # Its repo has no tokenizer.json; Breeze 25's has the identical vocabulary.
+        self.assertEqual(taigi.extra_files, {"tokenizer.json": "SoybeanMilk/faster-whisper-Breeze-ASR-25"})
+        self.assertIsNone(get_model("breeze-asr-25").default_language)
+        self.assertIsNone(get_model("whisper-large-v3-turbo").default_language)
+
 
 if __name__ == "__main__":
     os.environ.setdefault("HF_HUB_OFFLINE", "1")

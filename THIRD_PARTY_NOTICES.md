@@ -70,7 +70,7 @@ The models are not part of the app. Each one is downloaded from Hugging Face on 
 | Model | License |
 | --- | --- |
 | Whisper tiny, base, small, medium, large v1/v2/v3, large-v3-turbo (CTranslate2 conversions of OpenAI Whisper) | MIT |
-| Breeze ASR 25 (MediaTek Research; CTranslate2 conversion by SoybeanMilk) | Apache-2.0 |
+| Breeze ASR 25 and Breeze ASR 26 (MediaTek Research; CTranslate2 conversions by SoybeanMilk) | Apache-2.0 |
 | Taiwan Tongues ASR CE (adi-gov-tw) | TRAIL v0.1 (TWM Responsible AI License) |
 
 ## GPL-3.0 components

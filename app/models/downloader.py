@@ -122,10 +122,22 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
             raise DownloadError("not_found", str(exc)) from exc
         except Exception as exc:  # noqa: BLE001 - network errors of all kinds
             raise DownloadError("network", str(exc)) from exc
-        files = _selected_files(info, [(s.rfilename, s.size or 0) for s in meta.siblings or []])
+        files = [(n, s, hf_hub_url(meta.id, n, revision=meta.sha))
+                 for n, s in _selected_files(info, [(s.rfilename, s.size or 0) for s in meta.siblings or []])]
         if not files:
             raise DownloadError("not_found", f"no files in {info.repo}")
-        total = sum(size for _, size in files)
+        for name, repo in info.extra_files.items():
+            try:
+                other = HfApi().model_info(repo, files_metadata=True, timeout=30)
+            except RepositoryNotFoundError as exc:
+                raise DownloadError("not_found", str(exc)) from exc
+            except Exception as exc:  # noqa: BLE001
+                raise DownloadError("network", str(exc)) from exc
+            sib = next((s for s in other.siblings or [] if s.rfilename == name), None)
+            if sib is None:
+                raise DownloadError("not_found", f"{name} not found in {repo}")
+            files = [f for f in files if f[0] != name] + [(name, sib.size or 0, hf_hub_url(other.id, name, revision=other.sha))]
+        total = sum(size for _, size, _ in files)
 
         def have(name: str, size: int) -> int:
             final = target / name
@@ -134,7 +146,7 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
             part = target / (name + PARTIAL_SUFFIX)
             return part.stat().st_size if part.is_file() else 0
 
-        done = sum(have(n, s) for n, s in files)
+        done = sum(have(n, s) for n, s, _ in files)
         free = shutil.disk_usage(target).free
         if total - done + DISK_MARGIN > free:
             raise DownloadError("disk_space", f"need {(total - done) / 2**30:.1f} GB, {free / 2**30:.1f} GB free")
@@ -144,14 +156,13 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
         speed = _Speed()
         on_progress(Progress(done, total, 0.0, ""))
 
-        for name, size in files:
+        for name, size, url in files:
             final = target / name
             if final.is_file() and final.stat().st_size == size:
                 continue
             final.parent.mkdir(parents=True, exist_ok=True)
             part = target / (name + PARTIAL_SUFFIX)
-            url = hf_hub_url(meta.id, name, revision=meta.sha)
-            others = sum(have(n, s) for n, s in files if n != name)
+            others = sum(have(n, s) for n, s, _ in files if n != name)
             attempts = 0
             while True:
                 if cancel.is_set():
@@ -197,7 +208,7 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
             if part.is_file():
                 os.replace(part, final)
 
-    write_marker(info, {n: s for n, s in files}, base)
+    write_marker(info, {n: s for n, s, _ in files}, base)
     on_progress(Progress(total, total, 0.0, ""))
     log.info("Downloaded %s to %s", info.repo, target)
     return target

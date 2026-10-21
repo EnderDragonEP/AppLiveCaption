@@ -9,8 +9,9 @@ model is downloaded, it works with no network connection.
   or a ticked set of apps (Chrome, Teams, VLC, …) mixed together, optionally plus
   one microphone.
 - **Models:** Whisper tiny → large-v3, large-v3-turbo, Taiwan Tongues ASR CE
-  (Mandarin / Taiwanese Hokkien / Hakka / English) and Breeze ASR 25 (Taiwanese
-  Mandarin + English code-switching).
+  (Mandarin / Taiwanese Hokkien / Hakka / English), Breeze ASR 25 (Taiwanese
+  Mandarin + English code-switching) and Breeze ASR 26 (Taiwanese Hokkien /
+  Taigi, written as Mandarin characters).
 - **Live output:** partial captions that update while someone speaks (lighter
   color) and final captions when they pause, a floating always-on-top overlay,
   and a history you can copy or export as TXT or SRT.
@@ -109,7 +110,8 @@ and resumes.
 | --- | --- |
 | NVIDIA GPU (6 GB+) | Whisper large-v3-turbo (default) — partials in ~0.3 s on an RTX 4070 Laptop |
 | Taiwanese Mandarin / code-switching | Breeze ASR 25 (GPU) |
-| Taiwanese Hokkien / Hakka | Taiwan Tongues ASR CE (GPU) |
+| Taiwanese Hokkien (Taigi) | Breeze ASR 26 (GPU) |
+| Hakka | Taiwan Tongues ASR CE (GPU) |
 | CPU only | Whisper base or small |
 
 The app warns when the chosen model will probably be too slow for real time on
@@ -131,6 +133,7 @@ Hugging Face transformers format can be converted with CTranslate2's
 | Whisper large-v3-turbo | `dropbox-dash/faster-whisper-large-v3-turbo` | faster-whisper |
 | Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` | faster-whisper |
 | Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` | faster-whisper |
+| Breeze ASR 26 (Taigi) | `SoybeanMilk/faster-whisper-Breeze-ASR-26` | faster-whisper |
 | Whisper tiny / base / small / medium | `Systran/faster-whisper-{size}` | faster-whisper |
 | Whisper large v1 / v2 / v3 | `Systran/faster-whisper-large-{v1,v2,v3}` | faster-whisper |
 
@@ -152,6 +155,19 @@ Notes:
   float16`, and on 27 test utterances it gave the same transcripts as the
   original on PyTorch for all Mandarin and English speech, at about half the
   decoding time.
+- **Breeze ASR 26:** a fine-tune of Whisper large-v2 for Taiwanese Hokkien
+  (Taigi). It writes Taigi speech as **Mandarin Chinese characters**, not Taigi
+  orthography (台語正字). The app uses SoybeanMilk's CTranslate2 conversion of
+  `MediaTek-Research/Breeze-ASR-26`; on 16 Common Voice Taigi clips it matched
+  the original on PyTorch exactly (30.7% character error rate for both, against
+  39% for Breeze ASR 25 on the same clips). That repository has no
+  `tokenizer.json`, so the catalog's `extra_files` takes it from
+  `SoybeanMilk/faster-whisper-Breeze-ASR-25`, whose vocabulary is identical;
+  without one, faster-whisper would fetch a tokenizer from the internet.
+  Whisper's language detection doesn't recognise Taigi (in testing it guessed
+  Lao, Georgian and others), so the catalog sets `"auto_detect": false`: the
+  model always decodes as `zh`, and its language dropdown only offers
+  *Taiwanese Hokkien (Taigi)*.
 
 Click a model's card on the **Models** page to open its page on Hugging Face.
 
