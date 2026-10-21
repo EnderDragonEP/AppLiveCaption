@@ -53,7 +53,7 @@ VERSION_INFO = VSVersionInfo(
             StringStruct("InternalName", APP_NAME),
             StringStruct("OriginalFilename", f"{APP_NAME}.exe"),
             StringStruct("CompanyName", AUTHOR),  # shown as "Publisher" in Task Manager's Startup apps
-            StringStruct("LegalCopyright", f"Copyright (C) 2026 {AUTHOR}"),
+            StringStruct("LegalCopyright", f"Copyright (C) 2026 {AUTHOR}. Licensed under GPL-3.0."),
             StringStruct("Comments", DESCRIPTION),
         ])]),
         VarFileInfo([VarStruct("Translation", [0x0409, 1200])]),

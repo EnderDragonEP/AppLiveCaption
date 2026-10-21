@@ -295,3 +295,7 @@ app/
 - Breeze ASR 25 runs on PyTorch and is slower than the CTranslate2 models
   (finals take 1–2.5 s on an RTX 4070 Laptop).
 - Translation, speaker identification and cloud speech APIs are out of scope.
+
+## License
+
+[GPL-3.0](LICENSE) © 2026 Ender Yang. Dependency information is in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
