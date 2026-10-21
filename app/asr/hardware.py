@@ -7,7 +7,7 @@ import logging
 from dataclasses import dataclass
 from functools import lru_cache
 
-from .cuda_setup import setup_cuda_dlls
+from .cuda_setup import cuda_libraries_found, setup_cuda_dlls
 
 log = logging.getLogger(__name__)
 
@@ -51,9 +51,19 @@ def _nvml_gpu() -> GpuInfo | None:
 
 
 @lru_cache(maxsize=1)
+def nvidia_gpu() -> GpuInfo | None:
+    """The NVIDIA GPU, found through the driver alone (no CUDA libraries needed)."""
+    return _nvml_gpu()
+
+
+@lru_cache(maxsize=1)
 def cuda_available() -> bool:
-    """True when CTranslate2 can use an NVIDIA GPU (driver + CUDA 12 runtime present)."""
-    setup_cuda_dlls()
+    """True when CTranslate2 can use an NVIDIA GPU: a GPU, its driver and the CUDA 12 libraries.
+
+    The GPU is never touched without the libraries: cuDNN would abort the process.
+    """
+    if not cuda_libraries_found():
+        return False
     try:
         import ctranslate2
 
@@ -65,6 +75,13 @@ def cuda_available() -> bool:
 
 def gpu_info() -> GpuInfo | None:
     return _nvml_gpu() if cuda_available() else None
+
+
+def refresh_cuda() -> bool:
+    """Look for the CUDA libraries again (after they were downloaded)."""
+    setup_cuda_dlls(refresh=True)
+    cuda_available.cache_clear()
+    return cuda_available()
 
 
 def resolve_device(preference: str) -> str:

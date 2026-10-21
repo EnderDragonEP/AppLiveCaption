@@ -62,6 +62,8 @@ class Config(QConfig):
     defaultModel = OptionsConfigItem("ASR", "DefaultModel", DEFAULT_MODEL,
                                      OptionsValidator([m.id for m in load_catalog()]))
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
+    # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
+    offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())
     opencc = ConfigItem("ASR", "OpenCC", True, BoolValidator())
     modelFolder = ConfigItem("ASR", "ModelFolder", str(default_models_dir()), FolderPathValidator())
 

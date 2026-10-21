@@ -25,22 +25,41 @@ model is downloaded, it works with no network connection.
 | OS | Windows 10 or 11, 64-bit. Captioning individual apps needs Windows build 20348 or later (in practice Windows 11); on older builds that option is hidden and microphone/system audio still work. |
 | Python | 3.11 or 3.12 (64-bit) |
 | GPU (optional) | NVIDIA GPU with a recent driver (R525 or newer, any driver that supports CUDA 12). Without one, models run on the CPU (int8). |
-| Disk | ~3 GB for the Python packages (about 2 GB of it NVIDIA's CUDA libraries), plus 0.1–3 GB per model |
+| Disk | About 1 GB for the Python packages, 1.3 GB for GPU support (downloaded in the app, only with an NVIDIA GPU), plus 0.1–3 GB per model |
 
 ### CUDA
 
 You do **not** need to install the CUDA Toolkit, and the app doesn't use
-PyTorch. faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9, which
-`requirements.txt` installs from NVIDIA's pip packages (`nvidia-cublas-cu12`,
-`nvidia-cudnn-cu12`, `nvidia-cuda-nvrtc-cu12`); the app adds their folders to
-the DLL search path at start-up (`app/asr/cuda_setup.py`). Only the NVIDIA
-display driver is required.
+PyTorch; only the NVIDIA display driver is required. To run on the GPU,
+faster-whisper (CTranslate2) needs NVIDIA's cuBLAS 12 and cuDNN 9 libraries.
+They take 1.3 GB, so neither the built app nor `requirements.txt` includes them.
+On a PC with an NVIDIA GPU, the **Models** page shows an **NVIDIA GPU support**
+card that downloads them once (about 1 GB), and the app suggests it at start-up
+while models run on the CPU. `python -m app.cli cuda --download` does the same
+from a terminal.
+
+The download ([app/asr/cuda_libs.py](app/asr/cuda_libs.py)):
+
+- fetches NVIDIA's own pip packages (`nvidia-cublas-cu12` 12.4.5.8,
+  `nvidia-cudnn-cu12` 9.1.0.70, `nvidia-cuda-nvrtc-cu12` 12.4.127) from PyPI
+  and resumes where it stopped after an interruption,
+- checks each one against the SHA-256 pinned in the source before unpacking it,
+- keeps only the ten DLLs CTranslate2 loads, in
+  `%LOCALAPPDATA%\AppLiveCaption\cuda`.
+
+A model that is already loaded moves to the GPU as soon as the download
+finishes. The card's delete button removes the libraries again; because Windows
+locks DLLs that are loaded, that happens the next time the app starts. On a PC
+without internet access, copy that `cuda` folder from another PC.
 
 The versions are pinned to CUDA 12.4 / cuDNN 9.1.0.70 to match the cuDNN loader
 that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than
-that loader. If those packages aren't installed, the app falls back to the same
-libraries in PyTorch's `torch\lib` (when PyTorch is installed for something
-else) or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`).
+that loader. The app also uses the same libraries when they're already on the
+PC, in this order: the downloaded folder, NVIDIA's pip packages (handy when
+running from source), PyTorch's `torch\lib` (when PyTorch is installed for
+something else), or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`)
+([app/asr/cuda_setup.py](app/asr/cuda_setup.py)). Only a complete set counts;
+otherwise models run on the CPU.
 
 ## Setup
 
@@ -179,8 +198,9 @@ they stopped, and check free disk space first.
 
 The app sets `HF_HUB_OFFLINE=1` at start-up and loads models from their local
 folders only (`local_files_only=True`). The downloader lifts that flag only for
-its own requests while a download runs. No network access is needed to launch or
-caption.
+its own requests while a download runs. GPU support is downloaded the same
+way, only when you click **Download** on its card. No network access is needed
+to launch or caption.
 
 The only other network request is **Check for updates** (Settings → About, or
 the tray menu), and only when you click it: it asks the GitHub API for the
@@ -195,6 +215,7 @@ newer than the running version. Publish releases with tags like `v1.0.1`.
 | History | `%APPDATA%\AppLiveCaption\history\*.json` |
 | Logs (rotating) | `%APPDATA%\AppLiveCaption\logs\app.log` (Settings → Advanced → Logs opens the folder) |
 | Models | `%LOCALAPPDATA%\AppLiveCaption\models` |
+| GPU support (NVIDIA's CUDA libraries) | `%LOCALAPPDATA%\AppLiveCaption\cuda` |
 
 ## Console tools
 
@@ -203,6 +224,7 @@ Handy for testing capture and recognition without the GUI:
 ```powershell
 python -m app.cli devices                                  # microphones and loopback devices
 python -m app.cli apps                                     # apps that can be captured
+python -m app.cli cuda [--download]                        # GPU support status / download it
 python -m app.cli levels --mode system                     # input level per source
 python -m app.cli levels --mode apps --apps chrome.exe,ms-teams.exe --mic --record mix.wav
 python -m app.cli transcribe --mode system --model whisper-large-v3-turbo
@@ -219,8 +241,8 @@ python -m app.cli transcribe --model breeze-asr-25 --wav speech.wav   # simulate
 `py -3.11` finds, otherwise `python` on PATH), checks that the required packages
 are installed, runs the unit tests, and builds with PyInstaller. The one-folder
 build is written to `dist\AppLiveCaption\`; run
-`dist\AppLiveCaption\AppLiveCaption.exe`. Models are not bundled; users download
-them from inside the app.
+`dist\AppLiveCaption\AppLiveCaption.exe`. Models and GPU support are not bundled;
+users download them from inside the app.
 
 | Option | Effect |
 | --- | --- |
@@ -241,10 +263,13 @@ packages' dependencies, and excludes everything else
 Without that, PyInstaller would follow optional imports into unrelated packages
 (CTranslate2 alone would pull in an installed PyTorch).
 
-The folder is about 1.6 GB, three quarters of it NVIDIA's CUDA libraries. The
-spec leaves out what the app never loads: cuDNN's RNN/attention library, Qt's
-software OpenGL renderer, Qt Quick/QML, Qt's own translations, unused image
-formats and plugins, and the optional SciPy/Pillow extras of the widget library.
+The folder is about 210 MB (about 80 MB zipped). NVIDIA's CUDA libraries are not
+bundled (the app downloads them, see [CUDA](#cuda)), and the spec leaves out
+what the app never loads: PyAV and FFmpeg (faster-whisper only needs them to
+read audio files; `tools/pyi_rth_no_av.py` stands in for the import),
+Hugging Face's Xet client, Qt's software OpenGL renderer, Qt Quick/QML, Qt's own
+translations, unused image formats and plugins, and the optional SciPy/Pillow
+extras of the widget library.
 A build takes about 1–2 minutes. Without the script, the equivalent is
 `pyinstaller AppLiveCaption.spec --noconfirm` (set `ALC_CONSOLE=1` in the
 environment for a console window).
@@ -280,7 +305,8 @@ app/
                        app list (pycaw), resampling (soxr), mixer + limiter, Silero VAD
   asr/                 backend interface, faster_whisper_backend.py,
                        streaming.py (partials/finals, LocalAgreement, prompts),
-                       hallucination filter, OpenCC
+                       hallucination filter, OpenCC, GPU support
+                       (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
   core/                controller (worker thread) and history
   ui/                  main window, pages, source flyout, overlay, tray

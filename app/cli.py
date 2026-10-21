@@ -2,6 +2,7 @@
 
     python -m app.cli devices
     python -m app.cli apps
+    python -m app.cli cuda [--download]
     python -m app.cli levels --mode system
     python -m app.cli levels --mode apps --apps chrome.exe,ms-teams.exe --mic
     python -m app.cli transcribe --mode system --model whisper-large-v3-turbo
@@ -107,6 +108,39 @@ def cmd_transcribe(args) -> None:
     run_console_transcription(args, _selection_from_args(args) if not args.wav else None)
 
 
+def cmd_cuda(args) -> None:
+    import threading
+
+    from .asr import cuda_libs
+    from .asr.cuda_setup import active_dirs
+    from .asr.hardware import cuda_available, nvidia_gpu
+
+    if args.download:
+        cancel = threading.Event()
+        last = [0.0]
+
+        def on_progress(done, total, name):
+            now = time.monotonic()
+            if now - last[0] >= 1 or done == total:
+                last[0] = now
+                print(f"\r{name:24} {done / 2**20:7.0f} / {total / 2**20:.0f} MB", end="", flush=True)
+
+        try:
+            path = cuda_libs.download(on_progress, cancel)
+        except KeyboardInterrupt:
+            cancel.set()
+            print("\nCancelled; run again to resume.")
+            return
+        except cuda_libs.DownloadError as exc:
+            print(f"\nDownload failed ({exc.kind}): {exc}")
+            sys.exit(1)
+        print(f"\nInstalled in {path}")
+    gpu = nvidia_gpu()
+    print(f"NVIDIA GPU:      {gpu.name if gpu else 'none found'}")
+    print(f"Downloaded libs: {cuda_libs.installed_dir() or 'not installed'} ({cuda_libs.BUNDLE_ID})")
+    print(f"CUDA usable:     {cuda_available()}  {active_dirs()}")
+
+
 def main(argv: list[str] | None = None) -> None:
     sys.modules.setdefault("torch", None)  # unused; see app/main.py
     _utf8_console()
@@ -117,6 +151,9 @@ def main(argv: list[str] | None = None) -> None:
     sub = p.add_subparsers(dest="cmd", required=True)
     sub.add_parser("devices", help="list microphones and loopback devices").set_defaults(func=cmd_devices)
     sub.add_parser("apps", help="list apps that can be captured").set_defaults(func=cmd_apps)
+    cu = sub.add_parser("cuda", help="show GPU support status")
+    cu.add_argument("--download", action="store_true", help="download NVIDIA's CUDA libraries for the GPU")
+    cu.set_defaults(func=cmd_cuda)
 
     def add_capture_args(sp):
         sp.add_argument("--mode", choices=["mic", "system", "apps"], default="system")

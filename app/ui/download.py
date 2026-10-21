@@ -7,9 +7,10 @@ import threading
 
 from PySide6.QtCore import QObject, QThread, Signal
 
+from ..asr import cuda_libs
 from ..i18n import tr
 from ..models.catalog import ModelInfo
-from ..models.downloader import DownloadCancelled, DownloadError, Progress, download_model
+from ..models.downloader import DownloadCancelled, DownloadError, Progress, TransferSpeed, download_model
 
 log = logging.getLogger(__name__)
 
@@ -30,6 +31,43 @@ def download_error_text(kind: str, message: str) -> str:
     if kind == "io":
         return tr("The model files could not be written ({detail}).").format(detail=message)
     return tr("Check your internet connection. The download resumes where it stopped next time. ({detail})").format(detail=message)
+
+
+def cuda_download_error_text(kind: str, message: str) -> str:
+    if kind == "disk_space":
+        return tr("Not enough free disk space ({detail}).").format(detail=message)
+    if kind == "io":
+        return tr("The files could not be written ({detail}).").format(detail=message)
+    if kind == "corrupt":
+        return tr("A downloaded file was damaged and has been deleted. Try again. ({detail})").format(detail=message)
+    return tr("Check your internet connection. The download resumes where it stopped next time. ({detail})").format(detail=message)
+
+
+class CudaDownloadThread(QThread):
+    """Downloads NVIDIA's CUDA libraries (``cuda_libs.download``)."""
+
+    progress = Signal(object)  # Progress
+    done = Signal(str, str)  # result ("ok"/"cancelled"/error kind), message
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.cancel_event = threading.Event()
+
+    def run(self) -> None:
+        speed = TransferSpeed()
+        try:
+            cuda_libs.download(lambda done, total, name: self.progress.emit(Progress(done, total, speed.add(done), name)),
+                               self.cancel_event)
+        except cuda_libs.DownloadCancelled:
+            self.done.emit("cancelled", "")
+        except cuda_libs.DownloadError as exc:
+            log.warning("CUDA library download failed: %s", exc)
+            self.done.emit(exc.kind, str(exc))
+        except Exception as exc:  # noqa: BLE001
+            log.exception("CUDA library download failed")
+            self.done.emit("network", str(exc))
+        else:
+            self.done.emit("ok", "")
 
 
 class _DownloadThread(QThread):
@@ -95,4 +133,5 @@ class DownloadManager(QObject):
         self.finished.emit(model_id, result, message)
 
 
-__all__ = ["DownloadManager", "Progress", "download_error_text", "format_bytes"]
+__all__ = ["CudaDownloadThread", "DownloadManager", "Progress", "cuda_download_error_text", "download_error_text",
+           "format_bytes"]

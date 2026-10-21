@@ -1,7 +1,7 @@
 # Third-party notices
 
 AppLiveCaption is licensed under the [GNU General Public License v3.0](LICENSE).
-It is built on the open-source components below. The released `AppLiveCaption.exe` folder contains all of them; running from source only needs them installed (see `requirements.txt`).
+It is built on the open-source components below. The released `AppLiveCaption.exe` folder contains all of them (except the few [left out of the exe](#installed-only-when-running-from-source)); running from source only needs them installed (see `requirements.txt`).
 
 ## Main components
 
@@ -14,9 +14,7 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | [faster-whisper](https://github.com/SYSTRAN/faster-whisper) (includes the Silero VAD model) | 1.2.1 | MIT | <https://github.com/SYSTRAN/faster-whisper> |
 | [CTranslate2](https://github.com/OpenNMT/CTranslate2) | 4.6.2 | MIT | <https://github.com/OpenNMT/CTranslate2> |
 | [ONNX Runtime](https://onnxruntime.ai) | 1.31.0 | MIT | <https://github.com/microsoft/onnxruntime> |
-| [NVIDIA cuBLAS, cuDNN and NVRTC](https://developer.nvidia.com/cuda-toolkit) (nvidia-cublas-cu12, nvidia-cudnn-cu12, nvidia-cuda-nvrtc-cu12) | cuBLAS 12.4.5.8, cuDNN 9.1.0.70, NVRTC 12.4.127 | NVIDIA Software License | see [below](#nvidia-cuda-and-cudnn) |
-| [PyAV](https://github.com/PyAV-Org/PyAV) | 15.1.0 | BSD-3-Clause | <https://github.com/PyAV-Org/PyAV> |
-| [FFmpeg](https://ffmpeg.org/) and its codec libraries (via PyAV) | 7.1.1 | LGPL-3.0-or-later; x264, x265 GPL-2.0-or-later | see [below](#ffmpeg-via-pyav) |
+| [NVIDIA cuDNN](https://developer.nvidia.com/cudnn) loader `cudnn64_9.dll` (included in CTranslate2) | 9.1.0.70 | NVIDIA Software License | see [below](#nvidia-cuda-and-cudnn) |
 | [PyAudioWPatch](https://github.com/s0d3s/PyAudioWPatch) | 0.2.12.9 | Apache-2.0 | <https://github.com/s0d3s/PyAudioWPatch> |
 | [PortAudio](http://www.portaudio.com/) (via PyAudioWPatch) | 19.7 | MIT | <https://github.com/PortAudio/portaudio> |
 | [python-soxr](https://github.com/dofuuz/python-soxr) with libsoxr | 1.1.0 | LGPL-2.1-or-later | <https://github.com/dofuuz/python-soxr> |
@@ -37,7 +35,6 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | filelock | 3.20.0 | Unlicense | <https://github.com/tox-dev/py-filelock> |
 | fsspec | 2025.12.0 | BSD-3-Clause | <https://github.com/fsspec/filesystem_spec> |
 | h11 | 0.16.0 | MIT | <https://github.com/python-hyper/h11> |
-| hf-xet | 1.4.3 | Apache-2.0 | <https://github.com/huggingface/xet-core> |
 | httpcore | 1.0.9 | BSD-3-Clause | <https://github.com/encode/httpcore> |
 | httpx | 0.28.1 | BSD-3-Clause | <https://github.com/encode/httpx> |
 | huggingface_hub | 1.11.0 | Apache-2.0 | <https://github.com/huggingface/huggingface_hub> |
@@ -63,6 +60,15 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 
 The versions are the ones used to build the exe.
 
+## Installed only when running from source
+
+`requirements.txt` installs these because faster-whisper and huggingface_hub depend on them, but the exe leaves them out: the app never uses them (it gives faster-whisper audio as NumPy arrays, never files, and downloads models with its own HTTP transfer loop).
+
+| Package | Version | License | Source |
+| --- | --- | --- | --- |
+| [PyAV](https://github.com/PyAV-Org/PyAV), with FFmpeg 7.1.1 and its codec libraries | 15.1.0 | BSD-3-Clause; FFmpeg LGPL-3.0-or-later; x264, x265 GPL-2.0-or-later | <https://github.com/PyAV-Org/PyAV>, <https://github.com/PyAV-Org/pyav-ffmpeg> |
+| hf-xet | 1.4.3 | Apache-2.0 | <https://github.com/huggingface/xet-core> |
+
 ## Speech recognition models (not included)
 
 The models are not part of the app. Each one is downloaded from Hugging Face on request and is used under its own license, shown on the Models page:
@@ -84,17 +90,19 @@ The exe contains the Qt 6 libraries, Copyright (c) The Qt Company Ltd. and other
 Qt's source code is available from <https://download.qt.io/official_releases/qt/> and PySide6's from <https://code.qt.io/cgit/pyside/pyside-setup.git/>.
 Because AppLiveCaption's complete source code and build script are public, you can rebuild the exe with modified versions of these libraries.
 
-## FFmpeg (via PyAV)
-
-PyAV includes FFmpeg 7.1.1 (libavcodec, libavformat, libavutil, libavfilter, libavdevice, libswscale, libswresample), built under the
-[GNU Lesser General Public License v3.0 or later](https://www.gnu.org/licenses/lgpl-3.0.html), together with codec libraries under their own licenses:
-x264 and x265 (GPL-2.0-or-later), LAME, TwoLAME, libiconv and GMP (LGPL), libvpx, libaom, dav1d, SVT-AV1, OpenH264, Opus, Ogg, Vorbis, Speex and libwebp (BSD-style), opencore-amr (Apache-2.0), libsrt (MPL-2.0), zlib (zlib License) and OpenSSL 1.1.
-The source code for these builds is available from FFmpeg (<https://ffmpeg.org/download.html>) and from PyAV's build scripts (<https://github.com/PyAV-Org/pyav-ffmpeg>).
-
 ## NVIDIA CUDA and cuDNN
 
-The exe contains NVIDIA's cuBLAS, cuDNN and NVRTC libraries, Copyright (c) NVIDIA Corporation, from NVIDIA's `nvidia-cublas-cu12`, `nvidia-cudnn-cu12` and `nvidia-cuda-nvrtc-cu12` packages.
-They are redistributed under the [NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/) and the [cuDNN Software License Agreement](https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html). They are not open source.
+The exe contains one NVIDIA file, cuDNN's loader `cudnn64_9.dll`, Copyright (c) NVIDIA Corporation, as included in CTranslate2's package.
+
+The rest of NVIDIA's libraries for the GPU are not part of the app. When you click **Download** on the **NVIDIA GPU support** card (Models page), the app downloads NVIDIA's own packages from PyPI and keeps the DLLs it needs in `%LOCALAPPDATA%\AppLiveCaption\cuda`:
+
+| Package | Version | Kept |
+| --- | --- | --- |
+| [nvidia-cublas-cu12](https://pypi.org/project/nvidia-cublas-cu12/) | 12.4.5.8 | cuBLAS (`cublas64_12.dll`, `cublasLt64_12.dll`) |
+| [nvidia-cudnn-cu12](https://pypi.org/project/nvidia-cudnn-cu12/) | 9.1.0.70 | cuDNN (`cudnn_ops64_9.dll`, `cudnn_cnn64_9.dll`, `cudnn_graph64_9.dll`, `cudnn_heuristic64_9.dll`, `cudnn_engines_precompiled64_9.dll`, `cudnn_engines_runtime_compiled64_9.dll`) |
+| [nvidia-cuda-nvrtc-cu12](https://pypi.org/project/nvidia-cuda-nvrtc-cu12/) | 12.4.127 | NVRTC (`nvrtc64_120_0.dll`, `nvrtc-builtins64_124.dll`) |
+
+These libraries are provided by NVIDIA under the [NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/) and the [cuDNN Software License Agreement](https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html). They are not open source.
 
 ## Python (PSF License Agreement)
 

@@ -85,7 +85,7 @@ def _selected_files(info: ModelInfo, siblings: list[tuple[str, int]]) -> list[tu
     return out
 
 
-class _Speed:
+class TransferSpeed:
     """Moving-average transfer speed over the last few seconds."""
 
     def __init__(self, window: float = 3.0):
@@ -153,7 +153,7 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
 
         session = get_session()
         headers = build_hf_headers()
-        speed = _Speed()
+        speed = TransferSpeed()
         on_progress(Progress(done, total, 0.0, ""))
 
         for name, size, url in files:

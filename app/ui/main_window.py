@@ -6,11 +6,12 @@ import logging
 
 from PySide6.QtCore import QSize, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, SplashScreen
+from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
+from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
 
 from .. import APP_NAME, __version__
-from ..asr.hardware import gpu_info
+from ..asr import cuda_libs
+from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda
 from ..config import cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_READY, PAUSED, RUNNING, CaptionController
 from ..models.catalog import get_model
@@ -18,6 +19,7 @@ from ..models.storage import is_downloaded
 from ..updates import UpdateChecker, is_newer
 from .async_utils import run_async
 from .caption_model import CaptionModel
+from .download import format_bytes
 from .icons import app_icon
 from .live_page import LivePage
 from .messages import error_text, notice_text, show_infobar
@@ -41,6 +43,14 @@ def warm_up_native_libraries() -> None:
         get_session()
     except Exception:  # noqa: BLE001 - reported later when a model loads
         log.exception("warm-up failed")
+
+
+def probe_gpu(refresh: bool = False) -> tuple[str | None, bool]:
+    """(NVIDIA GPU name or None, whether models can run on it). ``refresh``
+    looks for the CUDA libraries again, after they were downloaded."""
+    usable = refresh_cuda() if refresh else cuda_available()
+    gpu = nvidia_gpu()
+    return (gpu.name if gpu else None), usable
 
 
 class MainWindow(FluentWindow):
@@ -96,7 +106,7 @@ class MainWindow(FluentWindow):
         c.levels.connect(self.live.set_levels)
 
         self._setup_overlay_and_tray()
-        run_async(gpu_info, self._on_gpu_info, self)
+        run_async(probe_gpu, self._on_gpu_probe, self)
         self.splash.finish()
         QTimer.singleShot(0, self._load_initial_model)
 
@@ -136,6 +146,7 @@ class MainWindow(FluentWindow):
         self.models_page.downloadRequested.connect(self.download_model)
         self.models_page.modelsChanged.connect(self.live.refresh_models)
         self.models_page.downloadFinished.connect(self.on_download_finished)
+        self.models_page.gpuSupportInstalled.connect(self._on_gpu_support_installed)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
         self.settings_page.about_card.clicked.connect(self.check_for_updates)
@@ -224,9 +235,53 @@ class MainWindow(FluentWindow):
     def _on_device_changed(self, _device: str, _compute: str) -> None:
         self._update_device_label()
 
-    def _on_gpu_info(self, gpu) -> None:
-        self._gpu_name = gpu.name if gpu else ""
+    def _on_gpu_probe(self, result) -> None:
+        name, usable = result
+        self._gpu_name = name if usable else ""
         self._update_device_label()
+        self.models_page.set_gpu(name, usable)
+        if (name and not usable and cfg.get(cfg.device) != "cpu" and cfg.get(cfg.offerGpuSupport)
+                and cuda_libs.installed_dir() is None and not cuda_libs.removal_scheduled()):
+            QTimer.singleShot(1500, lambda: self._offer_gpu_support(name))
+
+    def _offer_gpu_support(self, gpu_name: str) -> None:
+        """Models run on the CPU although there is an NVIDIA GPU: suggest downloading GPU support."""
+        bar = show_infobar("info", self.tr("Use your NVIDIA GPU"), self.tr(
+            "Models run on the CPU now. Download GPU support ({size}) to run them on your {gpu}, "
+            "many times faster.").format(size=format_bytes(cuda_libs.DOWNLOAD_SIZE), gpu=gpu_name),
+            self, duration=-1)
+        row = QWidget(bar)  # the buttons side by side (a long message puts the bar's widgets in a column)
+        buttons = QHBoxLayout(row)
+        buttons.setContentsMargins(0, 0, 0, 0)
+        setup = PushButton(self.tr("Set up"), row)
+        setup.clicked.connect(lambda: (bar.close(), self.show_gpu_support()))
+        never = PushButton(self.tr("Don't ask again"), row)
+        never.clicked.connect(lambda: (cfg.set(cfg.offerGpuSupport, False), bar.close()))
+        buttons.addWidget(setup)
+        buttons.addWidget(never)
+        buttons.addStretch(1)
+        bar.addWidget(row)
+
+    def show_gpu_support(self) -> None:
+        self.switchTo(self.models_page)
+        self.models_page.show_gpu_support()
+
+    def _on_gpu_support_installed(self) -> None:
+        run_async(lambda: probe_gpu(refresh=True), self._on_gpu_support_probed, self)
+
+    def _on_gpu_support_probed(self, result) -> None:
+        name, usable = result
+        self._on_gpu_probe(result)
+        if not usable:
+            show_infobar("warning", self.tr("GPU support installed, but the GPU can't be used"), self.tr(
+                "Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU."),
+                self, duration=12000)
+            return
+        show_infobar("success", self.tr("GPU support installed"),
+                     self.tr("Models now run on your {gpu}.").format(gpu=name), self)
+        c = self.controller
+        if c.model_id and c.model_state == MODEL_READY and c.device == "cpu" and cfg.get(cfg.device) != "cpu":
+            c.load_model(c.model_id, cfg.get(cfg.device))  # move the loaded model to the GPU
 
     def _update_device_label(self) -> None:
         c = self.controller

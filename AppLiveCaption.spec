@@ -3,8 +3,9 @@
 
     pyinstaller AppLiveCaption.spec --noconfirm
 
-Output: dist/AppLiveCaption/AppLiveCaption.exe. Models are not bundled; the
-app downloads them into %LOCALAPPDATA%\\AppLiveCaption\\models.
+Output: dist/AppLiveCaption/AppLiveCaption.exe. Models and NVIDIA's CUDA
+libraries are not bundled; the app downloads them when the user asks, into
+%LOCALAPPDATA%\\AppLiveCaption\\models and ...\\cuda.
 
 Environment switch:
     ALC_CONSOLE=1         keep a console window for debugging.
@@ -67,22 +68,9 @@ datas += collect_data_files("faster_whisper")  # bundled Silero VAD model
 datas += collect_data_files("opencc")  # s2twp profile and dictionaries
 datas += copy_metadata("faster-whisper") + copy_metadata("huggingface_hub") + copy_metadata("tokenizers")
 
-binaries = collect_dynamic_libs("ctranslate2")  # ctranslate2.dll, cudnn64_9.dll (cuDNN's loader), libiomp5md.dll
-
-# NVIDIA's CUDA 12 libraries for running on the GPU, from the nvidia-* pip packages.
-# Left out: cuDNN's own loader (CTranslate2 bundles the same one), cuDNN's
-# "adv" library (RNN/attention kernels CTranslate2 never loads, 230 MB) and the
-# nvblas BLAS wrapper.
-# They keep their package folders (nvidia/cublas/bin, ...): PyInstaller also
-# collects cuBLAS and cuDNN as dependencies of the other cuDNN DLLs and puts
-# those copies there, so any other destination would bundle them twice
-# (an extra 550 MB). app/asr/cuda_setup.py adds these folders to the DLL path.
-CUDA_SKIP = {"cudnn64_9.dll", "cudnn_adv64_9.dll", "nvblas64_12.dll"}
-_cuda = [(src, dst) for pkg in ("nvidia.cublas", "nvidia.cudnn", "nvidia.cuda_nvrtc")
-         for src, dst in collect_dynamic_libs(pkg) if os.path.basename(src).lower() not in CUDA_SKIP]
-if not any(os.path.basename(src).lower() == "cublas64_12.dll" for src, _ in _cuda):
-    raise SystemExit("NVIDIA's CUDA packages are missing; run: pip install -r requirements.txt")
-binaries += _cuda
+# ctranslate2.dll, cudnn64_9.dll (cuDNN's loader), libiomp5md.dll. The rest of
+# CUDA (cuBLAS, cuDNN, 1.3 GB) is downloaded by the app (app/asr/cuda_libs.py).
+binaries = collect_dynamic_libs("ctranslate2")
 
 hiddenimports = collect_submodules("app") + [
     "pyaudiowpatch",
@@ -111,25 +99,40 @@ excludes = [
     "scipy", "PIL", "colorthief",
     # pywin32's MFC UI and COM code generator (pulled in via win32com, never used)
     "win32ui", "pywin", "win32com.client.makepy",
+    # PyAV and FFmpeg (84 MB): faster-whisper only uses them to read audio files;
+    # tools/pyi_rth_no_av.py stands in for the import.
+    "av",
+    # Hugging Face's Xet client (8 MB): the model downloader has its own HTTP
+    # transfer loop and never uses it.
+    "hf_xet",
 ]
 
 # Qt files a widgets-only English app never loads (as in HorizontalScroll's spec):
 # the software OpenGL renderer, Qt's own translations, unused image formats and
 # plugins. The on-screen keyboard plugin alone pulls in Qt Quick, QML and OpenGL.
 # The update check uses HTTPS through Windows' TLS (qschannelbackend), so Qt's
-# OpenSSL backends can go; model downloads use Python's own ssl module.
+# OpenSSL backends can go; model downloads use Python's own ssl module
+# (libssl-3.dll). The QtNetwork hook also adds any OpenSSL for Qt it finds on
+# PATH (e.g. Git's libssl-3-x64.dll, 6 MB), which only that backend would load.
 DROP_FILES = {
     "opengl32sw.dll", "d3dcompiler_47.dll", "qt6pdf.dll", "qopensslbackend.dll", "qcertonlybackend.dll",
     "qt6quick.dll", "qt6qml.dll", "qt6qmlmodels.dll", "qt6qmlmeta.dll", "qt6qmlworkerscript.dll",
-    "qt6opengl.dll", "qt6virtualkeyboard.dll",
+    "qt6opengl.dll", "qt6virtualkeyboard.dll", "libssl-3-x64.dll", "libcrypto-3-x64.dll",
 }
 DROP_PLUGIN_DIRS = {"networkinformation", "platforminputcontexts", "generic"}
 DROP_IMAGE_PLUGINS = {"qgif", "qjpeg", "qtiff", "qwebp", "qicns", "qtga", "qwbmp", "qpdf"}
 
 
+# NVIDIA's CUDA libraries (except CTranslate2's cuDNN loader), in case a hook
+# collects them from an installed nvidia-* package or the CUDA Toolkit.
+CUDA_PREFIXES = ("cublas", "cudnn_", "nvrtc", "nvblas", "cudart", "cufft", "curand", "cusparse", "cusolver")
+
+
 def keep(entry) -> bool:
     dest = PurePath(entry[0])
     if dest.name.lower() in DROP_FILES or "translations" in dest.parts:
+        return False
+    if dest.name.lower().startswith(CUDA_PREFIXES) or "nvidia" in dest.parts:
         return False
     if dest.parent.name in DROP_PLUGIN_DIRS:
         return False
@@ -150,7 +153,7 @@ a = Analysis(  # noqa: F821
     datas=datas,
     hiddenimports=hiddenimports,
     hookspath=[],
-    runtime_hooks=[],
+    runtime_hooks=[os.path.join(ROOT, "tools", "pyi_rth_no_av.py")],
     excludes=excludes,
     noarchive=False,
 )

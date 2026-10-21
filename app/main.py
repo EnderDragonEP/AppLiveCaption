@@ -18,7 +18,7 @@ os.environ.setdefault("HF_HUB_DISABLE_TELEMETRY", "1")
 os.environ.setdefault("HF_HUB_DISABLE_PROGRESS_BARS", "1")
 # The app doesn't use PyTorch. CTranslate2 imports it when it's installed (only
 # its model converters need it), which costs over a second at start-up and
-# loads PyTorch's own CUDA libraries instead of the ones the app ships with.
+# loads PyTorch's own CUDA libraries instead of the ones the app uses.
 sys.modules.setdefault("torch", None)
 
 if __package__ in (None, ""):
@@ -52,6 +52,10 @@ def main() -> int:
     from app import APP_NAME, __version__
 
     logging.getLogger("app").info("Starting %s %s (frozen=%s)", APP_NAME, __version__, getattr(sys, "frozen", False))
+
+    from app.asr.cuda_libs import remove_if_scheduled
+
+    remove_if_scheduled()  # GPU support the user removed; must run before any CUDA library loads
 
     from PySide6.QtCore import Qt
     from PySide6.QtWidgets import QApplication

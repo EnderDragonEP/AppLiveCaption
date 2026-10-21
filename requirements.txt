@@ -13,19 +13,18 @@ PySide6-Fluent-Widgets[full]==1.11.3
 
 # Speech recognition (faster-whisper / CTranslate2, Silero VAD via onnxruntime)
 faster-whisper==1.2.1
-# CTranslate2 4.6 bundles the cuDNN 9.1 loader, matching nvidia-cudnn-cu12 below.
+# CTranslate2 4.6 bundles the cuDNN 9.1 loader; app/asr/cuda_libs.py pins the
+# matching CUDA libraries.
 ctranslate2>=4.6,<4.7
 onnxruntime==1.31.0
 tokenizers>=0.22,<1
-# faster-whisper's file decoder doesn't work with PyAV 16+ (only used by the CLI for files).
+# faster-whisper's file decoder doesn't work with PyAV 16+. The app never reads
+# audio files with it, so the built exe leaves PyAV out (tools/pyi_rth_no_av.py).
 av==15.1.0
 
-# NVIDIA's CUDA 12 libraries that CTranslate2 needs to run on the GPU. The
-# cuDNN version must not be older than the loader CTranslate2 bundles (9.1).
-nvidia-cublas-cu12==12.4.5.8
-nvidia-cudnn-cu12==9.1.0.70
-# cuDNN's dependency; pinned to CUDA 12.4 like the others (the latest is twice the size).
-nvidia-cuda-nvrtc-cu12==12.4.127
+# NVIDIA's CUDA libraries for the GPU are not listed: the app downloads them
+# itself (Models page > NVIDIA GPU support, or "python -m app.cli cuda --download").
+# Already installed nvidia-cublas-cu12 / nvidia-cudnn-cu12 packages are used too.
 
 # Audio capture: WASAPI loopback, per-app process loopback (comtypes), app list (pycaw)
 PyAudioWPatch==0.2.12.9

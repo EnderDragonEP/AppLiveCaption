@@ -5,8 +5,8 @@
 .DESCRIPTION
     Uses an installed Python 3.11 or 3.12 (the one "py -3.12" or "py -3.11"
     finds, otherwise "python" on PATH), runs the unit tests, then builds
-    dist\AppLiveCaption\. Models are not bundled; the app downloads them on
-    first use.
+    dist\AppLiveCaption\. Models and NVIDIA's CUDA libraries are not bundled;
+    the app downloads them when the user asks.
 
 .PARAMETER Python
     Path to the python.exe to build with, instead of finding one.
@@ -111,11 +111,8 @@ try {
         Invoke-Checked $Python @('-m', 'pip', 'install', '--disable-pip-version-check', '-r', 'requirements.txt')
     }
 
-    # nvidia.cublas / nvidia.cudnn: CUDA libraries for the GPU (nvidia-*-cu12 packages).
-    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub nvidia.cublas nvidia.cudnn PyInstaller'
-    # Check the top-level package first: find_spec('nvidia.cublas') raises instead
-    # of returning None when 'nvidia' itself isn't installed.
-    $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m.split('.')[0]) is None or u.find_spec(m) is None))"
+    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub PyInstaller'
+    $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m) is None))"
     $missing = Get-Output $Python @('-c', $check)
     if ($null -eq $missing) { throw "Could not run $Python." }
     if ($missing) {
@@ -149,9 +146,9 @@ try {
     if (-not (Test-Path $exe)) {
         throw "The build finished but $exe is missing."
     }
-    $sizeGB = (Get-ChildItem $distDir -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1GB
+    $sizeMB = (Get-ChildItem $distDir -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
     Write-Host ''
-    Write-Host ('Done in {0:mm\:ss}. Output: {1} ({2:N1} GB)' -f $timer.Elapsed, $exe, $sizeGB) -ForegroundColor Green
+    Write-Host ('Done in {0:mm\:ss}. Output: {1} ({2:N0} MB)' -f $timer.Elapsed, $exe, $sizeMB) -ForegroundColor Green
     $failed = $false
 }
 catch {
