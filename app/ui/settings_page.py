@@ -6,12 +6,13 @@ import os
 
 from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
-from PySide6.QtWidgets import QFileDialog, QFontDialog, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
     ComboBoxSettingCard,
     CustomColorSettingCard,
     ExpandLayout,
     FluentIcon,
+    HyperlinkLabel,
     OptionsSettingCard,
     PushButton,
     PushSettingCard,
@@ -21,10 +22,11 @@ from qfluentwidgets import (
     SettingCardGroup,
     SwitchSettingCard,
     TitleLabel,
+    setCustomStyleSheet,
     setTheme,
 )
 
-from .. import APP_NAME, __version__
+from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
 from ..config import cfg, is_win11
 from ..models.catalog import load_catalog
 from ..paths import log_dir
@@ -32,18 +34,26 @@ from .icons import app_icon
 
 
 class AppInfoCard(SettingCard):
-    """The app's icon, name and version, at the top of the About section."""
+    """App name, then the version with "View source" and "Licenses" links."""
 
     def __init__(self, parent=None):
-        super().__init__(app_icon(), APP_NAME, " ", parent)
-        self.contentLabel.setText(self.tr("Version {version}").format(version=__version__))
-        self.descriptionLabel = QLabel(self.tr("Offline live captions for Windows"), self)
-        self.descriptionLabel.setObjectName("contentLabel")  # styled like the card's content line
-        self.vBoxLayout.addWidget(self.descriptionLabel, 0, Qt.AlignmentFlag.AlignLeft)
-        self.iconLabel.setFixedSize(48, 48)
-        self.titleLabel.setStyleSheet("font-size: 18px; font-weight: 600;")
-        self.vBoxLayout.setSpacing(2)
-        self.setFixedHeight(96)
+        super().__init__(app_icon(), APP_NAME, self.tr("Version {version}").format(version=__version__) + "  ·", parent)
+        self.sourceLink = HyperlinkLabel(QUrl(REPO_URL), self.tr("View source"), self)
+        self.licenseLink = HyperlinkLabel(QUrl(LICENSES_URL), self.tr("Licenses"), self)
+        self.separator = QLabel("·", self)
+        self.separator.setObjectName("contentLabel")  # styled like the version text
+        # Match the version text; the card's button rule would make the links 14 px.
+        link_size = "HyperlinkLabel { font-size: 11px; }"
+        for link in (self.sourceLink, self.licenseLink):
+            setCustomStyleSheet(link, link_size, link_size)
+        # Put the links on the version line, after the card's content text.
+        row = QHBoxLayout()
+        row.setSpacing(6)
+        self.vBoxLayout.removeWidget(self.contentLabel)
+        for w in (self.contentLabel, self.sourceLink, self.separator, self.licenseLink):
+            row.addWidget(w, 0, Qt.AlignmentFlag.AlignVCenter)
+        row.addStretch(1)
+        self.vBoxLayout.addLayout(row)
 
 
 class FontSettingCard(SettingCard):
