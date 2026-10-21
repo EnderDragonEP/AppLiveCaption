@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from PySide6.QtCore import Qt
-from PySide6.QtGui import QGuiApplication
+from PySide6.QtCore import Qt, Signal
+from PySide6.QtGui import QGuiApplication, QKeySequence, QShortcut
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QListWidgetItem, QSplitter, QVBoxLayout, QWidget
 from qfluentwidgets import (
     CaptionLabel,
@@ -15,6 +15,7 @@ from qfluentwidgets import (
     PlainTextEdit,
     PushButton,
     TitleLabel,
+    ToolTipFilter,
 )
 
 from ..core.history import HistorySession, HistoryStore
@@ -22,6 +23,9 @@ from .messages import show_infobar
 
 
 class HistoryPage(QWidget):
+    # Refresh (button or F5): save the session being captioned, then reload().
+    refreshRequested = Signal()
+
     def __init__(self, store: HistoryStore, parent=None):
         super().__init__(parent)
         self.setObjectName("historyPage")
@@ -34,6 +38,12 @@ class HistoryPage(QWidget):
         root.addWidget(TitleLabel(self.tr("History"), self))
 
         bar = QHBoxLayout()
+        self.refresh_btn = PushButton(FluentIcon.SYNC, self.tr("Refresh"), self)
+        self.refresh_btn.setToolTip(self.tr("Show the latest lines (F5)"))
+        self.refresh_btn.installEventFilter(ToolTipFilter(self.refresh_btn))
+        self.refresh_btn.clicked.connect(self.refreshRequested)
+        QShortcut(QKeySequence.StandardKey.Refresh, self, self.refreshRequested.emit)
+        bar.addWidget(self.refresh_btn)
         self.copy_btn = PushButton(FluentIcon.COPY, self.tr("Copy"), self)
         self.copy_btn.clicked.connect(self._copy)
         self.txt_btn = PushButton(FluentIcon.DOCUMENT, self.tr("Export TXT"), self)
@@ -84,14 +94,15 @@ class HistoryPage(QWidget):
             self.list.addItem(item)
             if s.id == current:
                 row = i
-        self.list.blockSignals(False)
         has = bool(self.sessions)
+        if has:
+            self.list.setCurrentRow(row)  # signals still blocked: _show() below decides about scrolling
+        self.list.blockSignals(False)
         self.empty_label.setVisible(not has)
         for b in (self.copy_btn, self.txt_btn, self.srt_btn, self.delete_btn, self.clear_btn):
             b.setEnabled(has)
         if has:
-            self.list.setCurrentRow(row)
-            self._show(row)
+            self._show(row, keep_scroll=self.sessions[row].id == current)
         else:
             self.text.clear()
 
@@ -99,11 +110,18 @@ class HistoryPage(QWidget):
         row = self.list.currentRow() if hasattr(self, "list") else -1
         return self.sessions[row] if 0 <= row < len(self.sessions) else None
 
-    def _show(self, row: int) -> None:
-        if 0 <= row < len(self.sessions):
-            s = self.sessions[row]
-            header = f"{s.title}  ·  {s.model}  ·  {s.source}\n\n"
-            self.text.setPlainText(header + s.to_txt())
+    def _show(self, row: int, keep_scroll: bool = False) -> None:
+        if not 0 <= row < len(self.sessions):
+            return
+        s = self.sessions[row]
+        text = f"{s.title}  ·  {s.model}  ·  {s.source}\n\n{s.to_txt()}".rstrip("\n")
+        shown = self.text.toPlainText()
+        if keep_scroll and shown and text.startswith(shown + "\n"):
+            # The same transcript with new lines: appending keeps the reader's
+            # place, or follows the end if they were at the bottom.
+            self.text.appendPlainText(text[len(shown) + 1:])
+        elif not keep_scroll or text != shown:
+            self.text.setPlainText(text)
 
     def _copy(self) -> None:
         s = self._current()

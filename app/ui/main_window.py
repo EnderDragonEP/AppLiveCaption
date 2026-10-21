@@ -147,6 +147,7 @@ class MainWindow(FluentWindow):
         self.models_page.modelsChanged.connect(self.live.refresh_models)
         self.models_page.downloadFinished.connect(self.on_download_finished)
         self.models_page.gpuSupportInstalled.connect(self._on_gpu_support_installed)
+        self.history_page.refreshRequested.connect(self._reload_history)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
         self.settings_page.about_card.clicked.connect(self.check_for_updates)
@@ -164,9 +165,13 @@ class MainWindow(FluentWindow):
     def _on_page_changed(self, _index: int) -> None:
         widget = self.stackedWidget.currentWidget()
         if widget is self.history_page:
-            self.history_page.reload()
+            self._reload_history()
         elif widget is self.models_page:
             self.models_page.refresh()
+
+    def _reload_history(self) -> None:
+        self.controller.save_history()  # include lines captioned since the last periodic save
+        self.history_page.reload()
 
     # -- models ---------------------------------------------------------------
     def _load_initial_model(self) -> None:

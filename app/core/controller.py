@@ -363,7 +363,7 @@ class CaptionController(QObject):
 
         self._save_timer = QTimer(self)
         self._save_timer.setInterval(3000)
-        self._save_timer.timeout.connect(self._save_history)
+        self._save_timer.timeout.connect(self.save_history)
         self._save_timer.start()
 
     # -- commands -------------------------------------------------------------
@@ -395,7 +395,7 @@ class CaptionController(QObject):
     def shutdown(self) -> None:
         self.worker.post("quit")
         self.worker.wait(10000)
-        self._save_history()
+        self.save_history()
 
     @property
     def is_running(self) -> bool:
@@ -422,12 +422,13 @@ class CaptionController(QObject):
             info = get_model(self.model_id or "")
             self.session = self.history.new_session(info.name if info else "", self.source_label)
         elif state == IDLE:
-            self._save_history()
+            self.save_history()
             self.session = None
         self.run_state = state
         self.runState.emit(state)
 
-    def _save_history(self) -> None:
+    def save_history(self) -> None:
+        """Write the session being captioned to disk now (it is also saved every few seconds)."""
         if self._dirty and self.session is not None:
             self.history.save(self.session)
             self._dirty = False
