@@ -44,13 +44,14 @@ The download ([app/asr/cuda_libs.py](app/asr/cuda_libs.py)):
   `nvidia-cudnn-cu12` 9.1.0.70, `nvidia-cuda-nvrtc-cu12` 12.4.127) from PyPI
   and resumes where it stopped after an interruption,
 - checks each one against the SHA-256 pinned in the source before unpacking it,
-- keeps only the ten DLLs CTranslate2 loads, in
-  `%LOCALAPPDATA%\AppLiveCaption\cuda`.
+- keeps only the ten DLLs CTranslate2 loads, in the `cuda` folder next to
+  `AppLiveCaption.exe`.
 
 A model that is already loaded moves to the GPU as soon as the download
 finishes. The card's delete button removes the libraries again; because Windows
 locks DLLs that are loaded, that happens the next time the app starts. On a PC
-without internet access, copy that `cuda` folder from another PC.
+without internet access, copy the app folder (or just its `cuda` folder) from
+another PC.
 
 The versions are pinned to CUDA 12.4 / cuDNN 9.1.0.70 to match the cuDNN loader
 that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than
@@ -190,9 +191,9 @@ Notes:
 
 Click a model's card on the **Models** page to open its page on Hugging Face.
 
-Models are stored in `%LOCALAPPDATA%\AppLiveCaption\models` (changeable in
-Settings). Downloads show bytes and speed, can be cancelled, resume from where
-they stopped, and check free disk space first.
+Models are stored in the `models` folder next to `AppLiveCaption.exe`
+(changeable in Settings). Downloads show bytes and speed, can be cancelled,
+resume from where they stopped, and check free disk space first.
 
 ## Offline operation
 
@@ -209,13 +210,22 @@ newer than the running version. Publish releases with tags like `v1.0.1`.
 
 ## Data locations
 
-| What | Where |
+The app is portable: everything it writes stays next to `AppLiveCaption.exe`
+(when running from source, in the project folder, where git ignores it).
+Moving the folder moves all of it, and deleting the folder removes all of it;
+the app doesn't write to AppData ([app/paths.py](app/paths.py)).
+
+| What | Where (next to the exe) |
 | --- | --- |
-| Settings | `%APPDATA%\AppLiveCaption\config.json` |
-| History | `%APPDATA%\AppLiveCaption\history\*.json` |
-| Logs (rotating) | `%APPDATA%\AppLiveCaption\logs\app.log` (Settings → Advanced → Logs opens the folder) |
-| Models | `%LOCALAPPDATA%\AppLiveCaption\models` |
-| GPU support (NVIDIA's CUDA libraries) | `%LOCALAPPDATA%\AppLiveCaption\cuda` |
+| Settings | `config.json` |
+| History | `history\*.json` |
+| Logs (rotating) | `logs\app.log` (Settings → Advanced → Logs opens the folder) |
+| Models | `models\` (Settings → Model folder can point elsewhere, e.g. a folder several copies share) |
+| GPU support (NVIDIA's CUDA libraries) | `cuda\` |
+
+If the app's folder can't be written (for example under `C:\Program Files`),
+the app uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR`
+environment variable picks another folder (the tests use it).
 
 ## Console tools
 
@@ -243,6 +253,13 @@ are installed, runs the unit tests, and builds with PyInstaller. The one-folder
 build is written to `dist\AppLiveCaption\`; run
 `dist\AppLiveCaption\AppLiveCaption.exe`. Models and GPU support are not bundled;
 users download them from inside the app.
+
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in
+`dist\AppLiveCaption\` (the settings, history, models and GPU support of a
+built app you ran there, or your own files) is kept across builds, also with
+`-Clean`: PyInstaller replaces the whole folder, so `build.ps1` moves those
+items to `dist\AppLiveCaption.kept\` during the build and back afterwards. For
+a release, zip only `AppLiveCaption.exe` and `_internal\`.
 
 | Option | Effect |
 | --- | --- |

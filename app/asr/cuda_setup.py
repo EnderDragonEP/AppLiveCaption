@@ -3,7 +3,7 @@
 CTranslate2 ships only the cuDNN loader (``cudnn64_9.dll``); it also needs
 ``cublas64_12.dll`` and the cuDNN sub-libraries. They are looked up, in order:
 
-1. in %LOCALAPPDATA%\\AppLiveCaption\\cuda, where the app downloads them when
+1. in the ``cuda`` folder next to the exe, where the app downloads them when
    the user asks (``app/asr/cuda_libs.py``; the built app doesn't ship them),
 2. in NVIDIA's ``nvidia-cublas-cu12`` / ``nvidia-cudnn-cu12`` pip packages,
 3. in PyTorch's ``torch/lib``, if PyTorch is installed for something else,

@@ -6,3 +6,9 @@ __pycache__/
 build.log
 .ruff_cache/
 app/i18n/*.ts.bak
+# What the app writes when run from source (it's portable; see app/paths.py)
+/config.json
+/history/
+/logs/
+/models/
+/cuda/

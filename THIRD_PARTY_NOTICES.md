@@ -94,7 +94,7 @@ Because AppLiveCaption's complete source code and build script are public, you c
 
 The exe contains one NVIDIA file, cuDNN's loader `cudnn64_9.dll`, Copyright (c) NVIDIA Corporation, as included in CTranslate2's package.
 
-The rest of NVIDIA's libraries for the GPU are not part of the app. When you click **Download** on the **NVIDIA GPU support** card (Models page), the app downloads NVIDIA's own packages from PyPI and keeps the DLLs it needs in `%LOCALAPPDATA%\AppLiveCaption\cuda`:
+The rest of NVIDIA's libraries for the GPU are not part of the app. When you click **Download** on the **NVIDIA GPU support** card (Models page), the app downloads NVIDIA's own packages from PyPI and keeps the DLLs it needs in the `cuda` folder next to `AppLiveCaption.exe`:
 
 | Package | Version | Kept |
 | --- | --- | --- |

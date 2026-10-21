@@ -1,4 +1,4 @@
-"""Rotating file log in %APPDATA%\\AppLiveCaption\\logs."""
+"""Rotating file log in the logs folder next to the exe (app/paths.py)."""
 
 from __future__ import annotations
 

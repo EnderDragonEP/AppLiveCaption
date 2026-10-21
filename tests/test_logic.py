@@ -11,11 +11,13 @@ import tempfile
 import time
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import numpy as np
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from app import paths  # noqa: E402
 from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
 from app.asr.streaming import PartialStabilizer, tokenize  # noqa: E402
@@ -147,6 +149,42 @@ class CatalogTests(unittest.TestCase):
         self.assertEqual(taigi.extra_files, {"tokenizer.json": "SoybeanMilk/faster-whisper-Breeze-ASR-25"})
         self.assertIsNone(get_model("breeze-asr-25").default_language)
         self.assertIsNone(get_model("whisper-large-v3-turbo").default_language)
+
+
+class PortablePathTests(unittest.TestCase):
+    def setUp(self):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        self.root = Path(tmp.name)
+        self.app = self.root / "AppLiveCaption"
+        self.app.mkdir()
+        for patcher in (mock.patch.object(paths, "app_dir", lambda: self.app),
+                        mock.patch.dict(os.environ, {"LOCALAPPDATA": str(self.root / "local")})):
+            patcher.start()
+            self.addCleanup(patcher.stop)
+        os.environ.pop("ALC_DATA_DIR", None)
+
+    def test_everything_lives_next_to_the_exe(self):
+        self.assertEqual(paths.data_dir(), self.app)
+        self.assertEqual(paths.config_file(), self.app / "config.json")
+        self.assertEqual(paths.history_dir(), self.app / "history")
+        self.assertEqual(paths.log_dir(), self.app / "logs")
+        self.assertEqual(paths.default_models_dir(), self.app / "models")
+
+    def test_falls_back_when_the_app_folder_is_read_only(self):
+        with mock.patch.object(paths, "_writable", lambda _folder: False):
+            self.assertEqual(paths.data_dir(), self.root / "local" / "AppLiveCaption")
+
+    def test_override(self):
+        with mock.patch.dict(os.environ, {"ALC_DATA_DIR": str(self.root / "elsewhere")}):
+            self.assertEqual(paths.log_dir(), self.root / "elsewhere" / "logs")
+
+    def test_folder_setting_survives_moving_the_app(self):
+        self.assertEqual(paths.to_setting(self.app / "models"), "models")
+        self.assertEqual(paths.from_setting("models"), self.app / "models")
+        outside = (self.root / "shared models").resolve()
+        self.assertEqual(paths.to_setting(outside), str(outside))
+        self.assertEqual(paths.from_setting(str(outside)), outside)
 
 
 if __name__ == "__main__":

@@ -30,7 +30,8 @@ from qfluentwidgets import (
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
 from ..config import cfg, is_win11
 from ..models.catalog import load_catalog
-from ..paths import log_dir
+from ..models.storage import models_dir
+from ..paths import log_dir, to_setting
 from .icons import app_icon
 
 
@@ -158,7 +159,7 @@ class SettingsPage(ScrollArea):
                                            self.tr("Convert Simplified Chinese to Traditional Chinese (OpenCC s2twp)"),
                                            cfg.opencc, g))
         self.folder_card = PushSettingCard(self.tr("Choose folder"), FluentIcon.FOLDER, self.tr("Model folder"),
-                                           cfg.get(cfg.modelFolder), g)
+                                           str(models_dir()), g)
         self.folder_card.clicked.connect(self._choose_folder)
         g.addSettingCard(self.folder_card)
         self.layout_.addWidget(g)
@@ -179,9 +180,9 @@ class SettingsPage(ScrollArea):
         self.setWidget(body)
 
     def _choose_folder(self) -> None:
-        current = cfg.get(cfg.modelFolder)
+        current = str(models_dir())
         folder = QFileDialog.getExistingDirectory(self, self.tr("Choose the model folder"), current)
-        if folder and os.path.normcase(folder) != os.path.normcase(current):
-            cfg.set(cfg.modelFolder, folder)
-            self.folder_card.setContent(folder)
+        if folder and os.path.normcase(os.path.abspath(folder)) != os.path.normcase(current):
+            cfg.set(cfg.modelFolder, to_setting(folder))  # relative inside the app folder, so it can move
+            self.folder_card.setContent(str(models_dir()))
             self.modelFolderChanged.emit(folder)

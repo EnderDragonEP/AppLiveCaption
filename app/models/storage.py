@@ -14,13 +14,13 @@ PARTIAL_SUFFIX = ".part"
 
 def models_dir() -> Path:
     """The configured model folder (falls back to the default location)."""
-    from ..paths import default_models_dir
+    from ..paths import default_models_dir, from_setting
 
     try:
         from ..config import cfg
 
         value = cfg.get(cfg.modelFolder)
-        path = Path(value) if value else default_models_dir()
+        path = from_setting(value) if value else default_models_dir()
     except Exception:  # noqa: BLE001 - config unavailable (e.g. very early start-up)
         path = default_models_dir()
     path.mkdir(parents=True, exist_ok=True)

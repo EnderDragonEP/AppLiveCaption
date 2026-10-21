@@ -53,6 +53,13 @@ def main() -> int:
 
     logging.getLogger("app").info("Starting %s %s (frozen=%s)", APP_NAME, __version__, getattr(sys, "frozen", False))
 
+    from app.paths import app_dir, data_dir
+
+    if data_dir() != app_dir() and not os.environ.get("ALC_DATA_DIR"):
+        logging.getLogger("app").warning("%s can't be written; data folder: %s", app_dir(), data_dir())
+    else:
+        logging.getLogger("app").info("Data folder: %s", data_dir())
+
     from app.asr.cuda_libs import remove_if_scheduled
 
     remove_if_scheduled()  # GPU support the user removed; must run before any CUDA library loads

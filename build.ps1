@@ -8,6 +8,10 @@
     dist\AppLiveCaption\. Models and NVIDIA's CUDA libraries are not bundled;
     the app downloads them when the user asks.
 
+    The app is portable and keeps its settings, history, logs, models and GPU
+    support next to the exe. Everything in dist\AppLiveCaption\ other than the
+    build output (AppLiveCaption.exe and _internal) is kept across builds.
+
 .PARAMETER Python
     Path to the python.exe to build with, instead of finding one.
 
@@ -15,7 +19,8 @@
     Keep a console window in the built app, for debugging.
 
 .PARAMETER Clean
-    Delete earlier build output and PyInstaller's cache before building.
+    Delete earlier build output and PyInstaller's cache before building
+    (settings, models and other files in dist\AppLiveCaption\ are kept).
 
 .PARAMETER Install
     Run "pip install -r requirements.txt" for that Python before building.
@@ -45,6 +50,11 @@ param(
 $ErrorActionPreference = 'Stop'
 $root = $PSScriptRoot
 $distDir = Join-Path $root 'dist\AppLiveCaption'
+# PyInstaller replaces the whole output folder. Anything else in it (the app's
+# settings, history, logs, models and GPU support, or your own files) waits
+# here during the build.
+$buildOutput = 'AppLiveCaption.exe', '_internal'
+$keptDir = Join-Path $root 'dist\AppLiveCaption.kept'
 
 function Invoke-Checked {
     param([string]$Exe, [string[]]$Arguments)
@@ -69,6 +79,28 @@ function Get-Output {
     } finally {
         $ErrorActionPreference = $previous
     }
+}
+
+function Save-UserFiles {
+    if (-not (Test-Path -LiteralPath $distDir)) { return }
+    $items = @(Get-ChildItem -LiteralPath $distDir -Force | Where-Object { $buildOutput -notcontains $_.Name })
+    if (-not $items) { return }
+    New-Item -ItemType Directory -Force $keptDir | Out-Null
+    foreach ($item in $items) { Move-Item -LiteralPath $item.FullName -Destination $keptDir }
+    Write-Host "Keeping $($items.Count) item(s) in dist\AppLiveCaption that aren't build output: $($items.Name -join ', ')"
+}
+
+function Restore-UserFiles {
+    if (-not (Test-Path -LiteralPath $keptDir)) { return }
+    New-Item -ItemType Directory -Force $distDir | Out-Null
+    foreach ($item in @(Get-ChildItem -LiteralPath $keptDir -Force)) {
+        if (Test-Path -LiteralPath (Join-Path $distDir $item.Name)) {
+            Write-Warning "Not putting back $($item.Name): the build created one. Yours is in $keptDir."
+            continue
+        }
+        Move-Item -LiteralPath $item.FullName -Destination $distDir
+    }
+    if (-not (Get-ChildItem -LiteralPath $keptDir -Force)) { Remove-Item -LiteralPath $keptDir }
 }
 
 function Find-Python {
@@ -130,6 +162,8 @@ try {
     if (Get-Process -Name 'AppLiveCaption' -ErrorAction SilentlyContinue) {
         throw 'AppLiveCaption.exe is running. Close it first so its files can be replaced.'
     }
+    Restore-UserFiles  # left over if an earlier build was stopped mid-way
+    Save-UserFiles
     if ($Clean) {
         Write-Host 'Removing earlier build output...'
         foreach ($dir in (Join-Path $root 'build'), $distDir) {
@@ -146,7 +180,8 @@ try {
     if (-not (Test-Path $exe)) {
         throw "The build finished but $exe is missing."
     }
-    $sizeMB = (Get-ChildItem $distDir -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
+    $output = $buildOutput | ForEach-Object { Join-Path $distDir $_ }
+    $sizeMB = (Get-ChildItem $output -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
     Write-Host ''
     Write-Host ('Done in {0:mm\:ss}. Output: {1} ({2:N0} MB)' -f $timer.Elapsed, $exe, $sizeMB) -ForegroundColor Green
     $failed = $false
@@ -155,6 +190,7 @@ catch {
     Write-Host "Build failed: $($_.Exception.Message)" -ForegroundColor Red
 }
 finally {
+    Restore-UserFiles
     foreach ($name in $savedEnv.Keys) {
         if ($null -eq $savedEnv[$name]) {
             Remove-Item -Path "Env:$name" -ErrorAction SilentlyContinue

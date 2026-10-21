@@ -1,4 +1,4 @@
-"""Application settings (qfluentwidgets QConfig), saved to %APPDATA%\\AppLiveCaption\\config.json."""
+"""Application settings (qfluentwidgets QConfig), saved to config.json next to the exe (app/paths.py)."""
 
 from __future__ import annotations
 
@@ -21,13 +21,17 @@ from qfluentwidgets import (
 )
 
 from .models.catalog import load_catalog
-from .paths import config_file, default_models_dir
+from .paths import config_file
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
 
 
 def is_win11() -> bool:
     return sys.platform == "win32" and sys.getwindowsversion().build >= 22000
+
+
+# Relative to the app's data folder (app/paths.py), so it survives moving the app.
+DEFAULT_MODEL_FOLDER = "models"
 
 
 class FolderPathValidator(ConfigValidator):
@@ -37,7 +41,7 @@ class FolderPathValidator(ConfigValidator):
         return isinstance(value, str) and bool(value.strip())
 
     def correct(self, value):
-        return value if self.validate(value) else str(default_models_dir())
+        return value if self.validate(value) else DEFAULT_MODEL_FOLDER
 
 
 class DictValidator(ConfigValidator):
@@ -65,7 +69,7 @@ class Config(QConfig):
     # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
     offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())
     opencc = ConfigItem("ASR", "OpenCC", True, BoolValidator())
-    modelFolder = ConfigItem("ASR", "ModelFolder", str(default_models_dir()), FolderPathValidator())
+    modelFolder = ConfigItem("ASR", "ModelFolder", DEFAULT_MODEL_FOLDER, FolderPathValidator())
 
     # Caption appearance (Live Captions page)
     captionFont = ConfigItem("Captions", "FontFamily", "Microsoft JhengHei UI")

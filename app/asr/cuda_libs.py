@@ -4,7 +4,7 @@ The built app doesn't ship them, which keeps it about 1.3 GB smaller. On a PC
 with an NVIDIA GPU the user downloads them once from the Models page: NVIDIA's
 own pip packages (wheels) from PyPI, about 1 GB. Each wheel's SHA-256 is
 checked against the value pinned here before anything is unpacked, and only
-the DLLs CTranslate2 loads are kept, in %LOCALAPPDATA%\\AppLiveCaption\\cuda.
+the DLLs CTranslate2 loads are kept, in the ``cuda`` folder next to the exe.
 
 The versions must match the cuDNN loader that CTranslate2 bundles (9.1 for
 CTranslate2 4.6) and requirements.txt.
@@ -77,9 +77,9 @@ INSTALLED_SIZE = 1_420_480_240  # the kept DLLs, unpacked
 
 
 def lib_dir() -> Path:
-    from ..paths import local_dir
+    from ..paths import data_dir
 
-    return local_dir() / "cuda"
+    return data_dir() / "cuda"
 
 
 def installed_dir() -> Path | None:

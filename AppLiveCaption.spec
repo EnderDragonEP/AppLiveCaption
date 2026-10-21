@@ -5,7 +5,7 @@
 
 Output: dist/AppLiveCaption/AppLiveCaption.exe. Models and NVIDIA's CUDA
 libraries are not bundled; the app downloads them when the user asks, into
-%LOCALAPPDATA%\\AppLiveCaption\\models and ...\\cuda.
+the models and cuda folders next to the exe (the app is portable; app/paths.py).
 
 Environment switch:
     ALC_CONSOLE=1         keep a console window for debugging.

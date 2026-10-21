@@ -41,7 +41,7 @@ class DownloadTests(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         root = Path(self.tmp.name)
         self.addCleanup(self.tmp.cleanup)
-        env = mock.patch.dict(os.environ, {"LOCALAPPDATA": str(root / "local")})
+        env = mock.patch.dict(os.environ, {"ALC_DATA_DIR": str(root / "data")})
         env.start()
         self.addCleanup(env.stop)
         self.wheel_path = root / "fake-1.0-py3-none-win_amd64.whl"
