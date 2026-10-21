@@ -15,6 +15,7 @@ from qfluentwidgets import (
     HyperlinkLabel,
     OptionsSettingCard,
     PushButton,
+    PrimaryPushSettingCard,
     PushSettingCard,
     RangeSettingCard,
     ScrollArea,
@@ -33,11 +34,12 @@ from ..paths import log_dir
 from .icons import app_icon
 
 
-class AppInfoCard(SettingCard):
-    """App name, then the version with "View source" and "Licenses" links."""
+class AppInfoCard(PrimaryPushSettingCard):
+    """App name, then the version with "View source" and "Licenses" links, plus the update button."""
 
     def __init__(self, parent=None):
-        super().__init__(app_icon(), APP_NAME, self.tr("Version {version}").format(version=__version__) + "  ·", parent)
+        super().__init__(self.tr("Check for updates"), app_icon(), APP_NAME,
+                         self.tr("Version {version}").format(version=__version__) + "  ·", parent)
         self.sourceLink = HyperlinkLabel(QUrl(REPO_URL), self.tr("View source"), self)
         self.licenseLink = HyperlinkLabel(QUrl(LICENSES_URL), self.tr("Licenses"), self)
         self.separator = QLabel("·", self)
@@ -170,7 +172,8 @@ class SettingsPage(ScrollArea):
 
         # About
         g = SettingCardGroup(self.tr("About"), container)
-        g.addSettingCard(AppInfoCard(g))
+        self.about_card = AppInfoCard(g)
+        g.addSettingCard(self.about_card)
         self.layout_.addWidget(g)
 
         self.setWidget(body)

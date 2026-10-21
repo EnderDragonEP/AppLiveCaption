@@ -173,6 +173,11 @@ folders only (`local_files_only=True`). The downloader lifts that flag only for
 its own requests while a download runs. No network access is needed to launch or
 caption.
 
+The only other network request is **Check for updates** (Settings → About, or
+the tray menu), and only when you click it: it asks the GitHub API for the
+latest release of this repository and offers to open its download page if it's
+newer than the running version. Publish releases with tags like `v1.0.1`.
+
 ## Data locations
 
 | What | Where |

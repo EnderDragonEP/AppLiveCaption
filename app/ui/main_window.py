@@ -4,16 +4,18 @@ from __future__ import annotations
 
 import logging
 
-from PySide6.QtCore import QSize, QTimer
+from PySide6.QtCore import QSize, QTimer, QUrl
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, FluentWindow, NavigationItemPosition, SplashScreen
+from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, SplashScreen
 
-from .. import APP_NAME
+from .. import APP_NAME, __version__
 from ..asr.hardware import gpu_info
 from ..config import cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_READY, PAUSED, RUNNING, CaptionController
 from ..models.catalog import get_model
 from ..models.storage import is_downloaded
+from ..updates import UpdateChecker, is_newer
 from .async_utils import run_async
 from .caption_model import CaptionModel
 from .icons import app_icon
@@ -136,6 +138,7 @@ class MainWindow(FluentWindow):
         self.models_page.downloadFinished.connect(self.on_download_finished)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
+        self.settings_page.about_card.clicked.connect(self.check_for_updates)
         self.stackedWidget.currentChanged.connect(self._on_page_changed)
 
     def _on_device_setting(self, device: str) -> None:
@@ -294,6 +297,7 @@ class MainWindow(FluentWindow):
         self.tray.overlayToggled.connect(self.set_overlay_visible)
         self.tray.captionToggled.connect(self.toggle_captioning)
         self.tray.clickThroughToggled.connect(lambda on: cfg.set(cfg.overlayClickThrough, on))
+        self.tray.updateCheckRequested.connect(self._check_updates_from_tray)
         self.tray.quitRequested.connect(self.close)
         self.tray.show()
         if cfg.get(cfg.overlayVisible):
@@ -304,6 +308,45 @@ class MainWindow(FluentWindow):
         self.overlay.setVisible(on)
         self.live.set_overlay_checked(on)
         self.tray.set_overlay_checked(on)
+
+    # -- updates -------------------------------------------------------------------
+    def check_for_updates(self) -> None:
+        button = self.settings_page.about_card.button
+        if not button.isEnabled():
+            return  # a check is already running
+        if not hasattr(self, "updates"):
+            self.updates = UpdateChecker(self)
+            self.updates.finished.connect(self._on_update_checked)
+            self.updates.failed.connect(self._on_update_failed)
+        self._set_checking(True)
+        self.updates.check()
+
+    def _check_updates_from_tray(self) -> None:
+        self.show_and_raise()  # the result is shown in the window
+        self.check_for_updates()
+
+    def _set_checking(self, checking: bool) -> None:
+        button = self.settings_page.about_card.button
+        button.setEnabled(not checking)
+        button.setText(self.tr("Checking…") if checking else self.tr("Check for updates"))
+
+    def _on_update_checked(self, release) -> None:
+        self._set_checking(False)
+        if release is None or not is_newer(release.version):  # None: nothing published yet
+            show_infobar("success", self.tr("You're up to date"),
+                         self.tr("Version {version} is the latest version.").format(version=__version__), self, 3000)
+            return
+        box = MessageBox(self.tr("Version {version} is available").format(version=release.version),
+                         self.tr("You have version {version}. Open the download page on GitHub?").format(version=__version__),
+                         self)
+        box.yesButton.setText(self.tr("Download"))
+        box.cancelButton.setText(self.tr("Later"))
+        if box.exec():
+            QDesktopServices.openUrl(QUrl(release.url))
+
+    def _on_update_failed(self, message: str) -> None:
+        self._set_checking(False)
+        show_infobar("warning", self.tr("Couldn't check for updates"), message, self, 5000)
 
     def show_and_raise(self) -> None:
         self.showNormal()
