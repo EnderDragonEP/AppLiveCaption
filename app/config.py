@@ -23,6 +23,9 @@ from qfluentwidgets import (
 from .paths import config_file
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
+# Settings → Default model choices besides a model id (model ids never contain ":").
+NO_MODEL = ":none"  # load nothing at start-up
+PREVIOUS_MODEL = ":previous"  # load the model used last time
 
 
 def is_win11() -> bool:
@@ -62,8 +65,11 @@ class Config(QConfig):
     captureSelection = ConfigItem("Live", "CaptureSelection", {}, DictValidator())
 
     # Speech recognition
-    # Any model id: the list of models can change, so the id may be one the user added (or removed).
-    defaultModel = ConfigItem("ASR", "DefaultModel", DEFAULT_MODEL)
+    # The model loaded at start-up: NO_MODEL, PREVIOUS_MODEL or any model id (the list of models can
+    # change, so the id may be one the user added, or removed).
+    defaultModel = ConfigItem("ASR", "DefaultModel", NO_MODEL)
+    # At start-up with no default model, say where to choose one (until "Don't show again").
+    defaultModelTip = ConfigItem("ASR", "DefaultModelTip", True, BoolValidator())
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
     # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
     offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())

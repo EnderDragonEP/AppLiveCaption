@@ -12,9 +12,9 @@ from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemP
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
 from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda
-from ..config import cfg
+from ..config import NO_MODEL, PREVIOUS_MODEL, cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_NONE, MODEL_READY, PAUSED, RUNNING, CaptionController
-from ..models.catalog import default_model_id, get_model, load_catalog
+from ..models.catalog import get_model, load_catalog
 from ..models.storage import disk_usage, is_downloaded
 from ..updates import UpdateChecker, is_newer
 from .async_utils import run_async
@@ -145,6 +145,7 @@ class MainWindow(FluentWindow):
         self.addSubInterface(self.settings_page, FluentIcon.SETTING, self.tr("Settings"), NavigationItemPosition.BOTTOM)
 
         self.models_page.useRequested.connect(self.request_model)
+        self.models_page.unloadRequested.connect(self.unload_model)
         self.models_page.downloadRequested.connect(self.download_model)
         self.models_page.modelsChanged.connect(self.live.refresh_models)
         self.models_page.downloadFinished.connect(self.on_download_finished)
@@ -169,11 +170,7 @@ class MainWindow(FluentWindow):
         c = self.controller
         if get_model(c.model_id or "") is None and c.model_state in (MODEL_READY, MODEL_LOADING):
             c.unload_model()  # the model in use is no longer in the list
-        self.live.refresh_models()
-        if get_model(cfg.get(cfg.modelId)) is None and get_model(c.model_id or "") is None:
-            # The selected model left the list: pick another one, and load it if it's downloaded,
-            # as at start-up (Start would fail with no model loaded).
-            self._load_initial_model()
+        self.live.refresh_models()  # a selected model that left the list: "Select a model"
 
     def _reset_catalog(self) -> None:
         """Settings → Reset model list: the presets come back, the models the user added are removed."""
@@ -217,19 +214,50 @@ class MainWindow(FluentWindow):
 
     # -- models ---------------------------------------------------------------
     def _load_initial_model(self) -> None:
-        """Load the default model from Settings, or else the last one used, if downloaded."""
-        candidates = [cfg.get(cfg.defaultModel), cfg.get(cfg.modelId)]
+        """Load Settings → Default model: none, the one used last time, or a model (or else the
+        last one used) if it's downloaded."""
+        default = cfg.get(cfg.defaultModel)
+        if default == NO_MODEL and self._auto_start:
+            default = PREVIOUS_MODEL  # --start: caption with the model used last time
+        if default == NO_MODEL:
+            candidates = []
+        elif default == PREVIOUS_MODEL:
+            candidates = [cfg.get(cfg.modelId)]
+        else:
+            candidates = [default, cfg.get(cfg.modelId)]
         chosen = next((m for m in candidates if get_model(m) and is_downloaded(get_model(m))), None)
         if chosen:
             cfg.set(cfg.modelId, chosen)
             self.live.select_model(chosen)
             self.controller.load_model(chosen, cfg.get(cfg.device))
-        else:
-            fallback = next((m for m in candidates if get_model(m)), None) or default_model_id()
-            if fallback:  # nothing downloaded yet: show a model of the list, to download it
-                cfg.set(cfg.modelId, fallback)
-                self.live.select_model(fallback)
-            self.live.set_device(self.tr("No model loaded"))
+            return
+        # Nothing to load: show the chosen model if it isn't downloaded (Start then offers to download
+        # it), else "Select a model".
+        self.live.select_model(next((m for m in candidates if get_model(m)), None))
+        self.live.set_device(self.tr("No model loaded"))
+        if default == NO_MODEL and cfg.get(cfg.defaultModelTip):
+            QTimer.singleShot(1200, self._show_default_model_tip)
+
+    def _show_default_model_tip(self) -> None:
+        """No model is loaded at start-up (Default model: None): say where to change that."""
+        bar = show_infobar("info", self.tr("No model loaded at start-up"),
+                           self.tr("Choose one to load each time in Settings → Default model."), self, duration=-1,
+                           stacked=True)
+        row = QWidget(bar)  # the buttons side by side (a long message puts the bar's widgets in a column)
+        buttons = QHBoxLayout(row)
+        buttons.setContentsMargins(0, 0, 0, 0)
+        open_btn = PushButton(self.tr("Take me there"), row)
+        open_btn.clicked.connect(lambda: (bar.close(), self.show_default_model_setting()))
+        never = PushButton(self.tr("Don't show again"), row)
+        never.clicked.connect(lambda: (cfg.set(cfg.defaultModelTip, False), bar.close()))
+        buttons.addWidget(open_btn)
+        buttons.addWidget(never)
+        buttons.addStretch(1)
+        bar.addWidget(row)
+
+    def show_default_model_setting(self) -> None:
+        self.switchTo(self.settings_page)
+        QTimer.singleShot(50, self.settings_page.show_default_model)  # once the page is laid out
 
     def request_model(self, model_id: str) -> None:
         """The user picked a model: load it, or show its card on the Models page to download it."""
@@ -246,8 +274,14 @@ class MainWindow(FluentWindow):
             return
         # Keep the dropdown on the model that is actually in use, and show the
         # model's card so the user can read about it and download it from there.
-        self.live.select_model(self.controller.model_id or cfg.get(cfg.modelId))
+        self.live.select_model(c.model_id if c.model_state in (MODEL_READY, MODEL_LOADING) else None)
         self.show_model_card(model_id)
+
+    def unload_model(self, model_id: str) -> None:
+        """The in-use card's Unload: release the model; the dropdown shows "Select a model" until one is picked."""
+        c = self.controller
+        if model_id == c.model_id and c.model_state == MODEL_READY:
+            c.unload_model()
 
     def show_model_card(self, model_id: str) -> None:
         self.switchTo(self.models_page)
@@ -282,6 +316,9 @@ class MainWindow(FluentWindow):
         elif state in (MODEL_FAILED, MODEL_NONE):
             self.models_page.set_current_model(None)
             self.live.set_device(self.tr("No model loaded"))
+            self._auto_start = False  # (it waited for this model)
+            if state == MODEL_NONE:
+                self.live.select_model(None)  # "Select a model"
             if state == MODEL_NONE and self._after_unload:
                 after, self._after_unload = self._after_unload, None
                 after()
@@ -355,14 +392,24 @@ class MainWindow(FluentWindow):
     def start_captioning(self) -> None:
         c = self.controller
         if c.model_state not in (MODEL_READY, MODEL_LOADING):
-            info = get_model(cfg.get(cfg.modelId))
-            if info is None:  # the list is empty, or the model was removed from it
+            info = get_model(self.live.selected_model_id() or "")
+            if info is None and load_catalog():  # no model selected
+                show_infobar("info", self.tr("Select a model first"),
+                             self.tr("Pick one in the Model dropdown, then press Start."), self)
+                return
+            if info is None:  # the list is empty
                 self.switchTo(self.models_page)
                 return
             if not is_downloaded(info):
                 # First run: show where to download the selected model instead of failing.
                 self.show_model_card(info.id)
+                show_infobar("info", self.tr("{name} isn't downloaded").format(name=info.name),
+                             self.tr("Download it here, then press Start."), self)
                 return
+            # Selected but not loaded (its loading failed before): load it, then start.
+            self._auto_start = True
+            self.request_model(info.id)
+            return
         sel = self.live.selection
         lang = self.live.selected_language()
         self.captions.clear()

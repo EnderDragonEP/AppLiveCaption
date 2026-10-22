@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import Qt, QUrl, Signal
+from PySide6.QtCore import QPoint, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -29,10 +29,11 @@ from qfluentwidgets import (
 )
 
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
-from ..config import cfg, is_win11
+from ..config import NO_MODEL, PREVIOUS_MODEL, cfg, is_win11
 from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
+from .highlight import FlashMixin
 from .icons import app_icon
 
 
@@ -81,8 +82,8 @@ class FontSettingCard(SettingCard):
             self.setContent(font.family())
 
 
-class DefaultModelCard(SettingCard):
-    """The model loaded at start-up, chosen from the current model list."""
+class DefaultModelCard(FlashMixin, SettingCard):
+    """The model loaded at start-up: none, the one used last time, or one of the current model list."""
 
     def __init__(self, parent=None):
         super().__init__(FluentIcon.ROBOT, self.tr("Default model"),
@@ -96,16 +97,15 @@ class DefaultModelCard(SettingCard):
 
     def refresh_models(self) -> None:
         """Show the current model list (it changes when models are added or removed)."""
-        models = load_catalog()
         self.combo.blockSignals(True)
         self.combo.clear()
-        for m in models:
+        self.combo.addItem(self.tr("None"), userData=NO_MODEL)
+        self.combo.addItem(self.tr("Previous selection"), userData=PREVIOUS_MODEL)
+        for m in load_catalog():
             self.combo.addItem(m.name, userData=m.id)
-        ids = [m.id for m in models]
-        wanted = cfg.get(cfg.defaultModel)
-        self.combo.setCurrentIndex(ids.index(wanted) if wanted in ids else -1)  # a removed model: shows nothing
+        index = self.combo.findData(cfg.get(cfg.defaultModel))
+        self.combo.setCurrentIndex(index)  # -1 (shows nothing) for a model that was removed from the list
         self.combo.blockSignals(False)
-        self.combo.setEnabled(bool(models))
 
     def _on_index(self, index: int) -> None:
         if index >= 0:
@@ -217,6 +217,12 @@ class SettingsPage(ScrollArea):
         """The model list changed: update the default-model choice and the Reset button."""
         self.default_model_card.refresh_models()
         self.reset_card.button.setEnabled(not is_default_catalog())
+
+    def show_default_model(self) -> None:
+        """Scroll the Default model card to the top, under its group's title, and highlight it."""
+        card = self.default_model_card
+        self.verticalScrollBar().setValue(card.mapTo(self.widget(), QPoint(0, 0)).y() - 72)
+        card.flash()
 
     def _choose_folder(self) -> None:
         current = str(models_dir())

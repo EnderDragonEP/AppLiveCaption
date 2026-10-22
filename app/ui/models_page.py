@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, QRectF, Qt, QTimer, QUrl, QVariantAnimation, Signal
-from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen
+from PySide6.QtCore import QPoint, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action,
@@ -24,7 +24,6 @@ from qfluentwidgets import (
     TitleLabel,
     ToolTipFilter,
     TransparentToolButton,
-    themeColor,
 )
 
 from .. import LICENSES_URL
@@ -43,6 +42,7 @@ from ..models.storage import (
     models_dir,
 )
 from .download import CudaDownloadThread, DownloadManager, cuda_download_error_text, download_error_text, format_bytes
+from .highlight import FlashMixin
 from .messages import show_infobar
 from .model_dialogs import AddModelDialog, ConfirmDialog
 
@@ -53,8 +53,8 @@ def _languages_text(info: ModelInfo) -> str:
     return ", ".join(info.language_label(c) if c in info.language_notes else language_name(c) for c in info.languages)
 
 
-class _ItemCard(CardWidget):
-    """A card that opens ``page_url`` when clicked and can be highlighted for a moment.
+class _ItemCard(FlashMixin, CardWidget):
+    """A card that opens ``page_url`` when clicked and can be highlighted for a moment (``flash``).
 
     Subclasses call ``_build_frame`` and add ``detail`` (a label) for ``set_progress``.
     """
@@ -84,33 +84,6 @@ class _ItemCard(CardWidget):
         if e.button() == Qt.MouseButton.LeftButton and self.rect().contains(e.position().toPoint()):
             QDesktopServices.openUrl(QUrl(self.page_url))
 
-    def flash(self) -> None:
-        """Outline the card in the accent color for a moment, then fade it out."""
-        anim = QVariantAnimation(self)
-        anim.setStartValue(1.0)
-        anim.setEndValue(0.0)
-        anim.setDuration(1600)
-        anim.valueChanged.connect(self._set_highlight)
-        self._highlight_anim = anim  # keep a reference while it runs
-        self._set_highlight(1.0)
-        QTimer.singleShot(900, anim.start)  # hold fully visible first
-
-    def _set_highlight(self, value) -> None:
-        self._highlight = float(value)
-        self.update()
-
-    def paintEvent(self, e):  # noqa: N802 - Qt override
-        super().paintEvent(e)
-        if getattr(self, "_highlight", 0.0) <= 0:
-            return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        color = QColor(themeColor())
-        color.setAlphaF(self._highlight)
-        painter.setPen(QPen(color, 2))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 6, 6)
-
     def reserve_progress_width(self, downloading: bool) -> None:
         """While downloading, keep the detail label as wide as the widest progress
         text, so the columns don't change width (and the description doesn't
@@ -134,6 +107,7 @@ class ModelCard(_ItemCard):
     deleteClicked = Signal(str)  # delete the downloaded files
     removeClicked = Signal(str)  # take the model off the list
     useClicked = Signal(str)
+    unloadClicked = Signal(str)
 
     def __init__(self, info: ModelInfo, parent=None):
         super().__init__(parent)
@@ -179,6 +153,10 @@ class ModelCard(_ItemCard):
         buttons.addStretch(1)
         self.use_btn = PushButton(self.tr("Use"), self)
         self.use_btn.clicked.connect(lambda: self.useClicked.emit(info.id))
+        self.unload_btn = PushButton(self.tr("Unload"), self)
+        self.unload_btn.setToolTip(self.tr("Free the memory the model uses. Captioning stops if it's running."))
+        self.unload_btn.installEventFilter(ToolTipFilter(self.unload_btn))
+        self.unload_btn.clicked.connect(lambda: self.unloadClicked.emit(info.id))
         self.download_btn = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("Download"), self)
         self.download_btn.clicked.connect(lambda: self.downloadClicked.emit(info.id))
         self.cancel_btn = PushButton(FluentIcon.CLOSE, self.tr("Cancel"), self)
@@ -187,7 +165,7 @@ class ModelCard(_ItemCard):
         self.more_btn.setToolTip(self.tr("More"))
         self.more_btn.installEventFilter(ToolTipFilter(self.more_btn))
         self.more_btn.clicked.connect(self._show_menu)
-        for b in (self.use_btn, self.download_btn, self.cancel_btn, self.more_btn):
+        for b in (self.use_btn, self.unload_btn, self.download_btn, self.cancel_btn, self.more_btn):
             buttons.addWidget(b)
         side.addLayout(buttons)
         side.addStretch(1)
@@ -224,6 +202,7 @@ class ModelCard(_ItemCard):
         self.download_btn.setVisible(not downloaded and not downloading)
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
         self.use_btn.setVisible(downloaded and not in_use)
+        self.unload_btn.setVisible(in_use and not loading)
         self._has_files = downloaded or partial
         self.more_btn.setVisible(not downloading and not in_use)
         used = disk_usage(info) if (downloaded or partial) else 0
@@ -419,6 +398,7 @@ class GpuSupportCard(_ItemCard):
 
 class ModelsPage(QWidget):
     useRequested = Signal(str)
+    unloadRequested = Signal(str)
     downloadRequested = Signal(str)
     modelsChanged = Signal()
     catalogChanged = Signal()  # models were added, removed or restored
@@ -505,6 +485,7 @@ class ModelsPage(QWidget):
                 card.deleteClicked.connect(self._delete)
                 card.removeClicked.connect(self._remove)
                 card.useClicked.connect(self.useRequested)
+                card.unloadClicked.connect(self.unloadRequested)
                 self.cards[info.id] = card
             self.cards_layout.addWidget(card)
             card.show()

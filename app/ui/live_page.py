@@ -160,8 +160,8 @@ class LivePage(QWidget):
 
     # -- models -------------------------------------------------------------
     def refresh_models(self) -> None:
-        """Rebuild the dropdown (download status may have changed)."""
-        current = cfg.get(cfg.modelId)
+        """Rebuild the dropdown (download status may have changed), keeping the selected model."""
+        current = self.selected_model_id()
         self.model_combo.blockSignals(True)
         self.model_combo.clear()
         self._model_ids = []
@@ -170,23 +170,29 @@ class LivePage(QWidget):
             self.model_combo.addItem(f"{m.name}  ·  {format_size(m.size_mb)}")
             self.model_combo.set_item_dimmed(self.model_combo.count() - 1, not is_downloaded(m))
             self._model_ids.append(m.id)
-        if current in self._model_ids:
-            self.model_combo.setCurrentIndex(self._model_ids.index(current))
-        if not self._model_ids:
-            # (Only when empty: qfluentwidgets shows the placeholder over item 0 too.)
-            self.model_combo.setPlaceholderText(self.tr("No models: add one on the Models page"))
+        self.model_combo.setPlaceholderText(self.tr("Select a model") if self._model_ids else
+                                            self.tr("No models: add one on the Models page"))
+        # Nothing selected (e.g. the model was unloaded) shows the placeholder.
+        self.model_combo.setCurrentIndex(self._model_ids.index(current) if current in self._model_ids else -1)
         self.model_combo.setEnabled(bool(self._model_ids))
         self.model_combo.blockSignals(False)
-        info = get_model(current)
-        if info and not self._languages:
-            self.set_languages(list(info.languages))
+        if not self._languages:
+            # Until a model is loaded (none may be, at start-up), list the languages of the selected
+            # model, else of the one used last time, else of the first in the list.
+            info = get_model(current or "") or get_model(cfg.get(cfg.modelId)) or next(iter(load_catalog()), None)
+            if info:
+                self.set_languages(list(info.languages), info)
 
-    def select_model(self, model_id: str) -> None:
-        """Show ``model_id`` as selected without emitting modelRequested."""
-        if model_id in self._model_ids:
-            self.model_combo.blockSignals(True)
-            self.model_combo.setCurrentIndex(self._model_ids.index(model_id))
-            self.model_combo.blockSignals(False)
+    def select_model(self, model_id: str | None) -> None:
+        """Show ``model_id`` as selected without emitting modelRequested ("Select a model" if it isn't listed)."""
+        self.model_combo.blockSignals(True)
+        self.model_combo.setCurrentIndex(self._model_ids.index(model_id) if model_id in self._model_ids else -1)
+        self.model_combo.blockSignals(False)
+
+    def selected_model_id(self) -> str | None:
+        """The model the dropdown shows; None while it shows "Select a model"."""
+        index = self.model_combo.currentIndex()
+        return self._model_ids[index] if 0 <= index < len(getattr(self, "_model_ids", ())) else None
 
     def _on_model_index(self, index: int) -> None:
         if 0 <= index < len(self._model_ids):
@@ -206,7 +212,7 @@ class LivePage(QWidget):
 
     # -- languages -----------------------------------------------------------
     def set_languages(self, codes: list[str], info: ModelInfo | None = None) -> None:
-        info = info or get_model(cfg.get(cfg.modelId))
+        info = info or get_model(self.selected_model_id() or "")
         detect = info is None or info.auto_detect
         ordered = sorted(codes, key=lambda c: (c not in ("zh", "en"), language_name(c)))
         self._languages = (["auto"] if detect else []) + ordered

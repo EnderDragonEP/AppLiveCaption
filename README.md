@@ -38,6 +38,8 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 
 The status line shows the latency and the device in use. You can switch models while captioning: the app pauses, loads the new one in the background and carries on.
 
+By default no model is loaded when the app starts, so it doesn't take memory until you need it. To have one ready at start-up, set **Settings → Default model** to a model, or to **Previous selection** for the one you used last. The **Unload** button on the model's card frees it again.
+
 ## Which model should I use?
 
 | You have | Try |
