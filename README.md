@@ -14,6 +14,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - 🪟 **Floating overlay** – An always-on-top caption bar for videos, games and calls. Drag it anywhere, resize it, or let clicks pass through it.
 - 🔒 **Private by design** – Speech is recognized on your PC and never uploaded.
 - 🧠 **Pick your model** – Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 (Mandarin + English), Breeze ASR 26 (Taigi) and Taiwan Tongues (Hokkien and Hakka).
+- ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
 
@@ -29,19 +30,28 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 
 ## Quick start
 
-1. Download the zip from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Python isn't needed.
-2. Pick a model in the **Model** dropdown. If it isn't downloaded yet, the app shows its card on the **Models** page; download it there and the app switches to it when it's done.
+1. Get it from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, in either of two forms (Python isn't needed for either):
+   - **Installer** (`AppLiveCaption-<version>-Setup.exe`): run it and pick **Install for me only** (no admin rights needed) or **for all users**. You get a Start menu entry, an optional desktop shortcut and an uninstaller.
+   - **Portable** (the zip): unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Everything the app saves stays in that folder.
+2. The first time, a short **first-time setup** asks a few questions:
+   - whether to download GPU support (only if you have an NVIDIA GPU that needs it);
+   - which model to download (it suggests one that's fast enough for your PC);
+   - which model to load when the app starts.
+
+   It starts the downloads, and the model loads when it's ready. Skipped it? Pick a model in the **Model** dropdown instead. If that model isn't downloaded yet, the app shows its card on the **Models** page. Download it there, and the app switches to it when it's done. **Settings → First-time setup** opens the setup again.
 3. Click the source button (it says *System audio* at first) and choose **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to caption. They're remembered and picked up again whenever they start.
 4. Choose **Auto-detect** or a language, then press **Start**. 🎉
 5. Want captions on top of everything? Turn on **Overlay**. Drag it to move it and drag its edges to resize it. Click-through (the pin button, Settings or the tray menu) lets clicks pass to the window below; turn it off again from the tray icon.
 
 The status line shows the latency and the device in use. You can switch models while captioning: the app pauses, loads the new one in the background and carries on.
 
+By default no model is loaded when the app starts, so it doesn't take memory until you need it. To have one ready at start-up, set **Settings → Default model** to a model, or to **Previous selection** for the one you used last. The **Unload** button on the model's card frees it again.
+
 ## Which model should I use?
 
 | You have | Try |
 | --- | --- |
-| An NVIDIA GPU (6 GB+) | Whisper large-v3-turbo (the default): partial captions in about 0.3 s on an RTX 4070 Laptop |
+| An NVIDIA GPU (6 GB+) | Whisper large-v3-turbo (first-time setup suggests it): partial captions in about 0.3 s on an RTX 4070 Laptop |
 | Taiwanese Mandarin, or Mandarin mixed with English | Breeze ASR 25 (GPU) |
 | Taiwanese Hokkien (Taigi) | Breeze ASR 26 (GPU) |
 | Hakka | Taiwan Tongues ASR CE (GPU) |
@@ -51,12 +61,12 @@ The app warns you when a model will probably be too slow for real time on your P
 
 ## GPU support
 
-To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. The app also offers this at start-up while models run on the CPU.
+To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. First-time setup offers this too.
 
 - Only the NVIDIA display driver is needed; you don't have to install the CUDA Toolkit.
 - The files come from NVIDIA's own packages on PyPI and are checked against SHA-256 hashes pinned in the source before anything is unpacked.
 - The card's delete button removes them again. Windows locks DLLs that are in use, so they're deleted the next time the app starts.
-- No internet on that PC? Copy the app folder (or just its `cuda` folder) from another PC.
+- No internet on that PC? Copy the `cuda` folder from another PC: it's next to `AppLiveCaption.exe` in the portable version, and in `%LOCALAPPDATA%\AppLiveCaption` in the installed one.
 
 <details markdown="1">
 <summary>Technical details</summary>
@@ -88,24 +98,60 @@ The app also uses the same libraries when they're already on the PC, in this ord
 
 ## Where your stuff lives
 
-Everything the app writes stays next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it. Nothing goes to AppData.
+- **Portable version:** everything goes next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it.
+- **Installed version:** everything goes in your Windows profile, the usual way. Each Windows user has their own. Small, personal things go in `%APPDATA%\AppLiveCaption`, which follows you if your PC uses a roaming profile. The big things that belong to this PC go in `%LOCALAPPDATA%\AppLiveCaption`. (Paste either into File Explorer's address bar.)
 
-| What | Where (next to the exe) |
-| --- | --- |
-| Settings | `config.json` |
-| History | `history\` |
-| Logs | `logs\app.log` (Settings → Advanced → Logs opens the folder) |
-| Models | `models\` (Settings → Model folder can point somewhere else, e.g. a folder several copies share) |
-| GPU support | `cuda\` |
+| What | Portable (next to the exe) | Installed |
+| --- | --- | --- |
+| Settings | `config.json` | `%APPDATA%\AppLiveCaption\config.json` |
+| History | `history\` | `%APPDATA%\AppLiveCaption\history\` |
+| Your changes to the model list | `models.json` (only exists once you add or remove a model) | `%APPDATA%\AppLiveCaption\models.json` |
+| Logs | `logs\app.log` (Settings → Advanced → Logs opens the folder) | `%LOCALAPPDATA%\AppLiveCaption\logs\` |
+| Models | `models\` (Settings → Model folder can point somewhere else, e.g. a folder several copies share) | `%LOCALAPPDATA%\AppLiveCaption\models\` |
+| GPU support | `cuda\` | `%LOCALAPPDATA%\AppLiveCaption\cuda\` |
 
-If the app's folder can't be written to (for example under `C:\Program Files`), the app uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
+The installer puts a small `AppLiveCaption.installed` file next to the exe; that's how the app knows it was installed. If a portable copy's folder can't be written to (for example under `C:\Program Files`), it uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
+
+**Switching from portable to installed?** Install the app, then copy (the ones you have) `config.json`, `history` and `models.json` from the portable folder into `%APPDATA%\AppLiveCaption`, and `models` and `cuda` into `%LOCALAPPDATA%\AppLiveCaption`, so nothing needs downloading again.
+
+## Updating
+
+Your settings, history, models and GPU support stay where they are, so nothing needs downloading again. 🔄
+
+**Check for a new version** with **Settings → About → Check for updates** (or **Check for updates** in the tray icon's menu). If there is one, **Download** opens its page on GitHub. You can also look on the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page and compare with the version shown in Settings → About.
+
+### Installed version
+
+Download the new `Setup.exe` and run it. It finds your installation and replaces the program files. If AppLiveCaption is running, Setup asks you to close it first. That's it. 🎉
+
+### Portable version
+
+Updating means swapping the program files and keeping your stuff:
+
+1. **Download the new zip** and unzip it somewhere temporary, like your Downloads folder.
+2. **Close AppLiveCaption.** Closing the window quits it; check that its icon is gone from the tray.
+3. **In your AppLiveCaption folder, delete `AppLiveCaption.exe` and the `_internal` folder.** Leave everything else alone (see the table above).
+4. **Copy the new `AppLiveCaption.exe` and `_internal` folder** into your AppLiveCaption folder.
+5. **Start the app** and check Settings → About for the new version. 🎉
+
+Deleting the old `_internal` first matters: copying over it would leave files from the old version mixed in with the new ones.
+
+**Prefer a fresh folder?** Unzip the new version into a new folder, then move `config.json`, `history`, `models`, `models.json` and `cuda` over from the old one (the ones you have; `logs` is optional). Then delete the old folder.
+
+To go back to an older version, do the same with that version's zip (or, installed, run that version's Setup). See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+
+## Uninstalling
+
+- **Installed version:** uninstall AppLiveCaption from **Settings → Apps → Installed apps** in Windows. At the end it lists what's still on your PC, each with a tick box: **Settings and history**, **Downloaded models** and **GPU support**, with their sizes. Tick what you want gone. Anything left unticked (the default) is kept for a later install. A models folder you moved somewhere else in Settings is never deleted.
+  - A silent uninstall (`unins000.exe /VERYSILENT`) keeps everything, unless you add `/DELETEDATA=settings,models,gpu` (any of them, or `all`).
+- **Portable version:** delete its folder. That's everything.
 
 ## Offline and privacy
 
 Audio never leaves your PC. The app goes online only when you ask it to:
 
-- **Downloading a model** from Hugging Face (Models page).
-- **Downloading GPU support** from PyPI (Models page).
+- **Downloading a model** from Hugging Face (Models page or first-time setup).
+- **Downloading GPU support** from PyPI (Models page or first-time setup).
 - **Check for updates**, which asks the GitHub API for the latest release.
 
 Everything else runs offline: the app sets `HF_HUB_OFFLINE=1` at start-up and loads models from their local folders only.
@@ -174,12 +220,15 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 | `-Clean` | Delete earlier build output and PyInstaller's cache first. |
 | `-Install` | Run `pip install -r requirements.txt` for that Python before building. |
 | `-SkipTests` | Skip the unit tests. |
+| `-Installer` | Also build the installer, `dist\AppLiveCaption-<version>-Setup.exe` (about 55 MB). Needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`. |
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
 
-The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, zip only `AppLiveCaption.exe` and `_internal\`, and tag it like `v1.0.1` so the update check finds it.
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.1.0` so the update check finds it.
 
-The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.0.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
+
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.1.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
 <details markdown="1">
 <summary>What the build leaves out, and why</summary>
@@ -202,7 +251,7 @@ python -m unittest discover -s tests
 
 ## Website
 
-The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest zip. To preview it:
+The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one). To preview it:
 
 ```powershell
 python tools/build_site.py
@@ -213,7 +262,20 @@ Then open <http://localhost:8000>.
 
 ## Adding a model
 
-All models are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Every model runs on faster-whisper, so it must be in CTranslate2 format; a model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. Clicking a model's card on the Models page opens its page on Hugging Face.
+### In the app
+
+The **Models** page has an **Add model** button:
+
+- **Hugging Face:** paste a repository ID like `Systran/faster-whisper-large-v3` (or its huggingface.co link). The app checks that it's a faster-whisper model, reads its size and license, and gives it a card to download, like the presets.
+- **Folder on this PC:** pick a folder that holds a converted model. It's copied into the app's `models` folder, so the original can be moved or deleted afterwards.
+
+Only faster-whisper (CTranslate2) models work: `model.bin`, `config.json` and `tokenizer.json` must be at the top of the repository or folder. A model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. The app can't know which languages a model was trained on, so it lists all Whisper languages for it.
+
+Each card's **…** menu has **Delete files from disk** and **Remove from list**; removing offers to delete the downloaded files too (ticked by default). Your changes are stored in `models.json`, never in the preset list. **Settings → Reset model list** brings the presets back and removes the models you added at any time, and when every model has been removed the Models page shows a **Restore default models** button.
+
+### In the code
+
+The presets are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Ctrl+clicking a model's card on the Models page opens its page on Hugging Face (or, for a model from a folder, its folder).
 
 | Model | Repository |
 | --- | --- |
@@ -251,7 +313,7 @@ The app loads `app\i18n\app_<locale>.qm` for the Windows display language automa
 ```text
 app/
   main.py              entry point (sets offline mode, theme, splash)
-  paths.py             where the app keeps its data (next to the exe)
+  paths.py             where the app keeps its data (next to the exe, or in the user's profile when installed)
   config.py            settings (qfluentwidgets QConfig)
   cli.py               console tools
   audio/               capture (PyAudioWPatch, process loopback via comtypes),
@@ -261,7 +323,10 @@ app/
                        (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
   core/                controller (worker thread) and history
-  ui/                  main window, pages, source flyout, overlay, tray
+  ui/                  main window, pages, first-time setup, dialogs, source flyout, overlay, tray
+installer/             Inno Setup script for the installer
+site/                  the project website
+tools/                 build and website helpers
 ```
 
 <details markdown="1">

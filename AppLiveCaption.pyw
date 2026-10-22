@@ -13,8 +13,7 @@ import sys
 
 ROOT = os.path.dirname(os.path.abspath(__file__))
 
-# Import name -> pip package, for the packages the app can't start without.
-# (PyTorch and transformers are optional: only Breeze ASR 25 needs them.)
+# Import name -> pip package (as in requirements.txt), for the packages the app can't start without.
 REQUIRED = {
     "PySide6": "PySide6",
     "qfluentwidgets": "PySide6-Fluent-Widgets",
@@ -26,7 +25,7 @@ REQUIRED = {
     "pycaw": "pycaw",
     "psutil": "psutil",
     "soxr": "soxr",
-    "opencc": "OpenCC",
+    "opencc": "opencc-python-reimplemented",
     "numpy": "numpy",
     "huggingface_hub": "huggingface_hub",
 }

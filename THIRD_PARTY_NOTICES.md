@@ -116,3 +116,10 @@ Copyright (c) 2001, 2002, 2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 
 The exe starts through PyInstaller's bootloader, licensed under the GNU General Public License v2.0 or later with this exception:
 
 > In addition to the permissions in the GNU General Public License, the authors give you unlimited permission to link or embed compiled bootloader and related files into combinations with other programs, and to distribute those combinations without any restriction coming from the use of those files. (The General Public License restrictions do apply in other respects; for example, they cover modification of the files, and distribution when not linked into a combined executable.)
+
+## Inno Setup (installer)
+
+The installer (`AppLiveCaption-<version>-Setup.exe`) and its uninstaller are made with [Inno Setup](https://jrsoftware.org/isinfo.php), used under the [Inno Setup License](https://jrsoftware.org/files/is/license.txt). They aren't part of the app itself or of the portable zip.
+
+Copyright (C) 1997-2026 Jordan Russell. All rights reserved.
+Portions Copyright (C) 2000-2026 Martijn Laan. All rights reserved.

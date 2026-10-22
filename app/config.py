@@ -20,10 +20,12 @@ from qfluentwidgets import (
     qconfig,
 )
 
-from .models.catalog import load_catalog
 from .paths import config_file
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
+# Settings → Default model choices besides a model id (model ids never contain ":").
+NO_MODEL = ":none"  # load nothing at start-up
+PREVIOUS_MODEL = ":previous"  # load the model used last time
 
 
 def is_win11() -> bool:
@@ -56,6 +58,8 @@ class Config(QConfig):
     # Follow the system theme by default (QConfig's own default is light).
     themeMode = OptionsConfigItem("QFluentWidgets", "ThemeMode", Theme.AUTO, OptionsValidator(Theme), EnumSerializer(Theme))
     micaEnabled = ConfigItem("Appearance", "MicaEnabled", is_win11(), BoolValidator())
+    # First-time setup (app/ui/setup_dialog.py) was shown and finished or skipped. Settings can open it again.
+    setupDone = ConfigItem("General", "SetupDone", False, BoolValidator())
 
     # Live captions
     modelId = ConfigItem("Live", "Model", DEFAULT_MODEL)
@@ -63,18 +67,16 @@ class Config(QConfig):
     captureSelection = ConfigItem("Live", "CaptureSelection", {}, DictValidator())
 
     # Speech recognition
-    defaultModel = OptionsConfigItem("ASR", "DefaultModel", DEFAULT_MODEL,
-                                     OptionsValidator([m.id for m in load_catalog()]))
+    # The model loaded at start-up: NO_MODEL, PREVIOUS_MODEL or any model id (the list of models can
+    # change, so the id may be one the user added, or removed).
+    defaultModel = ConfigItem("ASR", "DefaultModel", NO_MODEL)
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
-    # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
-    offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())
     opencc = ConfigItem("ASR", "OpenCC", True, BoolValidator())
     modelFolder = ConfigItem("ASR", "ModelFolder", DEFAULT_MODEL_FOLDER, FolderPathValidator())
 
     # Caption appearance (Live Captions page)
     captionFont = ConfigItem("Captions", "FontFamily", "Microsoft JhengHei UI")
     captionFontSize = RangeConfigItem("Captions", "FontSize", 24, RangeValidator(10, 72))
-    captionLines = RangeConfigItem("Captions", "Lines", 8, RangeValidator(1, 30))
     # A caption color left at its default follows the light/dark theme instead.
     finalColor = ColorConfigItem("Captions", "FinalColor", QColor(32, 32, 32))
     partialColor = ColorConfigItem("Captions", "PartialColor", QColor(128, 128, 128))
@@ -83,7 +85,6 @@ class Config(QConfig):
     overlayVisible = ConfigItem("Overlay", "Visible", False, BoolValidator())
     overlayGeometry = ConfigItem("Overlay", "Geometry", [])
     overlayClickThrough = ConfigItem("Overlay", "ClickThrough", False, BoolValidator())
-    overlayLines = RangeConfigItem("Overlay", "Lines", 2, RangeValidator(1, 3))
     overlayFontSize = RangeConfigItem("Overlay", "FontSize", 26, RangeValidator(10, 72))
     overlayOpacity = RangeConfigItem("Overlay", "BackgroundOpacity", 70, RangeValidator(0, 100))
     overlayTextColor = ColorConfigItem("Overlay", "TextColor", QColor(255, 255, 255))

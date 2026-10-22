@@ -48,6 +48,14 @@ class ModelComboBox(ComboBox):
         super().clear()
         self._dimmed.clear()
 
+    def setPlaceholderText(self, text: str) -> None:  # noqa: N802 - Qt name
+        # qfluentwidgets also shows the placeholder over item 0 when it's selected; only show
+        # it when nothing is (setCurrentIndex(-1)).
+        self._placeholderText = text
+        if self.currentIndex() < 0:
+            self._updateTextState(True)
+            self.setText(text)
+
     def _createComboMenu(self):  # noqa: N802 - qfluentwidgets hook
         menu = super()._createComboMenu()
         # Menu rows are created in item order, so row numbers are item indexes.

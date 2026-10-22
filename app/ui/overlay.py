@@ -9,7 +9,7 @@ from qfluentwidgets import FluentIcon, Theme, ToolTipFilter, TransparentToolButt
 
 from ..config import cfg
 from .caption_model import CaptionModel
-from .caption_view import build_document
+from .caption_view import draw_captions
 
 EDGE = 8  # resize margin in pixels
 
@@ -52,7 +52,7 @@ class CaptionOverlay(QWidget):
         self._save_timer.timeout.connect(self.save_geometry)
 
         model.changed.connect(self.update)
-        for item in (cfg.overlayLines, cfg.overlayFontSize, cfg.overlayOpacity, cfg.overlayTextColor,
+        for item in (cfg.overlayFontSize, cfg.overlayOpacity, cfg.overlayTextColor,
                      cfg.overlayBackground, cfg.captionFont):
             item.valueChanged.connect(lambda _v: self.update())
         cfg.overlayClickThrough.valueChanged.connect(self._on_click_through)
@@ -115,8 +115,6 @@ class CaptionOverlay(QWidget):
             p.setPen(QColor(255, 255, 255, 70))
             p.drawPath(path)
 
-        lines = cfg.get(cfg.overlayLines)
-        finals, partial = self.model.last_lines(lines)
         margin = 16
         rect = self.rect().adjusted(margin, 10, -margin, -10)
         text_color = QColor(cfg.get(cfg.overlayTextColor))
@@ -125,15 +123,8 @@ class CaptionOverlay(QWidget):
         partial_color = partial_color.darker(135) if text_color.lightness() > 128 else partial_color.lighter(160)
         font = QFont(cfg.get(cfg.captionFont), cfg.get(cfg.overlayFontSize))
         font.setWeight(QFont.Weight.DemiBold)
-        if not finals and not partial:
-            return
-        doc = build_document(finals, partial, font, text_color, partial_color, rect.width())
-        top = rect.bottom() - doc.size().height()
-        p.save()
-        p.setClipRect(rect)
-        p.translate(rect.left(), top)
-        doc.drawContents(p, QRectF(0, rect.top() - top, rect.width(), rect.height()))
-        p.restore()
+        # As many lines as the overlay's height fits: resize it to show more or fewer.
+        draw_captions(p, self.model, QRectF(rect), font, text_color, partial_color)
 
     # -- interaction -------------------------------------------------------------
     def _edges_at(self, pos: QPoint) -> Qt.Edges:

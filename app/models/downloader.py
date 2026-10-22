@@ -22,7 +22,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
 
-from .catalog import ModelInfo
+from .catalog import _DEFAULT_IGNORE, ModelInfo
 from .storage import PARTIAL_SUFFIX, model_path, models_dir, write_marker
 
 log = logging.getLogger(__name__)
@@ -73,16 +73,26 @@ class Progress:
 ProgressCallback = Callable[[Progress], None]
 
 
-def _selected_files(info: ModelInfo, siblings: list[tuple[str, int]]) -> list[tuple[str, int]]:
+def select_files(siblings: list[tuple[str, int]], allow: tuple[str, ...] = ()) -> list[tuple[str, int]]:
+    """The files of a model to fetch: those matching ``allow``, or without it, everything except docs."""
     out = []
     for name, size in siblings:
-        if info.files:
-            if not any(fnmatch.fnmatch(name, pat) for pat in info.files):
+        if allow:
+            if not any(fnmatch.fnmatch(name, pat) for pat in allow):
                 continue
-        elif any(fnmatch.fnmatch(name, pat) for pat in info.ignore_patterns):
+        elif any(fnmatch.fnmatch(name, pat) for pat in _DEFAULT_IGNORE):
             continue
         out.append((name, size or 0))
     return out
+
+
+def _selected_files(info: ModelInfo, siblings: list[tuple[str, int]]) -> list[tuple[str, int]]:
+    return select_files(siblings, info.files)
+
+
+def local_files(folder: Path) -> list[tuple[str, int]]:
+    """The files at the top of a model folder on this PC, with their sizes (a converted model has no sub-folders)."""
+    return [(p.name, p.stat().st_size) for p in sorted(folder.iterdir()) if p.is_file() and not p.name.startswith(".")]
 
 
 class TransferSpeed:
@@ -101,19 +111,62 @@ class TransferSpeed:
         return (total_done - b0) / (now - t0) if now > t0 else 0.0
 
 
+def _copy_local(info: ModelInfo, on_progress: ProgressCallback, cancel: threading.Event, target: Path,
+                base: Path) -> Path:
+    """Copy a model folder chosen by the user into the models folder (the "download" of a local model)."""
+    src = Path(info.source_folder)
+    if not src.is_dir():
+        raise DownloadError("not_found", f"the folder {src} doesn't exist any more")
+    # Only the files that were checked (and counted in the size) when the model was added.
+    files = _selected_files(info, local_files(src))
+    if not files:
+        raise DownloadError("not_found", f"no model files in {src}")
+    target.mkdir(parents=True, exist_ok=True)
+    total = sum(size for _, size in files)
+    todo = sum(size for name, size in files if not (target / name).is_file() or (target / name).stat().st_size != size)
+    free = shutil.disk_usage(target).free
+    if todo + DISK_MARGIN > free:
+        raise DownloadError("disk_space", f"need {todo / 2**30:.1f} GB, {free / 2**30:.1f} GB free")
+    speed = TransferSpeed()
+    done = total - todo
+    on_progress(Progress(done, total, 0.0, ""))
+    for name, size in files:
+        final, part = target / name, target / (name + PARTIAL_SUFFIX)
+        if final.is_file() and final.stat().st_size == size:
+            continue
+        try:
+            with open(src / name, "rb") as fin, open(part, "wb") as fout:
+                while chunk := fin.read(CHUNK):
+                    if cancel.is_set():
+                        raise DownloadCancelled()
+                    fout.write(chunk)
+                    done += len(chunk)
+                    on_progress(Progress(done, total, speed.add(done), name))
+            os.replace(part, final)
+        except OSError as exc:
+            raise DownloadError("io", str(exc)) from exc
+    write_marker(info, dict(files), base)
+    on_progress(Progress(total, total, 0.0, ""))
+    log.info("Copied %s to %s", src, target)
+    return target
+
+
 def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threading.Event,
                    base: Path | None = None) -> Path:
     """Download (or resume) every file of ``info``. Returns the model folder.
 
-    Raises DownloadCancelled or DownloadError.
+    A model added from a local folder is copied instead. Raises DownloadCancelled or DownloadError.
     """
     from huggingface_hub import HfApi, hf_hub_url
     from huggingface_hub.errors import RepositoryNotFoundError
     from huggingface_hub.utils import build_hf_headers, get_session
 
     base = base or models_dir()
+    # The model's folder is created only once its files are known: a failed check mustn't leave an empty
+    # folder behind (a local model's id would then skip it as taken, see catalog.unique_id).
     target = model_path(info, base)
-    target.mkdir(parents=True, exist_ok=True)
+    if info.source_folder:
+        return _copy_local(info, on_progress, cancel, target, base)
 
     with allow_network():
         try:
@@ -138,6 +191,7 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
                 raise DownloadError("not_found", f"{name} not found in {repo}")
             files = [f for f in files if f[0] != name] + [(name, sib.size or 0, hf_hub_url(other.id, name, revision=other.sha))]
         total = sum(size for _, size, _ in files)
+        target.mkdir(parents=True, exist_ok=True)
 
         def have(name: str, size: int) -> int:
             final = target / name

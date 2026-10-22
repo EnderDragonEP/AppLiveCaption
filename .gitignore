@@ -8,6 +8,7 @@ build.log
 app/i18n/*.ts.bak
 # What the app writes when run from source (it's portable; see app/paths.py)
 /config.json
+/models.json
 /history/
 /logs/
 /models/

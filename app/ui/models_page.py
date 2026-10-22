@@ -1,11 +1,15 @@
-"""Models page: GPU support and every catalog model, with download/delete, disk usage and license."""
+"""Models page: GPU support and the model list, with download, delete, add and remove, disk usage and license."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, QVariantAnimation, Signal
-from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+import time
+from pathlib import Path
+
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, QUrl, Signal
+from PySide6.QtGui import QDesktopServices
+from PySide6.QtWidgets import QAbstractButton, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    Action,
     BodyLabel,
     CaptionLabel,
     CardWidget,
@@ -15,39 +19,66 @@ from qfluentwidgets import (
     PrimaryPushButton,
     ProgressBar,
     PushButton,
+    RoundMenu,
     ScrollArea,
     StrongBodyLabel,
     TitleLabel,
     ToolTipFilter,
     TransparentToolButton,
-    themeColor,
 )
 
 from .. import LICENSES_URL
 from ..asr import cuda_libs
 from ..asr.cuda_setup import active_dirs, cuda_libraries_found
 from ..asr.languages import language_name
-from ..config import cfg
 from ..i18n import tr
-from ..models.catalog import ModelInfo, load_catalog
-from ..models.storage import delete_model, disk_usage, has_partial_download, is_downloaded, models_dir
+from ..models.catalog import ModelInfo, add_custom_model, load_catalog, remove_model, reset_catalog
+from ..models.storage import (
+    delete_model,
+    disk_usage,
+    has_partial_download,
+    is_downloaded,
+    model_path,
+    models_dir,
+)
 from .download import CudaDownloadThread, DownloadManager, cuda_download_error_text, download_error_text, format_bytes
+from .highlight import FlashMixin
 from .messages import show_infobar
+from .model_dialogs import AddModelDialog, ConfirmDialog
 
 
-def _languages_text(info: ModelInfo) -> str:
+def languages_text(info: ModelInfo) -> str:
     if len(info.languages) > 10:
         return tr("{n} languages").format(n=len(info.languages))
     return ", ".join(info.language_label(c) if c in info.language_notes else language_name(c) for c in info.languages)
 
 
-class _ItemCard(CardWidget):
-    """A card that opens ``page_url`` when clicked and can be highlighted for a moment.
+class _HideOnEnter(QObject):
+    """Hides the card's link hint while the mouse is on one of its buttons (they have their own tooltips,
+    or would wrongly seem to open the link)."""
 
-    Subclasses call ``_build_frame`` and add ``detail`` (a label) for ``set_progress``.
+    def __init__(self, card_tip: ToolTipFilter, parent: QWidget):
+        super().__init__(parent)
+        self.card_tip = card_tip
+
+    def eventFilter(self, obj, e):  # noqa: N802 - Qt override
+        if e.type() == QEvent.Type.Enter:
+            self.card_tip.hideToolTip()
+        return False
+
+
+class _ItemCard(FlashMixin, CardWidget):
+    """A card that opens ``page_url`` on Ctrl+click and can be highlighted for a moment (``flash``).
+
+    Subclasses call ``_build_frame`` (after setting ``page_url``), add ``detail`` (a label) for
+    ``set_progress`` and, once their buttons exist, call ``_set_up_link_hint``.
     """
 
     page_url = ""
+    link_hint = ""  # what Ctrl+click opens, shown when hovering the card
+    PLAIN_CLICKS_FOR_TIP = 3  # plain clicks in a row (the user tries to open the link) before saying how
+    _plain_clicks = 0
+    _last_click = 0.0
 
     def _build_frame(self) -> QHBoxLayout:
         """Lay out the card: a row for the icon, text and status columns (returned
@@ -65,39 +96,31 @@ class _ItemCard(CardWidget):
         outer.addWidget(self.progress)
         return row
 
+    def _set_up_link_hint(self) -> None:
+        """Show ``link_hint`` when hovering the card, except over its buttons."""
+        self.setToolTip(self.link_hint)
+        tip = ToolTipFilter(self, showDelay=500)
+        self.installEventFilter(tip)
+        for button in self.findChildren(QAbstractButton):
+            button.installEventFilter(_HideOnEnter(tip, button))
+
     def mouseReleaseEvent(self, e):  # noqa: N802 - Qt override
         super().mouseReleaseEvent(e)
-        # Buttons on the card handle their own clicks; this is a click on the
-        # card itself. Ignore right-clicks and drags released outside the card.
-        if e.button() == Qt.MouseButton.LeftButton and self.rect().contains(e.position().toPoint()):
-            QDesktopServices.openUrl(QUrl(self.page_url))
-
-    def flash(self) -> None:
-        """Outline the card in the accent color for a moment, then fade it out."""
-        anim = QVariantAnimation(self)
-        anim.setStartValue(1.0)
-        anim.setEndValue(0.0)
-        anim.setDuration(1600)
-        anim.valueChanged.connect(self._set_highlight)
-        self._highlight_anim = anim  # keep a reference while it runs
-        self._set_highlight(1.0)
-        QTimer.singleShot(900, anim.start)  # hold fully visible first
-
-    def _set_highlight(self, value) -> None:
-        self._highlight = float(value)
-        self.update()
-
-    def paintEvent(self, e):  # noqa: N802 - Qt override
-        super().paintEvent(e)
-        if getattr(self, "_highlight", 0.0) <= 0:
+        # Buttons on the card handle their own clicks; this is a click on the card itself. Like a link in
+        # Office it needs Ctrl, so a stray click doesn't open the browser. Ignore right-clicks and drags
+        # released outside the card.
+        if e.button() != Qt.MouseButton.LeftButton or not self.rect().contains(e.position().toPoint()):
             return
-        painter = QPainter(self)
-        painter.setRenderHint(QPainter.RenderHint.Antialiasing)
-        color = QColor(themeColor())
-        color.setAlphaF(self._highlight)
-        painter.setPen(QPen(color, 2))
-        painter.setBrush(Qt.BrushStyle.NoBrush)
-        painter.drawRoundedRect(QRectF(self.rect()).adjusted(1, 1, -1, -1), 6, 6)
+        if e.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            self._plain_clicks = 0
+            QDesktopServices.openUrl(QUrl(self.page_url))
+            return
+        now = time.monotonic()
+        self._plain_clicks = self._plain_clicks + 1 if now - self._last_click < 2.0 else 1
+        self._last_click = now
+        if self._plain_clicks >= self.PLAIN_CLICKS_FOR_TIP:
+            self._plain_clicks = 0
+            show_infobar("info", self.tr("Hold Ctrl to open the link"), self.link_hint, self.window())
 
     def reserve_progress_width(self, downloading: bool) -> None:
         """While downloading, keep the detail label as wide as the widest progress
@@ -119,13 +142,15 @@ class _ItemCard(CardWidget):
 class ModelCard(_ItemCard):
     downloadClicked = Signal(str)
     cancelClicked = Signal(str)
-    deleteClicked = Signal(str)
+    deleteClicked = Signal(str)  # delete the downloaded files
+    removeClicked = Signal(str)  # take the model off the list
     useClicked = Signal(str)
+    unloadClicked = Signal(str)
 
     def __init__(self, info: ModelInfo, parent=None):
         super().__init__(parent)
         self.info = info
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self._has_files = False
         lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.ROBOT, self)
@@ -139,15 +164,15 @@ class ModelCard(_ItemCard):
         desc = CaptionLabel(info.description, self)
         desc.setWordWrap(True)
         text.addWidget(desc)
-        meta = CaptionLabel(
-            tr("Download {size} · {backend} · Languages: {langs} · License: {lic}").format(
-                size=format_bytes(info.size_mb * 2**20), backend=info.backend, langs=_languages_text(info),
-                lic=info.license),
-            self,
-        )
+        # A model from a local folder is copied, not downloaded.
+        template = (tr("Download {size} · {backend} · Languages: {langs} · License: {lic}") if info.repo else
+                    tr("Size {size} · {backend} · Languages: {langs} · License: {lic}"))
+        meta_text = template.format(size=format_bytes(info.size_mb * 2**20), backend=info.backend,
+                                    langs=languages_text(info), lic=info.license)
+        if info.custom:
+            meta_text += " · " + tr("Added by you")
+        meta = CaptionLabel(meta_text, self)
         meta.setWordWrap(True)
-        meta.setToolTip(info.repo)
-        meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
         lay.addLayout(text, 1)
 
@@ -163,25 +188,53 @@ class ModelCard(_ItemCard):
         buttons.addStretch(1)
         self.use_btn = PushButton(self.tr("Use"), self)
         self.use_btn.clicked.connect(lambda: self.useClicked.emit(info.id))
+        self.unload_btn = PushButton(self.tr("Unload"), self)
+        self.unload_btn.setToolTip(self.tr("Free the memory the model uses. Captioning stops if it's running."))
+        self.unload_btn.installEventFilter(ToolTipFilter(self.unload_btn))
+        self.unload_btn.clicked.connect(lambda: self.unloadClicked.emit(info.id))
         self.download_btn = PrimaryPushButton(FluentIcon.DOWNLOAD, self.tr("Download"), self)
         self.download_btn.clicked.connect(lambda: self.downloadClicked.emit(info.id))
         self.cancel_btn = PushButton(FluentIcon.CLOSE, self.tr("Cancel"), self)
         self.cancel_btn.clicked.connect(lambda: self.cancelClicked.emit(info.id))
-        self.delete_btn = TransparentToolButton(FluentIcon.DELETE, self)
-        self.delete_btn.setToolTip(self.tr("Delete from disk"))
-        self.delete_btn.installEventFilter(ToolTipFilter(self.delete_btn))
-        self.delete_btn.clicked.connect(lambda: self.deleteClicked.emit(info.id))
-        for b in (self.use_btn, self.download_btn, self.cancel_btn, self.delete_btn):
+        self.more_btn = TransparentToolButton(FluentIcon.MORE, self)
+        self.more_btn.setToolTip(self.tr("More"))
+        self.more_btn.installEventFilter(ToolTipFilter(self.more_btn))
+        self.more_btn.clicked.connect(self._show_menu)
+        for b in (self.use_btn, self.unload_btn, self.download_btn, self.cancel_btn, self.more_btn):
             buttons.addWidget(b)
         side.addLayout(buttons)
         side.addStretch(1)
         lay.addLayout(side)
+        self._set_up_link_hint()
 
     @property
     def page_url(self) -> str:
-        return f"https://huggingface.co/{self.info.repo}"
+        if self.info.repo:
+            return f"https://huggingface.co/{self.info.repo}"
+        return QUrl.fromLocalFile(str(model_path(self.info))).toString()  # a local model: open its folder
 
-    def update_state(self, downloading: bool, in_use: bool) -> None:
+    @property
+    def link_hint(self) -> str:
+        if self.info.repo:
+            return self.tr("Ctrl+click to open huggingface.co/{repo}").format(repo=self.info.repo)
+        return self.tr("Ctrl+click to open the model's folder")
+
+    def _show_menu(self) -> None:
+        menu = RoundMenu(parent=self)
+        menu.closedSignal.connect(menu.deleteLater)  # exec() doesn't wait for the menu to close
+        # The actions open a dialog. They run once the menu is done with the click: the dialog's event loop
+        # would delete the menu (deleteLater above) while its click handler is still running, and crash.
+        delete = Action(FluentIcon.DELETE, self.tr("Delete files from disk"), menu)
+        delete.setEnabled(self._has_files)
+        delete.triggered.connect(lambda: QTimer.singleShot(0, lambda: self.deleteClicked.emit(self.info.id)))
+        remove = Action(FluentIcon.REMOVE, self.tr("Remove from list"), menu)
+        remove.triggered.connect(lambda: QTimer.singleShot(0, lambda: self.removeClicked.emit(self.info.id)))
+        menu.addAction(delete)
+        menu.addAction(remove)
+        menu.exec(self.more_btn.mapToGlobal(QPoint(0, self.more_btn.height())))
+
+    def update_state(self, downloading: bool, in_use: bool, loading: bool = False) -> None:
+        """``in_use``: the model is loaded, or (``loading``) being loaded; its files can't be deleted then."""
         info = self.info
         downloaded = is_downloaded(info)
         partial = has_partial_download(info)
@@ -191,10 +244,14 @@ class ModelCard(_ItemCard):
         self.download_btn.setVisible(not downloaded and not downloading)
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
         self.use_btn.setVisible(downloaded and not in_use)
-        self.delete_btn.setVisible((downloaded or partial) and not downloading and not in_use)
+        self.unload_btn.setVisible(in_use and not loading)
+        self._has_files = downloaded or partial
+        self.more_btn.setVisible(not downloading and not in_use)
         used = disk_usage(info) if (downloaded or partial) else 0
         if downloading:
             self.status.setText(self.tr("Downloading…"))
+        elif in_use and loading:
+            self.status.setText(self.tr("Loading…"))
         elif in_use:
             self.status.setText(self.tr("In use"))
         elif downloaded:
@@ -211,6 +268,7 @@ class GpuSupportCard(_ItemCard):
     """Downloads NVIDIA's CUDA libraries (``app/asr/cuda_libs.py``) so models can run on the GPU."""
 
     installed = Signal()  # a download finished; the libraries can be used now
+    downloadEnded = Signal(bool)  # a download ended: True when it installed the libraries
 
     page_url = f"{LICENSES_URL}#nvidia-cuda-and-cudnn"
 
@@ -219,7 +277,7 @@ class GpuSupportCard(_ItemCard):
         self._thread: CudaDownloadThread | None = None
         self.gpu_name = ""
         self.usable = False  # CTranslate2 can use the GPU
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.link_hint = self.tr("Ctrl+click to open the license of NVIDIA's libraries")
         lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.SPEED_HIGH, self)
@@ -239,8 +297,6 @@ class GpuSupportCard(_ItemCard):
             self,
         )
         meta.setWordWrap(True)
-        meta.setToolTip(self.page_url)
-        meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
         lay.addLayout(text, 1)
 
@@ -269,6 +325,7 @@ class GpuSupportCard(_ItemCard):
         side.addLayout(buttons)
         side.addStretch(1)
         lay.addLayout(side)
+        self._set_up_link_hint()
         self.set_gpu(None, False)
 
     @property
@@ -354,6 +411,7 @@ class GpuSupportCard(_ItemCard):
             t.wait(1000)
             t.deleteLater()
         self.update_state()
+        self.downloadEnded.emit(result == "ok")
         if result == "ok":
             self.installed.emit()
         elif result != "cancelled":
@@ -371,8 +429,6 @@ class GpuSupportCard(_ItemCard):
         box.cancelButton.setText(self.tr("Cancel"))
         if not box.exec():
             return
-        if cuda_libs.installed_dir() is not None:
-            cfg.set(cfg.offerGpuSupport, False)  # removed on purpose: don't suggest it again at start-up
         cuda_libs.remove(in_use)
         self.update_state()
 
@@ -383,8 +439,10 @@ class GpuSupportCard(_ItemCard):
 
 class ModelsPage(QWidget):
     useRequested = Signal(str)
+    unloadRequested = Signal(str)
     downloadRequested = Signal(str)
     modelsChanged = Signal()
+    catalogChanged = Signal()  # models were added, removed or restored
     downloadFinished = Signal(str, bool)
     gpuSupportInstalled = Signal()
 
@@ -392,6 +450,7 @@ class ModelsPage(QWidget):
         super().__init__(parent)
         self.setObjectName("modelsPage")
         self.current_model_id: str | None = None
+        self.current_loading = False  # current_model_id is still being loaded
         self.downloads = DownloadManager(self)
         self.downloads.progress.connect(self._on_progress)
         self.downloads.finished.connect(self._on_finished)
@@ -406,25 +465,142 @@ class ModelsPage(QWidget):
         lay = QVBoxLayout(body)
         lay.setContentsMargins(36, 24, 36, 24)
         lay.setSpacing(10)
-        lay.addWidget(TitleLabel(self.tr("Models"), body))
+        head = QHBoxLayout()
+        head.addWidget(TitleLabel(self.tr("Models"), body))
+        head.addStretch(1)
+        self.add_btn = PushButton(FluentIcon.ADD, self.tr("Add model"), body)
+        self.add_btn.clicked.connect(self.add_model)
+        head.addWidget(self.add_btn)
+        lay.addLayout(head)
         self.folder_label = CaptionLabel("", body)
         lay.addWidget(self.folder_label)
         self.gpu_card = GpuSupportCard(body)
         self.gpu_card.installed.connect(self.gpuSupportInstalled)
         lay.addWidget(self.gpu_card)
         self.cards: dict[str, ModelCard] = {}
-        for info in load_catalog():
-            card = ModelCard(info, body)
-            card.downloadClicked.connect(self.downloadRequested)
-            card.cancelClicked.connect(self.downloads.cancel)
-            card.deleteClicked.connect(self._delete)
-            card.useClicked.connect(self.useRequested)
-            self.cards[info.id] = card
-            lay.addWidget(card)
+        self.cards_layout = QVBoxLayout()
+        self.cards_layout.setSpacing(10)
+        lay.addLayout(self.cards_layout)
+
+        # Shown instead of the cards when every model has been removed.
+        self.empty = QWidget(body)
+        empty_lay = QVBoxLayout(self.empty)
+        empty_lay.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.setSpacing(8)
+        empty_lay.setContentsMargins(0, 36, 0, 24)
+        empty_icon = IconWidget(FluentIcon.LIBRARY, self.empty)
+        empty_icon.setFixedSize(48, 48)
+        empty_lay.addWidget(empty_icon, 0, Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.addWidget(StrongBodyLabel(self.tr("No models in the list"), self.empty), 0, Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.addWidget(CaptionLabel(self.tr("Bring back the preset models, or add your own."), self.empty),
+                            0, Qt.AlignmentFlag.AlignHCenter)
+        self.restore_btn = PrimaryPushButton(FluentIcon.SYNC, self.tr("Restore default models"), self.empty)
+        self.restore_btn.clicked.connect(lambda: self.reset_catalog(delete_files=False))
+        empty_lay.addSpacing(8)
+        empty_lay.addWidget(self.restore_btn, 0, Qt.AlignmentFlag.AlignHCenter)
+        lay.addWidget(self.empty)
+
         lay.addStretch(1)
         scroll.setWidget(body)
+        # A tooltip only hides when the mouse leaves its widget, and scrolling moves the widget away
+        # without that happening: the tooltip would stay behind on the screen.
+        scroll.verticalScrollBar().valueChanged.connect(self._hide_tooltips)
         outer.addWidget(scroll)
+        self.sync_cards()
         self.refresh()
+
+    def _hide_tooltips(self) -> None:
+        for f in self.findChildren(ToolTipFilter):
+            f.hideToolTip()
+
+    def sync_cards(self) -> None:
+        """Make the cards match the model list (after models were added, removed or restored)."""
+        body = self.scroll.widget()
+        models = load_catalog()
+        for mid in [m for m in self.cards if m not in {i.id for i in models}]:
+            self._drop_card(mid)
+        while self.cards_layout.count():
+            self.cards_layout.takeAt(0)  # re-added below in the list's order
+        for info in models:
+            card = self.cards.get(info.id)
+            if card is not None and card.info != info:
+                self._drop_card(info.id)
+                card = None
+            if card is None:
+                card = ModelCard(info, body)
+                card.downloadClicked.connect(self.downloadRequested)
+                card.cancelClicked.connect(self.downloads.cancel)
+                card.deleteClicked.connect(self._delete)
+                card.removeClicked.connect(self._remove)
+                card.useClicked.connect(self.useRequested)
+                card.unloadClicked.connect(self.unloadRequested)
+                self.cards[info.id] = card
+            self.cards_layout.addWidget(card)
+            card.show()
+        self.empty.setVisible(not models)
+
+    def _drop_card(self, model_id: str) -> None:
+        card = self.cards.pop(model_id)
+        card.hide()
+        card.setParent(None)
+        card.deleteLater()
+
+    def _catalog_changed(self) -> None:
+        self.sync_cards()
+        self.refresh()
+        self.catalogChanged.emit()
+
+    # -- adding, removing, restoring --------------------------------------------------
+    def add_model(self) -> None:
+        dialog = AddModelDialog(self.window())
+        if not dialog.exec() or dialog.entry is None:
+            return
+        listed = {m.id for m in load_catalog()}
+        info = add_custom_model(dialog.entry)
+        if info.id in listed:  # its repository is a model's in the list already: nothing was added
+            show_infobar("info", self.tr("Already in the list"),
+                         self.tr("{name} is in the list already.").format(name=info.name), self.window())
+        else:
+            self._catalog_changed()
+            if info.source_folder:
+                # Copy it into the models folder right away. (Not through downloadRequested: the main
+                # window would then switch to it when the copy is done, replacing the model in use.)
+                self.start_download(info)
+            elif is_downloaded(info):  # a removed preset whose files were kept
+                show_infobar("success", self.tr("Model added"),
+                             self.tr("{name} is in the list, and downloaded already.").format(name=info.name),
+                             self.window())
+            else:
+                show_infobar("success", self.tr("Model added"),
+                             self.tr("{name} is in the list. Download it when you want to use it.").format(
+                                 name=info.name), self.window())
+        self.show_model(info.id)
+
+    def _remove(self, model_id: str) -> None:
+        card = self.cards[model_id]
+        info = card.info
+        files = disk_usage(info)
+        if info.custom:
+            content = self.tr("{name} is removed from the list. You can add it again later.").format(name=info.name)
+        else:
+            content = self.tr("{name} is removed from the list. Reset the model list in Settings (or press "
+                              "Restore default models when the list is empty) to bring it back.").format(name=info.name)
+        dialog = ConfirmDialog(self.tr("Remove from the list?"), content, self.tr("Remove"),
+                               option=(self.tr("Also delete the downloaded files ({size})").format(size=format_bytes(files))
+                                       if files else ""), parent=self.window())
+        if not dialog.exec():
+            return
+        remove_model(model_id)
+        if dialog.option_checked:
+            delete_model(info)
+        self._catalog_changed()
+
+    def reset_catalog(self, delete_files: bool) -> None:
+        """Back to the preset list; the models the user added are dropped (and their files deleted if asked)."""
+        for info in reset_catalog():
+            if delete_files:
+                delete_model(info)
+        self._catalog_changed()
 
     def show_model(self, model_id: str) -> None:
         """Scroll ``model_id``'s card into view and highlight it."""
@@ -435,12 +611,6 @@ class ModelsPage(QWidget):
         # Wait for the page to be laid out after switching to it.
         QTimer.singleShot(50, lambda: (self.scroll.ensureWidgetVisible(card, 0, 24), card.flash()))
 
-    def show_gpu_support(self) -> None:
-        """Scroll the GPU support card into view and highlight it."""
-        self.refresh()
-        card = self.gpu_card
-        QTimer.singleShot(50, lambda: (self.scroll.ensureWidgetVisible(card, 0, 24), card.flash()))
-
     def set_gpu(self, name: str | None, usable: bool) -> None:
         """The NVIDIA GPU's name (None: no NVIDIA GPU) and whether models can run on it."""
         self.gpu_card.set_gpu(name, usable)
@@ -448,13 +618,16 @@ class ModelsPage(QWidget):
 
     def refresh(self) -> None:
         self.folder_label.setText(self.tr("Models are stored in {path}").format(path=models_dir()))
+        self.empty.setVisible(not self.cards)
         self.gpu_card.setVisible(self.gpu_card.worth_showing())
         self.gpu_card.update_state()
         for mid, card in self.cards.items():
-            card.update_state(self.downloads.is_active(mid), mid == self.current_model_id)
+            card.update_state(self.downloads.is_active(mid), mid == self.current_model_id, self.current_loading)
 
-    def set_current_model(self, model_id: str | None) -> None:
+    def set_current_model(self, model_id: str | None, loading: bool = False) -> None:
+        """The model that is loaded, or being loaded (``loading``); None when there is none."""
         self.current_model_id = model_id
+        self.current_loading = loading
         self.refresh()
 
     def start_download(self, info: ModelInfo) -> None:
@@ -481,8 +654,16 @@ class ModelsPage(QWidget):
 
     def _delete(self, model_id: str) -> None:
         card = self.cards[model_id]
-        box = MessageBox(self.tr("Delete model?"),
-                         self.tr("Delete {name} from disk? You can download it again later.").format(name=card.info.name),
+        info = card.info
+        if not info.source_folder:
+            content = self.tr("Delete {name} from disk? You can download it again later.")
+        elif Path(info.source_folder).is_dir():
+            content = self.tr("Delete {name} from disk? It can be copied again from {folder} later, as long as "
+                              "that folder is there.")
+        else:
+            content = self.tr("Delete {name} from disk? The folder it was added from ({folder}) is gone, so it "
+                              "can't be copied again: add the model again from wherever it is now.")
+        box = MessageBox(self.tr("Delete model?"), content.format(name=info.name, folder=info.source_folder),
                          self.window())
         box.yesButton.setText(self.tr("Delete"))
         box.cancelButton.setText(self.tr("Cancel"))

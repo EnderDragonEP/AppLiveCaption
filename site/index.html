@@ -105,7 +105,7 @@
         </div>
         <ul class="hero-meta">
           <li><svg class="icon"><use href="#i-check"/></svg><span>Version <span data-version>{{version}}</span></span></li>
-          <li><svg class="icon"><use href="#i-check"/></svg><span>No installer: unzip and run</span></li>
+          <li><svg class="icon"><use href="#i-check"/></svg><span>Installer or portable zip</span></li>
           <li><svg class="icon"><use href="#i-check"/></svg><span>GPL-3.0</span></li>
         </ul>
       </div>
@@ -152,7 +152,7 @@
         <article class="card feature reveal">
           <span class="icon-tile"><svg class="icon"><use href="#i-brain"/></svg></span>
           <h3>Pick your model</h3>
-          <p>Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 and 26, and Taiwan Tongues.</p>
+          <p>Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 and 26, and Taiwan Tongues. Add your own from Hugging Face or a folder, and remove the ones you don't need.</p>
         </article>
         <article class="card feature reveal">
           <span class="icon-tile"><svg class="icon"><use href="#i-rocket"/></svg></span>
@@ -171,8 +171,8 @@
         </article>
         <article class="card feature reveal">
           <span class="icon-tile"><svg class="icon"><use href="#i-usb"/></svg></span>
-          <h3>Portable</h3>
-          <p>Settings, history and models stay in the app's folder. Move the folder, even to a USB stick, and it all comes along.</p>
+          <h3>Install it, or carry it</h3>
+          <p>Install it in a click, no admin rights needed. Or take the portable zip: settings, history and models stay in its folder, even on a USB stick.</p>
         </article>
       </div>
     </div>
@@ -192,7 +192,7 @@
           <li><svg class="icon"><use href="#i-check"/></svg>Stays on top of videos, games and full-screen calls</li>
           <li><svg class="icon"><use href="#i-check"/></svg>Drag it to move it, drag its edges to resize it</li>
           <li><svg class="icon"><use href="#i-check"/></svg>Click-through, so clicks reach the window below</li>
-          <li><svg class="icon"><use href="#i-check"/></svg>One to three lines, in the size, colors and opacity you like</li>
+          <li><svg class="icon"><use href="#i-check"/></svg>Make it taller for more lines, in the size, colors and opacity you like</li>
         </ul>
       </div>
     </div>
@@ -218,7 +218,7 @@
         <div class="tab-panel" role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0" hidden>
           <img class="shot" src="img/screenshot-models.png" width="2200" height="1440" loading="lazy"
                alt="The Models page with GPU support installed, a model in use and another one downloading">
-          <p class="tab-caption">Download models with one click, see how much space they take, and turn on GPU support.</p>
+          <p class="tab-caption">Download models with one click, add your own, see how much space they take, and turn on GPU support.</p>
         </div>
         <div class="tab-panel" role="tabpanel" id="panel-history" aria-labelledby="tab-history" tabindex="0" hidden>
           <img class="shot" src="img/screenshot-history.png" width="2200" height="1440" loading="lazy"
@@ -233,20 +233,20 @@
     <div class="container">
       <header class="section-head reveal">
         <h2>Up and running in a minute</h2>
-        <p>No installer and no Python. Just unzip it and go.</p>
+        <p>No Python and no account. Install it, or unzip the portable version and go.</p>
       </header>
       <ol class="steps">
         <li class="card step reveal">
           <span class="step-number">1</span>
           <svg class="icon step-icon"><use href="#i-zip"/></svg>
-          <h3>Download and unzip</h3>
-          <p>Put the folder anywhere you like: Documents, another drive, a USB stick.</p>
+          <h3>Install or unzip</h3>
+          <p>Run the installer, or put the portable folder anywhere you like: Documents, another drive, a USB stick.</p>
         </li>
         <li class="card step reveal">
           <span class="step-number">2</span>
           <svg class="icon step-icon"><use href="#i-brain"/></svg>
           <h3>Pick a model</h3>
-          <p>Choose one in the Model dropdown and download it from the Models page.</p>
+          <p>A short first-time setup suggests a model that's fast enough for your PC, downloads it, and offers GPU support if your NVIDIA GPU needs it.</p>
         </li>
         <li class="card step reveal">
           <span class="step-number">3</span>
@@ -273,7 +273,7 @@
       <div class="model-grid">
         <article class="card model reveal">
           <div class="model-top"><h3>Whisper large-v3-turbo</h3><span class="chip chip-brand">GPU</span></div>
-          <p class="model-use">The default, for an NVIDIA GPU with 6 GB or more</p>
+          <p class="model-use">The pick for an NVIDIA GPU with 6 GB or more</p>
           <p>Close to large-v3 accuracy and much faster: partial captions in about 0.3 s on an RTX 4070 Laptop. 100 languages.</p>
         </article>
         <article class="card model reveal">
@@ -302,8 +302,8 @@
         <div>
           <h3>Have an NVIDIA GPU?</h3>
           <p>
-            Open the Models page and click <strong>Download</strong> on the NVIDIA GPU support card (about 1 GB, once).
-            A model that's already loaded moves to the GPU as soon as it finishes. Only the display driver is needed;
+            First-time setup offers GPU support (about 1 GB, once), or click <strong>Download</strong> on the NVIDIA GPU
+            support card on the Models page. A model that's already loaded moves to the GPU as soon as it finishes. Only the display driver is needed;
             you don't have to install the CUDA Toolkit.
           </p>
         </div>
@@ -342,7 +342,7 @@
         </details>
         <details>
           <summary>Do I need a graphics card?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
-          <p>No. Without an NVIDIA GPU, models run on the CPU; pick Whisper base or small for real time. With an NVIDIA GPU and a recent driver, download GPU support on the Models page and use the bigger models.</p>
+          <p>No. Without an NVIDIA GPU, models run on the CPU; pick Whisper base or small for real time. With an NVIDIA GPU and a recent driver, download GPU support (first-time setup offers it, or use the Models page) and use the bigger models.</p>
         </details>
         <details>
           <summary>Does it need the internet?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
@@ -350,7 +350,7 @@
         </details>
         <details>
           <summary>Where does it keep my settings and transcripts?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
-          <p>Next to AppLiveCaption.exe: settings in config.json, transcripts in history, plus the logs, models and GPU support folders. Nothing goes to AppData, so moving or deleting the folder moves or removes everything. (In a folder Windows won't let it write to, such as C:\Program Files, it uses %LOCALAPPDATA%\AppLiveCaption instead.)</p>
+          <p>Installed, it uses your Windows profile: settings and transcripts in %APPDATA%\AppLiveCaption, and logs, models and GPU support in %LOCALAPPDATA%\AppLiveCaption. Uninstalling lets you choose which of them to delete. The portable version keeps everything next to AppLiveCaption.exe, so moving or deleting its folder moves or removes everything.</p>
         </details>
         <details>
           <summary>Can it caption just one app, like a browser or Discord?<svg class="icon chevron"><use href="#i-chevron"/></svg></summary>
@@ -377,7 +377,7 @@
       <div class="cta reveal">
         <img src="icon.svg" alt="" width="64" height="64">
         <h2>See what's being said</h2>
-        <p>Free for Windows 10 and 11. Unzip it and you're ready.</p>
+        <p>Free for Windows 10 and 11. Install it and you're ready.</p>
         <div class="button-row">
           <a class="btn btn-primary btn-large" href="https://github.com/EnderDragonEP/AppLiveCaption/releases/latest" data-download>
             <svg class="icon"><use href="#i-download"/></svg><span data-download-label>Download for Windows</span>

@@ -27,7 +27,7 @@ def download_error_text(kind: str, message: str) -> str:
     if kind == "disk_space":
         return tr("Not enough free disk space ({detail}). Free some space or change the model folder in Settings.").format(detail=message)
     if kind == "not_found":
-        return tr("The model was not found on Hugging Face ({detail}).").format(detail=message)
+        return tr("The model was not found ({detail}).").format(detail=message)
     if kind == "io":
         return tr("The model files could not be written ({detail}).").format(detail=message)
     return tr("Check your internet connection. The download resumes where it stopped next time. ({detail})").format(detail=message)
@@ -118,6 +118,9 @@ class DownloadManager(QObject):
 
     def is_active(self, model_id: str) -> bool:
         return model_id in self._threads
+
+    def any_active(self) -> bool:
+        return bool(self._threads)
 
     def cancel_all(self) -> None:
         for t in list(self._threads.values()):
