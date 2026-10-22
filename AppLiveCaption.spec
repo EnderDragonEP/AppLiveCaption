@@ -118,6 +118,11 @@ DROP_FILES = {
     "opengl32sw.dll", "d3dcompiler_47.dll", "qt6pdf.dll", "qopensslbackend.dll", "qcertonlybackend.dll",
     "qt6quick.dll", "qt6qml.dll", "qt6qmlmodels.dll", "qt6qmlmeta.dll", "qt6qmlworkerscript.dll",
     "qt6opengl.dll", "qt6virtualkeyboard.dll", "libssl-3-x64.dll", "libcrypto-3-x64.dll",
+    # Qt platform plugins besides qwindows: Direct2D, and the minimal/offscreen ones for testing.
+    "qdirect2d.dll", "qminimal.dll", "qoffscreen.dll",
+    # ONNX Runtime's C API library (18 MB). The Python module (onnxruntime_pybind11_state.pyd) has the
+    # runtime built in and never loads it.
+    "onnxruntime.dll",
 }
 DROP_PLUGIN_DIRS = {"networkinformation", "platforminputcontexts", "generic"}
 DROP_IMAGE_PLUGINS = {"qgif", "qjpeg", "qtiff", "qwebp", "qicns", "qtga", "qwbmp", "qpdf"}
