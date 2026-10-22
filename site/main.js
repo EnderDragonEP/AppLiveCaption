@@ -120,7 +120,7 @@ async function runDemo() {
 
 if (finalLine && partialLine && !reducedMotion.matches) runDemo();
 
-// -- Download links: point straight at the latest release's zip ----------------------------
+// -- Download links: point straight at the latest release's installer (or else its zip) ---------
 
 async function loadRelease() {
   const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
@@ -129,11 +129,13 @@ async function loadRelease() {
   if (!response.ok) return;
   const release = await response.json();
   const version = String(release.tag_name || "").replace(/^v\.?/i, "");
-  const zip = (release.assets || []).find((a) => a.name.toLowerCase().endsWith(".zip"));
+  const assets = release.assets || [];
+  const file = assets.find((a) => a.name.toLowerCase().endsWith("-setup.exe"))
+    || assets.find((a) => a.name.toLowerCase().endsWith(".zip"));
   if (version) document.querySelectorAll("[data-version]").forEach((el) => { el.textContent = version; });
-  if (!zip) return;
-  const size = `${Math.round(zip.size / 2 ** 20)} MB`;
-  document.querySelectorAll("a[data-download]").forEach((a) => { a.href = zip.browser_download_url; });
+  if (!file) return;
+  const size = `${Math.round(file.size / 2 ** 20)} MB`;
+  document.querySelectorAll("a[data-download]").forEach((a) => { a.href = file.browser_download_url; });
   document.querySelectorAll("[data-download-label]").forEach((el) => {
     el.textContent = version ? `Download v${version} · ${size}` : `Download · ${size}`;
   });

@@ -12,6 +12,10 @@
     support next to the exe. Everything in dist\AppLiveCaption\ other than the
     build output (AppLiveCaption.exe and _internal) is kept across builds.
 
+    With -Installer it also builds dist\AppLiveCaption-<version>-Setup.exe with
+    Inno Setup 6 (installer\AppLiveCaption.iss). The installed app keeps its
+    data in %APPDATA%\AppLiveCaption instead.
+
 .PARAMETER Python
     Path to the python.exe to build with, instead of finding one.
 
@@ -29,6 +33,9 @@
 .PARAMETER SkipTests
     Don't run the unit tests before building.
 
+.PARAMETER Installer
+    Also build the Setup.exe with Inno Setup 6 (winget install JRSoftware.InnoSetup).
+
 .EXAMPLE
     .\build.ps1
 
@@ -37,6 +44,9 @@
 
 .EXAMPLE
     .\build.ps1 -Python C:\Python312\python.exe
+
+.EXAMPLE
+    .\build.ps1 -Installer
 #>
 [CmdletBinding()]
 param(
@@ -44,7 +54,8 @@ param(
     [switch]$Console,
     [switch]$Clean,
     [switch]$Install,
-    [switch]$SkipTests
+    [switch]$SkipTests,
+    [switch]$Installer
 )
 
 $ErrorActionPreference = 'Stop'
@@ -119,6 +130,18 @@ function Find-Python {
     throw 'Python 3.11 or 3.12 (64-bit) was not found. Install it from python.org, or pass -Python <path to python.exe>.'
 }
 
+function Find-InnoSetup {
+    $onPath = Get-Command ISCC -ErrorAction SilentlyContinue
+    if ($onPath) { return $onPath.Source }
+    # Where winget (current user) and the Inno Setup installer (all users) put it.
+    foreach ($base in @("$env:LOCALAPPDATA\Programs", ${env:ProgramFiles(x86)}, $env:ProgramFiles)) {
+        if (-not $base) { continue }
+        $exe = Join-Path $base 'Inno Setup 6\ISCC.exe'
+        if (Test-Path $exe) { return $exe }
+    }
+    throw 'Inno Setup 6 was not found. Install it with:  winget install JRSoftware.InnoSetup   (or from jrsoftware.org)'
+}
+
 $timer = [Diagnostics.Stopwatch]::StartNew()
 $savedEnv = @{
     ALC_CONSOLE       = $env:ALC_CONSOLE
@@ -137,6 +160,7 @@ try {
         throw "AppLiveCaption needs Python 3.11 or newer; $Python is Python $version."
     }
     Write-Host "Using Python $version`: $Python"
+    if ($Installer) { $iscc = Find-InnoSetup }  # before the long build
 
     if ($Install) {
         Write-Host 'Installing requirements...'
@@ -182,8 +206,22 @@ try {
     }
     $output = $buildOutput | ForEach-Object { Join-Path $distDir $_ }
     $sizeMB = (Get-ChildItem $output -Recurse -File | Measure-Object -Property Length -Sum).Sum / 1MB
+
+    # 4. Installer
+    if ($Installer) {
+        $appVersion = Get-Output $Python @('-c', 'import app; print(app.__version__)')
+        if (-not $appVersion) { throw 'Could not read the version from app\__init__.py.' }
+        Write-Host "Building the installer for version $appVersion..."
+        Invoke-Checked $iscc @('/Qp', "/DAppVersion=$appVersion", (Join-Path $root 'installer\AppLiveCaption.iss'))
+        $setup = Join-Path $root "dist\AppLiveCaption-$appVersion-Setup.exe"
+        if (-not (Test-Path $setup)) { throw "Inno Setup finished but $setup is missing." }
+    }
+
     Write-Host ''
     Write-Host ('Done in {0:mm\:ss}. Output: {1} ({2:N0} MB)' -f $timer.Elapsed, $exe, $sizeMB) -ForegroundColor Green
+    if ($Installer) {
+        Write-Host ('Installer: {0} ({1:N0} MB)' -f $setup, ((Get-Item $setup).Length / 1MB)) -ForegroundColor Green
+    }
     $failed = $false
 }
 catch {

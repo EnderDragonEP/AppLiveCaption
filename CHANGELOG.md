@@ -7,6 +7,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **An installer.** `AppLiveCaption-<version>-Setup.exe` installs the app for you only (no admin rights needed) or for all users, with a Start menu entry, an optional desktop shortcut and an uninstaller. The installed app keeps its data in `%APPDATA%\AppLiveCaption`; running the next Setup updates it in place. Uninstalling asks whether to keep that data. The portable zip is still available and keeps its data next to the exe as before.
 - **Add your own models.** The Models page has an **Add model** button: paste a Hugging Face repository (its ID or link) or pick a folder on your PC that holds a faster-whisper (CTranslate2) model. The app checks the model first and tells you what's wrong if it can't be used. A model from a folder is copied into the models folder, with progress and Cancel/Resume like a download.
 - **Remove models from the list.** Each model card has a **…** menu with **Delete files from disk** and **Remove from list**. Removing a model can delete its downloaded files too (ticked by default).
 - **Bring the presets back.** **Settings → Reset model list** restores the preset models at any time and removes the ones you added, optionally with their files. When every model has been removed, the Models page shows a **Restore default models** button.

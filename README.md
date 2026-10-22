@@ -30,7 +30,9 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 
 ## Quick start
 
-1. Download the zip from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Python isn't needed.
+1. Get it from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, in either of two forms (Python isn't needed for either):
+   - **Installer** (`AppLiveCaption-<version>-Setup.exe`): run it and pick **Install for me only** (no admin rights needed) or **for all users**. You get a Start menu entry, an optional desktop shortcut and an uninstaller.
+   - **Portable** (the zip): unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Everything the app saves stays in that folder.
 2. Pick a model in the **Model** dropdown. If it isn't downloaded yet, the app shows its card on the **Models** page; download it there and the app switches to it when it's done.
 3. Click the source button (it says *System audio* at first) and choose **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to caption. They're remembered and picked up again whenever they start.
 4. Choose **Auto-detect** or a language, then press **Start**. 🎉
@@ -80,9 +82,12 @@ The app also uses the same libraries when they're already on the PC, in this ord
 
 ## Where your stuff lives
 
-Everything the app writes stays next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it. Nothing goes to AppData.
+Everything the app writes goes in one folder:
 
-| What | Where (next to the exe) |
+- **Installed version:** `%APPDATA%\AppLiveCaption` (paste that into File Explorer's address bar). Each Windows user has their own.
+- **Portable version:** next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it.
+
+| What | Where (in that folder) |
 | --- | --- |
 | Settings | `config.json` |
 | History | `history\` |
@@ -91,7 +96,40 @@ Everything the app writes stays next to `AppLiveCaption.exe`. Moving the folder 
 | Your changes to the model list | `models.json` (only exists once you add or remove a model) |
 | GPU support | `cuda\` |
 
-If the app's folder can't be written to (for example under `C:\Program Files`), the app uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
+The installer puts a small `AppLiveCaption.installed` file next to the exe; that's how the app knows to use `%APPDATA%`. If a portable copy's folder can't be written to (for example under `C:\Program Files`), it uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
+
+**Switching from portable to installed?** Install the app, then copy `config.json`, `history`, `models`, `models.json` and `cuda` (the ones you have) from the portable folder into `%APPDATA%\AppLiveCaption`, so nothing needs downloading again.
+
+## Updating
+
+Your settings, history, models and GPU support stay where they are, so nothing needs downloading again. 🔄
+
+**Check for a new version** with **Settings → About → Check for updates** (or **Check for updates** in the tray icon's menu). If there is one, **Download** opens its page on GitHub. You can also look on the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page and compare with the version shown in Settings → About.
+
+### Installed version
+
+Download the new `Setup.exe` and run it. It finds your installation and replaces the program files. If AppLiveCaption is running, Setup asks you to close it first. That's it. 🎉
+
+### Portable version
+
+Updating means swapping the program files and keeping your stuff:
+
+1. **Download the new zip** and unzip it somewhere temporary, like your Downloads folder.
+2. **Close AppLiveCaption.** Closing the window quits it; check that its icon is gone from the tray.
+3. **In your AppLiveCaption folder, delete `AppLiveCaption.exe` and the `_internal` folder.** Leave everything else alone (see the table above).
+4. **Copy the new `AppLiveCaption.exe` and `_internal` folder** into your AppLiveCaption folder.
+5. **Start the app** and check Settings → About for the new version. 🎉
+
+Deleting the old `_internal` first matters: copying over it would leave files from the old version mixed in with the new ones.
+
+**Prefer a fresh folder?** Unzip the new version into a new folder, then move `config.json`, `history`, `models`, `models.json` and `cuda` over from the old one (the ones you have; `logs` is optional). Then delete the old folder.
+
+To go back to an older version, do the same with that version's zip (or, installed, run that version's Setup). See [CHANGELOG.md](CHANGELOG.md) for what changed in each version.
+
+## Uninstalling
+
+- **Installed version:** uninstall AppLiveCaption from **Settings → Apps → Installed apps** in Windows. At the end it asks whether to also delete your settings, history, downloaded models and GPU support in `%APPDATA%\AppLiveCaption`. Choose **No** (the default) to keep them for a later install. A models folder you moved somewhere else in Settings is never deleted.
+- **Portable version:** delete its folder. That's everything.
 
 ## Offline and privacy
 
@@ -167,10 +205,13 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 | `-Clean` | Delete earlier build output and PyInstaller's cache first. |
 | `-Install` | Run `pip install -r requirements.txt` for that Python before building. |
 | `-SkipTests` | Skip the unit tests. |
+| `-Installer` | Also build the installer, `dist\AppLiveCaption-<version>-Setup.exe` (about 55 MB). Needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`. |
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
 
-The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, zip only `AppLiveCaption.exe` and `_internal\`, and tag it like `v1.1.0` so the update check finds it.
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.1.0` so the update check finds it.
+
+The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
 
 The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.1.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 

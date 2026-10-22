@@ -42,6 +42,24 @@ def _install_exception_hooks() -> None:
     threading.excepthook = thread_hook
 
 
+RUNNING_MUTEX = "AppLiveCaption.Running"  # AppMutex in installer/AppLiveCaption.iss
+_mutex_handles: list[int] = []
+
+
+def _hold_running_mutex() -> None:
+    """Let Setup and the uninstaller see that the app is running, so they ask to close it first."""
+    if sys.platform != "win32":
+        return
+    import ctypes
+
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateMutexW.restype = ctypes.c_void_p
+    for name in (RUNNING_MUTEX, "Global\\" + RUNNING_MUTEX):  # (Global: other users' sessions too)
+        handle = kernel32.CreateMutexW(None, False, name)
+        if handle:
+            _mutex_handles.append(handle)  # held until the process exits
+
+
 def main() -> int:
     from app.logging_setup import setup_logging
 
@@ -53,12 +71,15 @@ def main() -> int:
 
     logging.getLogger("app").info("Starting %s %s (frozen=%s)", APP_NAME, __version__, getattr(sys, "frozen", False))
 
-    from app.paths import app_dir, data_dir
+    from app.paths import app_dir, data_dir, is_installed
 
-    if data_dir() != app_dir() and not os.environ.get("ALC_DATA_DIR"):
+    if is_installed():
+        logging.getLogger("app").info("Installed; data folder: %s", data_dir())
+    elif data_dir() != app_dir() and not os.environ.get("ALC_DATA_DIR"):
         logging.getLogger("app").warning("%s can't be written; data folder: %s", app_dir(), data_dir())
     else:
         logging.getLogger("app").info("Data folder: %s", data_dir())
+    _hold_running_mutex()
 
     from app.asr.cuda_libs import remove_if_scheduled
 

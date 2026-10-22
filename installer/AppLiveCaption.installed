@@ -1,0 +1,5 @@
+This copy of AppLiveCaption was installed with Setup, so it keeps its settings,
+history, logs, models and GPU support in %APPDATA%\AppLiveCaption.
+
+Without this file, AppLiveCaption is portable and keeps them next to
+AppLiveCaption.exe instead.
