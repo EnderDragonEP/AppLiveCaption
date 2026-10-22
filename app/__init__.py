@@ -1,7 +1,7 @@
 """AppLiveCaption: offline live captions for Windows."""
 
 APP_NAME = "AppLiveCaption"
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 __author__ = "Ender Yang"
 DESCRIPTION = "Offline live captions for Windows"
 REPO_URL = "https://github.com/EnderDragonEP/AppLiveCaption"
