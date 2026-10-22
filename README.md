@@ -88,10 +88,10 @@ The app also uses the same libraries when they're already on the PC, in this ord
 ## To do
 
 - [ ] Keyword detection (text highlighting, audio alerts)
-- [ ] Dynamically adjusted line counts
-- [ ] Support custom model import
+- [x] Dynamically adjusted line counts
+- [x] Support custom model import
 - [ ] Model catalog export and import
-- [ ] Allow deleting preset model entries
+- [x] Allow deleting preset model entries
 - [ ] Add more languages
 - [ ] Add AMD or Intel GPU support (mabey)
 - [ ] Split long sentences into shorter ones
