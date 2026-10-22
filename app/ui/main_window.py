@@ -275,7 +275,7 @@ class MainWindow(FluentWindow):
         # Keep the dropdown on the model that is actually in use, and show the
         # model's card so the user can read about it and download it from there.
         self.live.select_model(c.model_id if c.model_state in (MODEL_READY, MODEL_LOADING) else None)
-        self.show_model_card(model_id)
+        self.offer_download(info, self.tr("Download it here, and the app switches to it when it's done."))
 
     def unload_model(self, model_id: str) -> None:
         """The in-use card's Unload: release the model; the dropdown shows "Select a model" until one is picked."""
@@ -286,6 +286,11 @@ class MainWindow(FluentWindow):
     def show_model_card(self, model_id: str) -> None:
         self.switchTo(self.models_page)
         self.models_page.show_model(model_id)
+
+    def offer_download(self, info, what_next: str) -> None:
+        """The model isn't downloaded: show its card, highlighted, and say so."""
+        self.show_model_card(info.id)
+        show_infobar("info", self.tr("{name} isn't downloaded").format(name=info.name), what_next, self)
 
     def download_model(self, model_id: str) -> None:
         info = get_model(model_id)
@@ -402,9 +407,7 @@ class MainWindow(FluentWindow):
                 return
             if not is_downloaded(info):
                 # First run: show where to download the selected model instead of failing.
-                self.show_model_card(info.id)
-                show_infobar("info", self.tr("{name} isn't downloaded").format(name=info.name),
-                             self.tr("Download it here, then press Start."), self)
+                self.offer_download(info, self.tr("Download it here, then press Start."))
                 return
             # Selected but not loaded (its loading failed before): load it, then start.
             self._auto_start = True
