@@ -13,7 +13,7 @@ from pathlib import Path
 
 from .catalog import BACKEND_FASTER_WHISPER, preset_for_repo
 from .downloader import allow_network, local_files, select_files
-from .storage import ESSENTIAL_FILES
+from .storage import CT2_FILES, ESSENTIAL_FILES
 
 
 class CustomModelError(Exception):
@@ -63,6 +63,7 @@ def _entry(name: str, repo: str, size_bytes: int, model_bin: int, license: str, 
         "license": license or "See the model page",
         "tier": estimate_tier(model_bin),
         "description": description,
+        "files": list(CT2_FILES),
         **extra,
     }
 
@@ -93,7 +94,7 @@ def inspect_repo(text: str, name: str = "") -> dict:
     if problem:
         raise CustomModelError(problem)
     model_bin = next(size for n, size in siblings if n == "model.bin")
-    size = sum(s for _, s in select_files(siblings))
+    size = sum(s for _, s in select_files(siblings, CT2_FILES))
     return _entry(name.strip() or repo.split("/", 1)[1], repo, size, model_bin, _repo_license(meta),
                   f"Added by you from huggingface.co/{repo}.")
 
@@ -118,6 +119,6 @@ def inspect_folder(path: str, name: str = "") -> dict:
     if problem:
         raise CustomModelError(problem)
     label = folder.name or "Local model"  # (a drive's root folder has no name)
-    size = sum(s for _, s in select_files(files))
+    size = sum(s for _, s in select_files(files, CT2_FILES))
     return _entry(name.strip() or label, "", size, dict(files)["model.bin"], "Unknown", f"Added by you from {folder}.",
                   id=f"local-{label}", source_folder=str(folder.resolve()))

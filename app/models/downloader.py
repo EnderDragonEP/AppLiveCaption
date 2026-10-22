@@ -121,6 +121,7 @@ def _copy_local(info: ModelInfo, on_progress: ProgressCallback, cancel: threadin
     files = _selected_files(info, local_files(src))
     if not files:
         raise DownloadError("not_found", f"no model files in {src}")
+    target.mkdir(parents=True, exist_ok=True)
     total = sum(size for _, size in files)
     todo = sum(size for name, size in files if not (target / name).is_file() or (target / name).stat().st_size != size)
     free = shutil.disk_usage(target).free
@@ -161,8 +162,9 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
     from huggingface_hub.utils import build_hf_headers, get_session
 
     base = base or models_dir()
+    # The model's folder is created only once its files are known: a failed check mustn't leave an empty
+    # folder behind (a local model's id would then skip it as taken, see catalog.unique_id).
     target = model_path(info, base)
-    target.mkdir(parents=True, exist_ok=True)
     if info.source_folder:
         return _copy_local(info, on_progress, cancel, target, base)
 
@@ -189,6 +191,7 @@ def download_model(info: ModelInfo, on_progress: ProgressCallback, cancel: threa
                 raise DownloadError("not_found", f"{name} not found in {repo}")
             files = [f for f in files if f[0] != name] + [(name, sib.size or 0, hf_hub_url(other.id, name, revision=other.sha))]
         total = sum(size for _, size, _ in files)
+        target.mkdir(parents=True, exist_ok=True)
 
         def have(name: str, size: int) -> int:
             final = target / name

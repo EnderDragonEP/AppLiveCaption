@@ -172,14 +172,26 @@ class MainWindow(FluentWindow):
             c.unload_model()  # the model in use is no longer in the list
         self.live.refresh_models()  # a selected model that left the list: "Select a model"
 
+        self._forget_removed_default()
     def _reset_catalog(self) -> None:
         """Settings → Reset model list: the presets come back, the models the user added are removed."""
         if self.models_page.downloads.any_active():
             show_infobar("warning", self.tr("A download is running"),
                          self.tr("Wait for it to finish (or cancel it) before resetting the model list."), self)
             return
+    def _forget_removed_default(self) -> bool:
+        """Settings → Default model is a model that's no longer in the list: make it None, instead of a
+        blank choice that quietly loads the model used last. Returns whether it changed."""
+        default = cfg.get(cfg.defaultModel)
+        if default in (NO_MODEL, PREVIOUS_MODEL) or get_model(default) is not None:
+            return False
+        cfg.set(cfg.defaultModel, NO_MODEL)
+        return True
+
         added = [m for m in load_catalog() if m.custom]
         files = sum(disk_usage(m) for m in added)
+        if self._after_unload is not None:
+            return  # a reset is already waiting for the model in use to be released
         content = self.tr("The preset models come back in the list.")
         if added:
             content += " " + self.tr("The {n} model(s) you added are removed from it.").format(n=len(added))
@@ -222,6 +234,8 @@ class MainWindow(FluentWindow):
         if default == NO_MODEL:
             candidates = []
         elif default == PREVIOUS_MODEL:
+        if self._forget_removed_default():
+            self.settings_page.refresh_models()
             candidates = [cfg.get(cfg.modelId)]
         else:
             candidates = [default, cfg.get(cfg.modelId)]

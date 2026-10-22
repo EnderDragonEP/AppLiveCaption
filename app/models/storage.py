@@ -13,6 +13,9 @@ PARTIAL_SUFFIX = ".part"
 # A CTranslate2 (faster-whisper) model. Without tokenizer.json faster-whisper
 # would fetch a tokenizer from the internet, which offline use can't allow.
 ESSENTIAL_FILES = ("config.json", "model.bin", "tokenizer.json")
+# Everything faster-whisper reads from a CTranslate2 model (its own download list): the allowlist of a model the
+# user adds, so other weight formats or sub-folders in the same repository aren't fetched.
+CT2_FILES = ("model.bin", "config.json", "preprocessor_config.json", "tokenizer.json", "vocabulary.*")
 
 
 def models_dir() -> Path:

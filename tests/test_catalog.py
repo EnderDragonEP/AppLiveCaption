@@ -22,8 +22,8 @@ from app.models.custom import (  # noqa: E402
     inspect_repo,
     parse_repo_id,
 )
-from app.models.downloader import DownloadCancelled, DownloadError, download_model  # noqa: E402
-from app.models.storage import is_downloaded, model_path, verify  # noqa: E402
+from app.models.downloader import DownloadCancelled, DownloadError, download_model, select_files  # noqa: E402
+from app.models.storage import CT2_FILES, is_downloaded, model_path, verify  # noqa: E402
 
 PRESET_COUNT = len(json.loads(Path(catalog.__file__).with_name("catalog.json").read_text(encoding="utf-8"))["models"])
 
@@ -170,6 +170,14 @@ class CheckTests(unittest.TestCase):
         self.assertEqual([estimate_tier(n * mb) for n in (75, 145, 480, 1530, 3090)],
                          ["tiny", "base", "small", "medium", "large"])
 
+    def test_added_models_fetch_only_what_faster_whisper_reads(self):
+        siblings = [("model.bin", 100), ("config.json", 1), ("tokenizer.json", 2), ("vocabulary.json", 3),
+                    ("preprocessor_config.json", 4), ("pytorch_model.bin", 900), ("model.safetensors", 900),
+                    ("onnx/encoder.onnx", 900), ("sub/model.bin", 900), ("README.md", 5)]
+        kept = [n for n, _ in select_files(siblings, CT2_FILES)]
+        self.assertEqual(kept, ["model.bin", "config.json", "tokenizer.json", "vocabulary.json",
+                                "preprocessor_config.json"])
+
     def test_parse_repo_id(self):
         self.assertEqual(parse_repo_id(" Systran/faster-whisper-large-v3 "), "Systran/faster-whisper-large-v3")
         self.assertEqual(parse_repo_id("https://huggingface.co/Systran/faster-whisper-tiny/tree/main"),
@@ -200,11 +208,13 @@ class LocalFolderTests(CatalogTestCase):
         return folder
 
     def test_inspect_folder(self):
-        folder = self.make_model()
+        folder = self.make_model(**{"pytorch_model.bin": b"x" * 3 * 2**20})
         entry = inspect_folder(str(folder), " My own ")
         self.assertEqual((entry["name"], entry["repo"], entry["id"]), ("My own", "", "local-converted"))
         self.assertEqual(entry["source_folder"], str(folder.resolve()))
         self.assertEqual(entry["tier"], "tiny")
+        self.assertEqual(entry["files"], list(CT2_FILES))
+        self.assertEqual(entry["size_mb"], 1)  # the 3 MB of PyTorch weights aren't counted
         with self.assertRaises(CustomModelError):
             inspect_folder(str(self.make_model("broken", **{"model.bin": None})))
         with self.assertRaises(CustomModelError):
@@ -276,6 +286,14 @@ class LocalFolderTests(CatalogTestCase):
         with self.assertRaises(DownloadError) as ctx:
             download_model(info, lambda p: None, threading.Event(), base=self.root / "models")
         self.assertEqual(ctx.exception.kind, "not_found")
+        self.assertFalse(model_path(info, self.root / "models").exists())  # no empty folder left behind
+
+    def test_copy_skips_files_faster_whisper_doesnt_read(self):
+        folder = self.make_model(**{"pytorch_model.bin": b"x" * 9000})
+        info = catalog.add_custom_model(inspect_folder(str(folder)))
+        path = download_model(info, lambda p: None, threading.Event(), base=self.root / "models")
+        self.assertFalse((path / "pytorch_model.bin").exists())
+        self.assertTrue((path / "model.bin").is_file())
 
 
 if __name__ == "__main__":

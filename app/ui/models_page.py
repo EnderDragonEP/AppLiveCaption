@@ -564,7 +564,9 @@ class ModelsPage(QWidget):
         else:
             self._catalog_changed()
             if info.source_folder:
-                self.downloadRequested.emit(info.id)  # copy it into the models folder right away
+                # Copy it into the models folder right away. (Not through downloadRequested: the main
+                # window would then switch to it when the copy is done, replacing the model in use.)
+                self.start_download(info)
             elif is_downloaded(info):  # a removed preset whose files were kept
                 show_infobar("success", self.tr("Model added"),
                              self.tr("{name} is in the list, and downloaded already.").format(name=info.name),
