@@ -120,7 +120,9 @@ async function runDemo() {
 
 if (finalLine && partialLine && !reducedMotion.matches) runDemo();
 
-// -- Download links: point straight at the latest release's installer (or else its zip) ---------
+// -- Download links: point straight at the latest release's installer, and its portable zip -------
+
+const megabytes = (asset) => `${Math.round(asset.size / 2 ** 20)} MB`;
 
 async function loadRelease() {
   const response = await fetch(`https://api.github.com/repos/${REPO}/releases/latest`, {
@@ -130,15 +132,24 @@ async function loadRelease() {
   const release = await response.json();
   const version = String(release.tag_name || "").replace(/^v\.?/i, "");
   const assets = release.assets || [];
-  const file = assets.find((a) => a.name.toLowerCase().endsWith("-setup.exe"))
-    || assets.find((a) => a.name.toLowerCase().endsWith(".zip"));
+  const setup = assets.find((a) => a.name.toLowerCase().endsWith("-setup.exe"));
+  const zip = assets.find((a) => a.name.toLowerCase().endsWith(".zip"));
+  const file = setup || zip;  // the main buttons: the installer, or the zip for a release without one
   if (version) document.querySelectorAll("[data-version]").forEach((el) => { el.textContent = version; });
   if (!file) return;
-  const size = `${Math.round(file.size / 2 ** 20)} MB`;
   document.querySelectorAll("a[data-download]").forEach((a) => { a.href = file.browser_download_url; });
   document.querySelectorAll("[data-download-label]").forEach((el) => {
-    el.textContent = version ? `Download v${version} · ${size}` : `Download · ${size}`;
+    el.textContent = version ? `Download v${version} · ${megabytes(file)}` : `Download · ${megabytes(file)}`;
   });
+  if (setup && zip) {
+    document.querySelectorAll("a[data-portable-link]").forEach((a) => { a.href = zip.browser_download_url; });
+    document.querySelectorAll("[data-portable-label]").forEach((el) => {
+      el.textContent = `Get the portable zip · ${megabytes(zip)}`;
+    });
+  } else {
+    // The main buttons already download the zip (or the release has no files): no second link needed.
+    document.querySelectorAll("[data-portable]").forEach((el) => { el.hidden = true; });
+  }
 }
 
 loadRelease().catch(() => { /* offline or rate-limited: the links keep pointing at the releases page */ });

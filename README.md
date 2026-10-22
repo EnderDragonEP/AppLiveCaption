@@ -251,7 +251,7 @@ python -m unittest discover -s tests
 
 ## Website
 
-The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one). To preview it:
+The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one), with a link to the portable zip under them. To preview it:
 
 ```powershell
 python tools/build_site.py

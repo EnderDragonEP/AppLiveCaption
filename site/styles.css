@@ -248,6 +248,11 @@ p { margin: 0; text-wrap: pretty; }
 .lead { max-width: 34em; color: var(--fg2); font-size: 18px; line-height: 28px; }
 .hero .button-row { margin-top: 32px; }
 
+/* "Prefer not to install? Get the portable zip" under the download buttons */
+.download-alt { margin: 12px 0 0; color: var(--fg3); font-size: 14px; line-height: 20px; }
+.download-alt a { display: inline-flex; align-items: center; gap: 4px; margin-left: 2px; font-weight: 600; vertical-align: bottom; }
+.download-alt .icon { width: 16px; height: 16px; }
+
 .hero-meta { display: flex; flex-wrap: wrap; gap: 8px 20px; margin: 24px 0 0; padding: 0; list-style: none; color: var(--fg3); font-size: 14px; line-height: 20px; }
 .hero-meta li { display: inline-flex; align-items: center; gap: 6px; }
 .hero-meta .icon { width: 16px; height: 16px; color: var(--brand-fg); }
@@ -496,6 +501,7 @@ p { margin: 0; text-wrap: pretty; }
 .cta h2 { margin-top: 8px; font-size: 32px; line-height: 40px; }
 .cta p { color: var(--fg2); font-size: 18px; line-height: 26px; }
 .cta .button-row { justify-content: center; margin-top: 16px; }
+.cta .download-alt { margin-top: 0; color: var(--fg3); font-size: 14px; line-height: 20px; }
 
 /* Footer */
 .footer { padding: 40px 0 48px; border-top: 1px solid var(--stroke3); background: color-mix(in srgb, var(--bg1) 40%, transparent); }
