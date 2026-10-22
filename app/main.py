@@ -71,10 +71,11 @@ def main() -> int:
 
     logging.getLogger("app").info("Starting %s %s (frozen=%s)", APP_NAME, __version__, getattr(sys, "frozen", False))
 
-    from app.paths import app_dir, data_dir, is_installed
+    from app.paths import app_dir, data_dir, is_installed, local_data_dir
 
     if is_installed():
-        logging.getLogger("app").info("Installed; data folder: %s", data_dir())
+        logging.getLogger("app").info("Installed; settings and history in %s, logs, models and GPU support in %s",
+                                      data_dir(), local_data_dir())
     elif data_dir() != app_dir() and not os.environ.get("ALC_DATA_DIR"):
         logging.getLogger("app").warning("%s can't be written; data folder: %s", app_dir(), data_dir())
     else:

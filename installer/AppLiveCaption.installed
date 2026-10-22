@@ -1,5 +1,6 @@
-This copy of AppLiveCaption was installed with Setup, so it keeps its settings,
-history, logs, models and GPU support in %APPDATA%\AppLiveCaption.
+This copy of AppLiveCaption was installed with Setup, so it keeps its data in
+your Windows profile: settings and history in %APPDATA%\AppLiveCaption, and
+logs, models and GPU support in %LOCALAPPDATA%\AppLiveCaption.
 
 Without this file, AppLiveCaption is portable and keeps them next to
 AppLiveCaption.exe instead.

@@ -14,7 +14,7 @@
 
     With -Installer it also builds dist\AppLiveCaption-<version>-Setup.exe with
     Inno Setup 6 (installer\AppLiveCaption.iss). The installed app keeps its
-    data in %APPDATA%\AppLiveCaption instead.
+    data in the user's profile instead (%APPDATA% and %LOCALAPPDATA%).
 
 .PARAMETER Python
     Path to the python.exe to build with, instead of finding one.

@@ -77,9 +77,9 @@ INSTALLED_SIZE = 1_420_480_240  # the kept DLLs, unpacked
 
 
 def lib_dir() -> Path:
-    from ..paths import data_dir
+    from ..paths import local_data_dir
 
-    return data_dir() / "cuda"
+    return local_data_dir() / "cuda"
 
 
 def installed_dir() -> Path | None:

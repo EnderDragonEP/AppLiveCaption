@@ -82,23 +82,21 @@ The app also uses the same libraries when they're already on the PC, in this ord
 
 ## Where your stuff lives
 
-Everything the app writes goes in one folder:
+- **Portable version:** everything goes next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it.
+- **Installed version:** everything goes in your Windows profile, the usual way. Each Windows user has their own. Small, personal things go in `%APPDATA%\AppLiveCaption`, which follows you if your PC uses a roaming profile. The big things that belong to this PC go in `%LOCALAPPDATA%\AppLiveCaption`. (Paste either into File Explorer's address bar.)
 
-- **Installed version:** `%APPDATA%\AppLiveCaption` (paste that into File Explorer's address bar). Each Windows user has their own.
-- **Portable version:** next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it.
+| What | Portable (next to the exe) | Installed |
+| --- | --- | --- |
+| Settings | `config.json` | `%APPDATA%\AppLiveCaption\config.json` |
+| History | `history\` | `%APPDATA%\AppLiveCaption\history\` |
+| Your changes to the model list | `models.json` (only exists once you add or remove a model) | `%APPDATA%\AppLiveCaption\models.json` |
+| Logs | `logs\app.log` (Settings → Advanced → Logs opens the folder) | `%LOCALAPPDATA%\AppLiveCaption\logs\` |
+| Models | `models\` (Settings → Model folder can point somewhere else, e.g. a folder several copies share) | `%LOCALAPPDATA%\AppLiveCaption\models\` |
+| GPU support | `cuda\` | `%LOCALAPPDATA%\AppLiveCaption\cuda\` |
 
-| What | Where (in that folder) |
-| --- | --- |
-| Settings | `config.json` |
-| History | `history\` |
-| Logs | `logs\app.log` (Settings → Advanced → Logs opens the folder) |
-| Models | `models\` (Settings → Model folder can point somewhere else, e.g. a folder several copies share) |
-| Your changes to the model list | `models.json` (only exists once you add or remove a model) |
-| GPU support | `cuda\` |
+The installer puts a small `AppLiveCaption.installed` file next to the exe; that's how the app knows it was installed. If a portable copy's folder can't be written to (for example under `C:\Program Files`), it uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
 
-The installer puts a small `AppLiveCaption.installed` file next to the exe; that's how the app knows to use `%APPDATA%`. If a portable copy's folder can't be written to (for example under `C:\Program Files`), it uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
-
-**Switching from portable to installed?** Install the app, then copy `config.json`, `history`, `models`, `models.json` and `cuda` (the ones you have) from the portable folder into `%APPDATA%\AppLiveCaption`, so nothing needs downloading again.
+**Switching from portable to installed?** Install the app, then copy (the ones you have) `config.json`, `history` and `models.json` from the portable folder into `%APPDATA%\AppLiveCaption`, and `models` and `cuda` into `%LOCALAPPDATA%\AppLiveCaption`, so nothing needs downloading again.
 
 ## Updating
 
@@ -128,7 +126,8 @@ To go back to an older version, do the same with that version's zip (or, install
 
 ## Uninstalling
 
-- **Installed version:** uninstall AppLiveCaption from **Settings → Apps → Installed apps** in Windows. At the end it asks whether to also delete your settings, history, downloaded models and GPU support in `%APPDATA%\AppLiveCaption`. Choose **No** (the default) to keep them for a later install. A models folder you moved somewhere else in Settings is never deleted.
+- **Installed version:** uninstall AppLiveCaption from **Settings → Apps → Installed apps** in Windows. At the end it lists what's still on your PC, each with a tick box: **Settings and history**, **Downloaded models** and **GPU support**, with their sizes. Tick what you want gone. Anything left unticked (the default) is kept for a later install. A models folder you moved somewhere else in Settings is never deleted.
+  - A silent uninstall (`unins000.exe /VERYSILENT`) keeps everything, unless you add `/DELETEDATA=settings,models,gpu` (any of them, or `all`).
 - **Portable version:** delete its folder. That's everything.
 
 ## Offline and privacy
