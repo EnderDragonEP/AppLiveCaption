@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
-from PySide6.QtCore import QPoint, Qt, QTimer, QUrl, Signal
+from PySide6.QtCore import QEvent, QObject, QPoint, Qt, QTimer, QUrl, Signal
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QAbstractButton, QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
     Action,
     BodyLabel,
@@ -53,15 +54,32 @@ def _languages_text(info: ModelInfo) -> str:
     return ", ".join(info.language_label(c) if c in info.language_notes else language_name(c) for c in info.languages)
 
 
+class _HideOnEnter(QObject):
+    """Hides the card's link hint while the mouse is on one of its buttons (they have their own tooltips,
+    or would wrongly seem to open the link)."""
+
+    def __init__(self, card_tip: ToolTipFilter, parent: QWidget):
+        super().__init__(parent)
+        self.card_tip = card_tip
+
+    def eventFilter(self, obj, e):  # noqa: N802 - Qt override
+        if e.type() == QEvent.Type.Enter:
+            self.card_tip.hideToolTip()
+        return False
+
+
 class _ItemCard(FlashMixin, CardWidget):
     """A card that opens ``page_url`` on Ctrl+click and can be highlighted for a moment (``flash``).
 
-    Subclasses call ``_build_frame`` (after setting ``page_url``) and add ``detail`` (a label) for
-    ``set_progress``.
+    Subclasses call ``_build_frame`` (after setting ``page_url``), add ``detail`` (a label) for
+    ``set_progress`` and, once their buttons exist, call ``_set_up_link_hint``.
     """
 
     page_url = ""
-    link_hint = ""  # the hover hint: what Ctrl+click opens
+    link_hint = ""  # what Ctrl+click opens, shown when hovering the card
+    PLAIN_CLICKS_FOR_TIP = 3  # plain clicks in a row (the user tries to open the link) before saying how
+    _plain_clicks = 0
+    _last_click = 0.0
 
     def _build_frame(self) -> QHBoxLayout:
         """Lay out the card: a row for the icon, text and status columns (returned
@@ -77,18 +95,33 @@ class _ItemCard(FlashMixin, CardWidget):
         self.progress.setRange(0, 1000)
         self.progress.hide()
         outer.addWidget(self.progress)
-        # Like a link in Office: a plain click does nothing, so a stray click doesn't open the browser.
-        self.setToolTip(self.link_hint)
-        self.installEventFilter(ToolTipFilter(self))
         return row
+
+    def _set_up_link_hint(self) -> None:
+        """Show ``link_hint`` when hovering the card, except over its buttons."""
+        self.setToolTip(self.link_hint)
+        tip = ToolTipFilter(self, showDelay=500)
+        self.installEventFilter(tip)
+        for button in self.findChildren(QAbstractButton):
+            button.installEventFilter(_HideOnEnter(tip, button))
 
     def mouseReleaseEvent(self, e):  # noqa: N802 - Qt override
         super().mouseReleaseEvent(e)
-        # Buttons on the card handle their own clicks; this is a click on the card itself.
-        # Ignore right-clicks, clicks without Ctrl and drags released outside the card.
-        if (e.button() == Qt.MouseButton.LeftButton and e.modifiers() & Qt.KeyboardModifier.ControlModifier
-                and self.rect().contains(e.position().toPoint())):
+        # Buttons on the card handle their own clicks; this is a click on the card itself. Like a link in
+        # Office it needs Ctrl, so a stray click doesn't open the browser. Ignore right-clicks and drags
+        # released outside the card.
+        if e.button() != Qt.MouseButton.LeftButton or not self.rect().contains(e.position().toPoint()):
+            return
+        if e.modifiers() & Qt.KeyboardModifier.ControlModifier:
+            self._plain_clicks = 0
             QDesktopServices.openUrl(QUrl(self.page_url))
+            return
+        now = time.monotonic()
+        self._plain_clicks = self._plain_clicks + 1 if now - self._last_click < 2.0 else 1
+        self._last_click = now
+        if self._plain_clicks >= self.PLAIN_CLICKS_FOR_TIP:
+            self._plain_clicks = 0
+            show_infobar("info", self.tr("Hold Ctrl to open the link"), self.link_hint, self.window())
 
     def reserve_progress_width(self, downloading: bool) -> None:
         """While downloading, keep the detail label as wide as the widest progress
@@ -141,8 +174,6 @@ class ModelCard(_ItemCard):
             meta_text += " · " + tr("Added by you")
         meta = CaptionLabel(meta_text, self)
         meta.setWordWrap(True)
-        meta.setToolTip(info.repo or info.source_folder)
-        meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
         lay.addLayout(text, 1)
 
@@ -175,6 +206,7 @@ class ModelCard(_ItemCard):
         side.addLayout(buttons)
         side.addStretch(1)
         lay.addLayout(side)
+        self._set_up_link_hint()
 
     @property
     def page_url(self) -> str:
@@ -185,7 +217,7 @@ class ModelCard(_ItemCard):
     @property
     def link_hint(self) -> str:
         if self.info.repo:
-            return self.tr("Ctrl+click to open the model's page on Hugging Face")
+            return self.tr("Ctrl+click to open huggingface.co/{repo}").format(repo=self.info.repo)
         return self.tr("Ctrl+click to open the model's folder")
 
     def _show_menu(self) -> None:
@@ -265,8 +297,6 @@ class GpuSupportCard(_ItemCard):
             self,
         )
         meta.setWordWrap(True)
-        meta.setToolTip(self.page_url)
-        meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
         lay.addLayout(text, 1)
 
@@ -295,6 +325,7 @@ class GpuSupportCard(_ItemCard):
         side.addLayout(buttons)
         side.addStretch(1)
         lay.addLayout(side)
+        self._set_up_link_hint()
         self.set_gpu(None, False)
 
     @property
@@ -472,9 +503,16 @@ class ModelsPage(QWidget):
 
         lay.addStretch(1)
         scroll.setWidget(body)
+        # A tooltip only hides when the mouse leaves its widget, and scrolling moves the widget away
+        # without that happening: the tooltip would stay behind on the screen.
+        scroll.verticalScrollBar().valueChanged.connect(self._hide_tooltips)
         outer.addWidget(scroll)
         self.sync_cards()
         self.refresh()
+
+    def _hide_tooltips(self) -> None:
+        for f in self.findChildren(ToolTipFilter):
+            f.hideToolTip()
 
     def sync_cards(self) -> None:
         """Make the cards match the model list (after models were added, removed or restored)."""
