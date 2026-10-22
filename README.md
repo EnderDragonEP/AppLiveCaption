@@ -75,6 +75,17 @@ The app also uses the same libraries when they're already on the PC, in this ord
 - Breeze ASR 26 writes Taigi as Mandarin Chinese characters, not Taigi orthography (台語正字).
 - Translation, speaker identification and cloud speech services are out of scope.
 
+## To do
+
+- [ ] Keyword detection (text highlighting, audio alerts)
+- [ ] Dynamically adjusted line counts
+- [ ] Support custom model import
+- [ ] Model catalog export and import
+- [ ] Allow deleting preset model entries
+- [ ] Add more languages
+- [ ] Add AMD or Intel GPU support (mabey)
+- [ ] Split long sentences into shorter ones
+
 ## Where your stuff lives
 
 Everything the app writes stays next to `AppLiveCaption.exe`. Moving the folder moves all of it, and deleting the folder removes all of it. Nothing goes to AppData.
