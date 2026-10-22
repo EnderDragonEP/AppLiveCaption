@@ -74,7 +74,6 @@ class Config(QConfig):
     # Caption appearance (Live Captions page)
     captionFont = ConfigItem("Captions", "FontFamily", "Microsoft JhengHei UI")
     captionFontSize = RangeConfigItem("Captions", "FontSize", 24, RangeValidator(10, 72))
-    captionLines = RangeConfigItem("Captions", "Lines", 8, RangeValidator(1, 30))
     # A caption color left at its default follows the light/dark theme instead.
     finalColor = ColorConfigItem("Captions", "FinalColor", QColor(32, 32, 32))
     partialColor = ColorConfigItem("Captions", "PartialColor", QColor(128, 128, 128))
@@ -83,7 +82,6 @@ class Config(QConfig):
     overlayVisible = ConfigItem("Overlay", "Visible", False, BoolValidator())
     overlayGeometry = ConfigItem("Overlay", "Geometry", [])
     overlayClickThrough = ConfigItem("Overlay", "ClickThrough", False, BoolValidator())
-    overlayLines = RangeConfigItem("Overlay", "Lines", 2, RangeValidator(1, 3))
     overlayFontSize = RangeConfigItem("Overlay", "FontSize", 26, RangeValidator(10, 72))
     overlayOpacity = RangeConfigItem("Overlay", "BackgroundOpacity", 70, RangeValidator(0, 100))
     overlayTextColor = ColorConfigItem("Overlay", "TextColor", QColor(255, 255, 255))

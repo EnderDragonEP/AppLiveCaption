@@ -168,7 +168,7 @@ If PowerShell refuses to run the script because of the execution policy, run `po
 
 The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, zip only `AppLiveCaption.exe` and `_internal\`, and tag it like `v1.0.1` so the update check finds it.
 
-The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.0.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.0.1). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
 <details markdown="1">
 <summary>What the build leaves out, and why</summary>

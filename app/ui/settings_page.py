@@ -118,8 +118,6 @@ class SettingsPage(ScrollArea):
         g.addSettingCard(FontSettingCard(g))
         g.addSettingCard(RangeSettingCard(cfg.captionFontSize, FluentIcon.FONT_SIZE, self.tr("Caption size"),
                                           self.tr("Font size on the Live captions page"), g))
-        g.addSettingCard(RangeSettingCard(cfg.captionLines, FluentIcon.ALIGNMENT, self.tr("Caption lines"),
-                                          self.tr("How many lines the Live captions page shows"), g))
         g.addSettingCard(CustomColorSettingCard(cfg.finalColor, FluentIcon.PALETTE, self.tr("Caption color"),
                                                 self.tr("Finished lines"), g))
         g.addSettingCard(CustomColorSettingCard(cfg.partialColor, FluentIcon.PALETTE, self.tr("Partial caption color"),
@@ -128,8 +126,6 @@ class SettingsPage(ScrollArea):
 
         # Overlay
         g = SettingCardGroup(self.tr("Floating overlay"), container)
-        g.addSettingCard(RangeSettingCard(cfg.overlayLines, FluentIcon.ALIGNMENT, self.tr("Overlay lines"),
-                                          self.tr("Number of caption lines in the overlay (1–3)"), g))
         g.addSettingCard(RangeSettingCard(cfg.overlayFontSize, FluentIcon.FONT_SIZE, self.tr("Overlay text size"),
                                           None, g))
         g.addSettingCard(RangeSettingCard(cfg.overlayOpacity, FluentIcon.TRANSPARENT, self.tr("Background opacity"),

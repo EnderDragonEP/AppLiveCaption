@@ -139,7 +139,7 @@ class LivePage(QWidget):
         self.lang_combo.currentIndexChanged.connect(self._on_language_index)
         self.apply_style()
         qconfig.themeChanged.connect(lambda _t: self.apply_style())
-        for item in (cfg.captionFont, cfg.captionFontSize, cfg.captionLines, cfg.finalColor,
+        for item in (cfg.captionFont, cfg.captionFontSize, cfg.finalColor,
                      cfg.partialColor):
             item.valueChanged.connect(lambda _v: self.apply_style())
         self.set_running(False)
@@ -156,7 +156,7 @@ class LivePage(QWidget):
             final = QColor(cfg.get(cfg.finalColor))
         if QColor(cfg.get(cfg.partialColor)) != QColor(cfg.partialColor.defaultValue):
             partial = QColor(cfg.get(cfg.partialColor))
-        self.view.set_style(font, final, partial, cfg.get(cfg.captionLines))
+        self.view.set_style(font, final, partial)
 
     # -- models -------------------------------------------------------------
     def refresh_models(self) -> None:
