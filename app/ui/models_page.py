@@ -1,11 +1,14 @@
-"""Models page: GPU support and every catalog model, with download/delete, disk usage and license."""
+"""Models page: GPU support and the model list, with download, delete, add and remove, disk usage and license."""
 
 from __future__ import annotations
 
-from PySide6.QtCore import QRectF, Qt, QTimer, QUrl, QVariantAnimation, Signal
+from pathlib import Path
+
+from PySide6.QtCore import QPoint, QRectF, Qt, QTimer, QUrl, QVariantAnimation, Signal
 from PySide6.QtGui import QColor, QDesktopServices, QPainter, QPen
 from PySide6.QtWidgets import QHBoxLayout, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    Action,
     BodyLabel,
     CaptionLabel,
     CardWidget,
@@ -15,6 +18,7 @@ from qfluentwidgets import (
     PrimaryPushButton,
     ProgressBar,
     PushButton,
+    RoundMenu,
     ScrollArea,
     StrongBodyLabel,
     TitleLabel,
@@ -29,10 +33,18 @@ from ..asr.cuda_setup import active_dirs, cuda_libraries_found
 from ..asr.languages import language_name
 from ..config import cfg
 from ..i18n import tr
-from ..models.catalog import ModelInfo, load_catalog
-from ..models.storage import delete_model, disk_usage, has_partial_download, is_downloaded, models_dir
+from ..models.catalog import ModelInfo, add_custom_model, load_catalog, remove_model, reset_catalog
+from ..models.storage import (
+    delete_model,
+    disk_usage,
+    has_partial_download,
+    is_downloaded,
+    model_path,
+    models_dir,
+)
 from .download import CudaDownloadThread, DownloadManager, cuda_download_error_text, download_error_text, format_bytes
 from .messages import show_infobar
+from .model_dialogs import AddModelDialog, ConfirmDialog
 
 
 def _languages_text(info: ModelInfo) -> str:
@@ -119,12 +131,14 @@ class _ItemCard(CardWidget):
 class ModelCard(_ItemCard):
     downloadClicked = Signal(str)
     cancelClicked = Signal(str)
-    deleteClicked = Signal(str)
+    deleteClicked = Signal(str)  # delete the downloaded files
+    removeClicked = Signal(str)  # take the model off the list
     useClicked = Signal(str)
 
     def __init__(self, info: ModelInfo, parent=None):
         super().__init__(parent)
         self.info = info
+        self._has_files = False
         self.setCursor(Qt.CursorShape.PointingHandCursor)
         lay = self._build_frame()
 
@@ -139,14 +153,16 @@ class ModelCard(_ItemCard):
         desc = CaptionLabel(info.description, self)
         desc.setWordWrap(True)
         text.addWidget(desc)
-        meta = CaptionLabel(
-            tr("Download {size} · {backend} · Languages: {langs} · License: {lic}").format(
-                size=format_bytes(info.size_mb * 2**20), backend=info.backend, langs=_languages_text(info),
-                lic=info.license),
-            self,
-        )
+        # A model from a local folder is copied, not downloaded.
+        template = (tr("Download {size} · {backend} · Languages: {langs} · License: {lic}") if info.repo else
+                    tr("Size {size} · {backend} · Languages: {langs} · License: {lic}"))
+        meta_text = template.format(size=format_bytes(info.size_mb * 2**20), backend=info.backend,
+                                    langs=_languages_text(info), lic=info.license)
+        if info.custom:
+            meta_text += " · " + tr("Added by you")
+        meta = CaptionLabel(meta_text, self)
         meta.setWordWrap(True)
-        meta.setToolTip(info.repo)
+        meta.setToolTip(info.repo or info.source_folder)
         meta.installEventFilter(ToolTipFilter(meta))
         text.addWidget(meta)
         lay.addLayout(text, 1)
@@ -167,11 +183,11 @@ class ModelCard(_ItemCard):
         self.download_btn.clicked.connect(lambda: self.downloadClicked.emit(info.id))
         self.cancel_btn = PushButton(FluentIcon.CLOSE, self.tr("Cancel"), self)
         self.cancel_btn.clicked.connect(lambda: self.cancelClicked.emit(info.id))
-        self.delete_btn = TransparentToolButton(FluentIcon.DELETE, self)
-        self.delete_btn.setToolTip(self.tr("Delete from disk"))
-        self.delete_btn.installEventFilter(ToolTipFilter(self.delete_btn))
-        self.delete_btn.clicked.connect(lambda: self.deleteClicked.emit(info.id))
-        for b in (self.use_btn, self.download_btn, self.cancel_btn, self.delete_btn):
+        self.more_btn = TransparentToolButton(FluentIcon.MORE, self)
+        self.more_btn.setToolTip(self.tr("More"))
+        self.more_btn.installEventFilter(ToolTipFilter(self.more_btn))
+        self.more_btn.clicked.connect(self._show_menu)
+        for b in (self.use_btn, self.download_btn, self.cancel_btn, self.more_btn):
             buttons.addWidget(b)
         side.addLayout(buttons)
         side.addStretch(1)
@@ -179,9 +195,26 @@ class ModelCard(_ItemCard):
 
     @property
     def page_url(self) -> str:
-        return f"https://huggingface.co/{self.info.repo}"
+        if self.info.repo:
+            return f"https://huggingface.co/{self.info.repo}"
+        return QUrl.fromLocalFile(str(model_path(self.info))).toString()  # a local model: open its folder
 
-    def update_state(self, downloading: bool, in_use: bool) -> None:
+    def _show_menu(self) -> None:
+        menu = RoundMenu(parent=self)
+        menu.closedSignal.connect(menu.deleteLater)  # exec() doesn't wait for the menu to close
+        # The actions open a dialog. They run once the menu is done with the click: the dialog's event loop
+        # would delete the menu (deleteLater above) while its click handler is still running, and crash.
+        delete = Action(FluentIcon.DELETE, self.tr("Delete files from disk"), menu)
+        delete.setEnabled(self._has_files)
+        delete.triggered.connect(lambda: QTimer.singleShot(0, lambda: self.deleteClicked.emit(self.info.id)))
+        remove = Action(FluentIcon.REMOVE, self.tr("Remove from list"), menu)
+        remove.triggered.connect(lambda: QTimer.singleShot(0, lambda: self.removeClicked.emit(self.info.id)))
+        menu.addAction(delete)
+        menu.addAction(remove)
+        menu.exec(self.more_btn.mapToGlobal(QPoint(0, self.more_btn.height())))
+
+    def update_state(self, downloading: bool, in_use: bool, loading: bool = False) -> None:
+        """``in_use``: the model is loaded, or (``loading``) being loaded; its files can't be deleted then."""
         info = self.info
         downloaded = is_downloaded(info)
         partial = has_partial_download(info)
@@ -191,10 +224,13 @@ class ModelCard(_ItemCard):
         self.download_btn.setVisible(not downloaded and not downloading)
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
         self.use_btn.setVisible(downloaded and not in_use)
-        self.delete_btn.setVisible((downloaded or partial) and not downloading and not in_use)
+        self._has_files = downloaded or partial
+        self.more_btn.setVisible(not downloading and not in_use)
         used = disk_usage(info) if (downloaded or partial) else 0
         if downloading:
             self.status.setText(self.tr("Downloading…"))
+        elif in_use and loading:
+            self.status.setText(self.tr("Loading…"))
         elif in_use:
             self.status.setText(self.tr("In use"))
         elif downloaded:
@@ -385,6 +421,7 @@ class ModelsPage(QWidget):
     useRequested = Signal(str)
     downloadRequested = Signal(str)
     modelsChanged = Signal()
+    catalogChanged = Signal()  # models were added, removed or restored
     downloadFinished = Signal(str, bool)
     gpuSupportInstalled = Signal()
 
@@ -392,6 +429,7 @@ class ModelsPage(QWidget):
         super().__init__(parent)
         self.setObjectName("modelsPage")
         self.current_model_id: str | None = None
+        self.current_loading = False  # current_model_id is still being loaded
         self.downloads = DownloadManager(self)
         self.downloads.progress.connect(self._on_progress)
         self.downloads.finished.connect(self._on_finished)
@@ -406,25 +444,132 @@ class ModelsPage(QWidget):
         lay = QVBoxLayout(body)
         lay.setContentsMargins(36, 24, 36, 24)
         lay.setSpacing(10)
-        lay.addWidget(TitleLabel(self.tr("Models"), body))
+        head = QHBoxLayout()
+        head.addWidget(TitleLabel(self.tr("Models"), body))
+        head.addStretch(1)
+        self.add_btn = PushButton(FluentIcon.ADD, self.tr("Add model"), body)
+        self.add_btn.clicked.connect(self.add_model)
+        head.addWidget(self.add_btn)
+        lay.addLayout(head)
         self.folder_label = CaptionLabel("", body)
         lay.addWidget(self.folder_label)
         self.gpu_card = GpuSupportCard(body)
         self.gpu_card.installed.connect(self.gpuSupportInstalled)
         lay.addWidget(self.gpu_card)
         self.cards: dict[str, ModelCard] = {}
-        for info in load_catalog():
-            card = ModelCard(info, body)
-            card.downloadClicked.connect(self.downloadRequested)
-            card.cancelClicked.connect(self.downloads.cancel)
-            card.deleteClicked.connect(self._delete)
-            card.useClicked.connect(self.useRequested)
-            self.cards[info.id] = card
-            lay.addWidget(card)
+        self.cards_layout = QVBoxLayout()
+        self.cards_layout.setSpacing(10)
+        lay.addLayout(self.cards_layout)
+
+        # Shown instead of the cards when every model has been removed.
+        self.empty = QWidget(body)
+        empty_lay = QVBoxLayout(self.empty)
+        empty_lay.setAlignment(Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.setSpacing(8)
+        empty_lay.setContentsMargins(0, 36, 0, 24)
+        empty_icon = IconWidget(FluentIcon.LIBRARY, self.empty)
+        empty_icon.setFixedSize(48, 48)
+        empty_lay.addWidget(empty_icon, 0, Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.addWidget(StrongBodyLabel(self.tr("No models in the list"), self.empty), 0, Qt.AlignmentFlag.AlignHCenter)
+        empty_lay.addWidget(CaptionLabel(self.tr("Bring back the preset models, or add your own."), self.empty),
+                            0, Qt.AlignmentFlag.AlignHCenter)
+        self.restore_btn = PrimaryPushButton(FluentIcon.SYNC, self.tr("Restore default models"), self.empty)
+        self.restore_btn.clicked.connect(lambda: self.reset_catalog(delete_files=False))
+        empty_lay.addSpacing(8)
+        empty_lay.addWidget(self.restore_btn, 0, Qt.AlignmentFlag.AlignHCenter)
+        lay.addWidget(self.empty)
+
         lay.addStretch(1)
         scroll.setWidget(body)
         outer.addWidget(scroll)
+        self.sync_cards()
         self.refresh()
+
+    def sync_cards(self) -> None:
+        """Make the cards match the model list (after models were added, removed or restored)."""
+        body = self.scroll.widget()
+        models = load_catalog()
+        for mid in [m for m in self.cards if m not in {i.id for i in models}]:
+            self._drop_card(mid)
+        while self.cards_layout.count():
+            self.cards_layout.takeAt(0)  # re-added below in the list's order
+        for info in models:
+            card = self.cards.get(info.id)
+            if card is not None and card.info != info:
+                self._drop_card(info.id)
+                card = None
+            if card is None:
+                card = ModelCard(info, body)
+                card.downloadClicked.connect(self.downloadRequested)
+                card.cancelClicked.connect(self.downloads.cancel)
+                card.deleteClicked.connect(self._delete)
+                card.removeClicked.connect(self._remove)
+                card.useClicked.connect(self.useRequested)
+                self.cards[info.id] = card
+            self.cards_layout.addWidget(card)
+            card.show()
+        self.empty.setVisible(not models)
+
+    def _drop_card(self, model_id: str) -> None:
+        card = self.cards.pop(model_id)
+        card.hide()
+        card.setParent(None)
+        card.deleteLater()
+
+    def _catalog_changed(self) -> None:
+        self.sync_cards()
+        self.refresh()
+        self.catalogChanged.emit()
+
+    # -- adding, removing, restoring --------------------------------------------------
+    def add_model(self) -> None:
+        dialog = AddModelDialog(self.window())
+        if not dialog.exec() or dialog.entry is None:
+            return
+        listed = {m.id for m in load_catalog()}
+        info = add_custom_model(dialog.entry)
+        if info.id in listed:  # its repository is a model's in the list already: nothing was added
+            show_infobar("info", self.tr("Already in the list"),
+                         self.tr("{name} is in the list already.").format(name=info.name), self.window())
+        else:
+            self._catalog_changed()
+            if info.source_folder:
+                self.downloadRequested.emit(info.id)  # copy it into the models folder right away
+            elif is_downloaded(info):  # a removed preset whose files were kept
+                show_infobar("success", self.tr("Model added"),
+                             self.tr("{name} is in the list, and downloaded already.").format(name=info.name),
+                             self.window())
+            else:
+                show_infobar("success", self.tr("Model added"),
+                             self.tr("{name} is in the list. Download it when you want to use it.").format(
+                                 name=info.name), self.window())
+        self.show_model(info.id)
+
+    def _remove(self, model_id: str) -> None:
+        card = self.cards[model_id]
+        info = card.info
+        files = disk_usage(info)
+        if info.custom:
+            content = self.tr("{name} is removed from the list. You can add it again later.").format(name=info.name)
+        else:
+            content = self.tr("{name} is removed from the list. Reset the model list in Settings (or press "
+                              "Restore default models when the list is empty) to bring it back.").format(name=info.name)
+        dialog = ConfirmDialog(self.tr("Remove from the list?"), content, self.tr("Remove"),
+                               option=(self.tr("Also delete the downloaded files ({size})").format(size=format_bytes(files))
+                                       if files else ""), parent=self.window())
+        if not dialog.exec():
+            return
+        remove_model(model_id)
+        if dialog.option_checked:
+            delete_model(info)
+        self._catalog_changed()
+
+    def reset_catalog(self, delete_files: bool) -> None:
+        """Back to the preset list; the models the user added are dropped (and their files deleted if asked)."""
+        for info in reset_catalog():
+            if delete_files:
+                delete_model(info)
+        self._catalog_changed()
 
     def show_model(self, model_id: str) -> None:
         """Scroll ``model_id``'s card into view and highlight it."""
@@ -448,13 +593,16 @@ class ModelsPage(QWidget):
 
     def refresh(self) -> None:
         self.folder_label.setText(self.tr("Models are stored in {path}").format(path=models_dir()))
+        self.empty.setVisible(not self.cards)
         self.gpu_card.setVisible(self.gpu_card.worth_showing())
         self.gpu_card.update_state()
         for mid, card in self.cards.items():
-            card.update_state(self.downloads.is_active(mid), mid == self.current_model_id)
+            card.update_state(self.downloads.is_active(mid), mid == self.current_model_id, self.current_loading)
 
-    def set_current_model(self, model_id: str | None) -> None:
+    def set_current_model(self, model_id: str | None, loading: bool = False) -> None:
+        """The model that is loaded, or being loaded (``loading``); None when there is none."""
         self.current_model_id = model_id
+        self.current_loading = loading
         self.refresh()
 
     def start_download(self, info: ModelInfo) -> None:
@@ -481,8 +629,16 @@ class ModelsPage(QWidget):
 
     def _delete(self, model_id: str) -> None:
         card = self.cards[model_id]
-        box = MessageBox(self.tr("Delete model?"),
-                         self.tr("Delete {name} from disk? You can download it again later.").format(name=card.info.name),
+        info = card.info
+        if not info.source_folder:
+            content = self.tr("Delete {name} from disk? You can download it again later.")
+        elif Path(info.source_folder).is_dir():
+            content = self.tr("Delete {name} from disk? It can be copied again from {folder} later, as long as "
+                              "that folder is there.")
+        else:
+            content = self.tr("Delete {name} from disk? The folder it was added from ({folder}) is gone, so it "
+                              "can't be copied again: add the model again from wherever it is now.")
+        box = MessageBox(self.tr("Delete model?"), content.format(name=info.name, folder=info.source_folder),
                          self.window())
         box.yesButton.setText(self.tr("Delete"))
         box.cancelButton.setText(self.tr("Cancel"))

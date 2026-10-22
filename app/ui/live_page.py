@@ -172,6 +172,10 @@ class LivePage(QWidget):
             self._model_ids.append(m.id)
         if current in self._model_ids:
             self.model_combo.setCurrentIndex(self._model_ids.index(current))
+        if not self._model_ids:
+            # (Only when empty: qfluentwidgets shows the placeholder over item 0 too.)
+            self.model_combo.setPlaceholderText(self.tr("No models: add one on the Models page"))
+        self.model_combo.setEnabled(bool(self._model_ids))
         self.model_combo.blockSignals(False)
         info = get_model(current)
         if info and not self._languages:

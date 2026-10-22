@@ -156,6 +156,12 @@ class AsrWorker(QThread):
             if was_running:
                 self.runState.emit(IDLE)
 
+    def _cmd_unload(self) -> None:
+        """Stop captioning and release the model (its files can then be deleted)."""
+        self._stop()
+        self._unload()
+        self.modelState.emit(MODEL_NONE, "")
+
     def _load(self, info: ModelInfo, device_pref: str) -> bool:
         problem = verify(info) if is_downloaded(info) else "missing"
         if problem:
@@ -370,6 +376,11 @@ class CaptionController(QObject):
     def load_model(self, model_id: str, device_pref: str) -> None:
         self.model_id = model_id
         self.worker.post("load", model_id=model_id, device_pref=device_pref)
+
+    def unload_model(self) -> None:
+        """Stop captioning and release the current model; ``modelState`` then reports MODEL_NONE."""
+        self.model_id = None
+        self.worker.post("unload")
 
     def start(self, selection: CaptureSelection, language: str | None, opencc: bool, source_label: str) -> None:
         self.selection = selection

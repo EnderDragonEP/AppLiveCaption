@@ -6,7 +6,7 @@ import html
 import math
 
 from PySide6.QtCore import QRectF, Qt
-from PySide6.QtGui import QColor, QFont, QPainter, QTextDocument, QTextOption
+from PySide6.QtGui import QColor, QFont, QFontMetricsF, QPainter, QTextDocument, QTextOption
 from PySide6.QtWidgets import QWidget
 
 from .caption_model import CaptionModel
@@ -30,10 +30,6 @@ def build_document(finals: list[str], partial: str, font: QFont, final_color: QC
     return doc
 
 
-# More finished lines than any window can show; the height decides how many are drawn.
-MAX_LINES = 40
-
-
 def draw_captions(painter: QPainter, model: CaptionModel, rect: QRectF, font: QFont, final_color: QColor,
                   partial_color: QColor) -> bool:
     """Draw as many of the newest lines as fit in ``rect``, anchored to its bottom.
@@ -41,7 +37,10 @@ def draw_captions(painter: QPainter, model: CaptionModel, rect: QRectF, font: QF
     The cut is at a whole text line, never through one, so a taller window
     simply shows more lines. Returns False when there is nothing to draw.
     """
-    finals, partial = model.last_lines(MAX_LINES)
+    # Every caption takes at least one text line, so this many fill the height,
+    # with one more to cut at the top. Laying out more would be wasted work.
+    fit = math.ceil(rect.height() / max(1.0, QFontMetricsF(font).height())) + 1
+    finals, partial = model.last_lines(max(2, fit))
     if not finals and not partial:
         return False
     doc = build_document(finals, partial, font, final_color, partial_color, rect.width())

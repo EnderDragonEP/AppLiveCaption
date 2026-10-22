@@ -108,6 +108,16 @@ class HistoryTests(unittest.TestCase):
 
 
 class CatalogTests(unittest.TestCase):
+    def setUp(self):
+        # The presets only: not the models.json of a copy of the app run from source.
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        env = mock.patch.dict(os.environ, {"ALC_DATA_DIR": tmp.name})
+        env.start()
+        self.addCleanup(env.stop)
+        load_catalog.cache_clear()
+        self.addCleanup(load_catalog.cache_clear)
+
     def test_catalog_entries(self):
         ids = [m.id for m in load_catalog()]
         self.assertEqual(len(ids), len(set(ids)))

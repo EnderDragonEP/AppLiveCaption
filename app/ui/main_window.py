@@ -13,12 +13,13 @@ from .. import APP_NAME, __version__
 from ..asr import cuda_libs
 from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda
 from ..config import cfg
-from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_READY, PAUSED, RUNNING, CaptionController
-from ..models.catalog import get_model
-from ..models.storage import is_downloaded
+from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_NONE, MODEL_READY, PAUSED, RUNNING, CaptionController
+from ..models.catalog import default_model_id, get_model, load_catalog
+from ..models.storage import disk_usage, is_downloaded
 from ..updates import UpdateChecker, is_newer
 from .async_utils import run_async
 from .caption_model import CaptionModel
+from .model_dialogs import ConfirmDialog
 from .download import format_bytes
 from .icons import app_icon
 from .live_page import LivePage
@@ -76,6 +77,7 @@ class MainWindow(FluentWindow):
         self.controller = CaptionController(self)
         self._gpu_name = ""
         self._pending_model: str | None = None  # model to switch to once its download finishes
+        self._after_unload = None  # runs once the controller has released the model (see _reset_catalog)
 
         # Pages
         self.live = LivePage(self.captions, self)
@@ -147,6 +149,8 @@ class MainWindow(FluentWindow):
         self.models_page.modelsChanged.connect(self.live.refresh_models)
         self.models_page.downloadFinished.connect(self.on_download_finished)
         self.models_page.gpuSupportInstalled.connect(self._on_gpu_support_installed)
+        self.models_page.catalogChanged.connect(self._on_catalog_changed)
+        self.settings_page.resetCatalogRequested.connect(self._reset_catalog)
         self.history_page.refreshRequested.connect(self._reload_history)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
@@ -157,6 +161,44 @@ class MainWindow(FluentWindow):
         # Reload the current model on the newly chosen device.
         if self.controller.model_id and self.controller.model_state == MODEL_READY:
             self.controller.load_model(self.controller.model_id, device)
+
+    # -- the model list ---------------------------------------------------------------
+    def _on_catalog_changed(self) -> None:
+        """Models were added, removed or restored: bring the other pages in line."""
+        self.settings_page.refresh_models()
+        c = self.controller
+        if get_model(c.model_id or "") is None and c.model_state in (MODEL_READY, MODEL_LOADING):
+            c.unload_model()  # the model in use is no longer in the list
+        self.live.refresh_models()
+        if get_model(cfg.get(cfg.modelId)) is None and get_model(c.model_id or "") is None:
+            # The selected model left the list: pick another one, and load it if it's downloaded,
+            # as at start-up (Start would fail with no model loaded).
+            self._load_initial_model()
+
+    def _reset_catalog(self) -> None:
+        """Settings → Reset model list: the presets come back, the models the user added are removed."""
+        if self.models_page.downloads.any_active():
+            show_infobar("warning", self.tr("A download is running"),
+                         self.tr("Wait for it to finish (or cancel it) before resetting the model list."), self)
+            return
+        added = [m for m in load_catalog() if m.custom]
+        files = sum(disk_usage(m) for m in added)
+        content = self.tr("The preset models come back in the list.")
+        if added:
+            content += " " + self.tr("The {n} model(s) you added are removed from it.").format(n=len(added))
+        dialog = ConfirmDialog(self.tr("Reset the model list?"), content, self.tr("Reset"),
+                               option=(self.tr("Also delete the files of the models you added ({size})")
+                                       .format(size=format_bytes(files)) if files else ""), parent=self)
+        if not dialog.exec():
+            return
+        delete_files = dialog.option_checked
+        in_use = self.controller.model_id
+        if in_use and any(m.id == in_use for m in added) and self.controller.model_state in (MODEL_READY, MODEL_LOADING):
+            # Release the model first: Windows won't delete a file that is loaded.
+            self._after_unload = lambda: self.models_page.reset_catalog(delete_files)
+            self.controller.unload_model()
+        else:
+            self.models_page.reset_catalog(delete_files)
 
     def _on_model_folder(self, _folder: str) -> None:
         self.models_page.refresh()
@@ -183,9 +225,10 @@ class MainWindow(FluentWindow):
             self.live.select_model(chosen)
             self.controller.load_model(chosen, cfg.get(cfg.device))
         else:
-            if get_model(candidates[0]):
-                cfg.set(cfg.modelId, candidates[0])
-                self.live.select_model(candidates[0])
+            fallback = next((m for m in candidates if get_model(m)), None) or default_model_id()
+            if fallback:  # nothing downloaded yet: show a model of the list, to download it
+                cfg.set(cfg.modelId, fallback)
+                self.live.select_model(fallback)
             self.live.set_device(self.tr("No model loaded"))
 
     def request_model(self, model_id: str) -> None:
@@ -226,16 +269,22 @@ class MainWindow(FluentWindow):
     def _on_model_state(self, state: str, model_id: str) -> None:
         info = get_model(model_id)
         self.live.set_model_loading(state == MODEL_LOADING, info)
-        if state == MODEL_READY:
+        if state == MODEL_LOADING:
+            # Its files are open: keep them from being deleted (or the model removed) until it's loaded.
+            self.models_page.set_current_model(model_id, loading=True)
+        elif state == MODEL_READY:
             self.live.select_model(model_id)
             self.models_page.set_current_model(model_id)
             self._update_device_label()
             if self._auto_start and not self.controller.is_running:
                 self._auto_start = False
                 self.start_captioning()
-        elif state == MODEL_FAILED:
+        elif state in (MODEL_FAILED, MODEL_NONE):
             self.models_page.set_current_model(None)
             self.live.set_device(self.tr("No model loaded"))
+            if state == MODEL_NONE and self._after_unload:
+                after, self._after_unload = self._after_unload, None
+                after()
 
     def _on_device_changed(self, _device: str, _compute: str) -> None:
         self._update_device_label()
@@ -307,7 +356,10 @@ class MainWindow(FluentWindow):
         c = self.controller
         if c.model_state not in (MODEL_READY, MODEL_LOADING):
             info = get_model(cfg.get(cfg.modelId))
-            if info and not is_downloaded(info):
+            if info is None:  # the list is empty, or the model was removed from it
+                self.switchTo(self.models_page)
+                return
+            if not is_downloaded(info):
                 # First run: show where to download the selected model instead of failing.
                 self.show_model_card(info.id)
                 return

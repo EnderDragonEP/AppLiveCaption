@@ -8,6 +8,7 @@ from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
+    ComboBox,
     ComboBoxSettingCard,
     CustomColorSettingCard,
     ExpandLayout,
@@ -29,7 +30,7 @@ from qfluentwidgets import (
 
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
 from ..config import cfg, is_win11
-from ..models.catalog import load_catalog
+from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
 from .icons import app_icon
@@ -80,9 +81,41 @@ class FontSettingCard(SettingCard):
             self.setContent(font.family())
 
 
+class DefaultModelCard(SettingCard):
+    """The model loaded at start-up, chosen from the current model list."""
+
+    def __init__(self, parent=None):
+        super().__init__(FluentIcon.ROBOT, self.tr("Default model"),
+                         self.tr("Loaded when the app starts (if it is downloaded)"), parent)
+        self.combo = ComboBox(self)
+        self.combo.setMinimumWidth(220)
+        self.hBoxLayout.addWidget(self.combo, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+        self.combo.currentIndexChanged.connect(self._on_index)
+        self.refresh_models()
+
+    def refresh_models(self) -> None:
+        """Show the current model list (it changes when models are added or removed)."""
+        models = load_catalog()
+        self.combo.blockSignals(True)
+        self.combo.clear()
+        for m in models:
+            self.combo.addItem(m.name, userData=m.id)
+        ids = [m.id for m in models]
+        wanted = cfg.get(cfg.defaultModel)
+        self.combo.setCurrentIndex(ids.index(wanted) if wanted in ids else -1)  # a removed model: shows nothing
+        self.combo.blockSignals(False)
+        self.combo.setEnabled(bool(models))
+
+    def _on_index(self, index: int) -> None:
+        if index >= 0:
+            cfg.set(cfg.defaultModel, self.combo.itemData(index))
+
+
 class SettingsPage(ScrollArea):
     deviceChanged = Signal(str)
     modelFolderChanged = Signal(str)
+    resetCatalogRequested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -127,13 +160,15 @@ class SettingsPage(ScrollArea):
         # Overlay
         g = SettingCardGroup(self.tr("Floating overlay"), container)
         g.addSettingCard(RangeSettingCard(cfg.overlayFontSize, FluentIcon.FONT_SIZE, self.tr("Overlay text size"),
-                                          None, g))
+                                          self.tr("Font size in the floating overlay"), g))
         g.addSettingCard(RangeSettingCard(cfg.overlayOpacity, FluentIcon.TRANSPARENT, self.tr("Background opacity"),
-                                          self.tr("Percent"), g))
+                                          self.tr("0% is fully see-through, 100% is solid"), g))
         g.addSettingCard(CustomColorSettingCard(cfg.overlayTextColor, FluentIcon.PALETTE, self.tr("Overlay text color"),
-                                                None, g))
+                                                self.tr("The line still being recognized is shown in a softer shade"),
+                                                g))
         g.addSettingCard(CustomColorSettingCard(cfg.overlayBackground, FluentIcon.PALETTE,
-                                                self.tr("Overlay background color"), None, g))
+                                                self.tr("Overlay background color"),
+                                                self.tr("Its transparency is set by Background opacity"), g))
         g.addSettingCard(SwitchSettingCard(FluentIcon.PIN, self.tr("Click-through"),
                                            self.tr("Mouse clicks pass through the overlay to the window below"),
                                            cfg.overlayClickThrough, g))
@@ -141,10 +176,8 @@ class SettingsPage(ScrollArea):
 
         # Speech recognition
         g = SettingCardGroup(self.tr("Speech recognition"), container)
-        models = load_catalog()
-        g.addSettingCard(ComboBoxSettingCard(cfg.defaultModel, FluentIcon.ROBOT, self.tr("Default model"),
-                                             self.tr("Loaded when the app starts (if it is downloaded)"),
-                                             texts=[m.name for m in models], parent=g))
+        self.default_model_card = DefaultModelCard(g)
+        g.addSettingCard(self.default_model_card)
         self.device_card = ComboBoxSettingCard(
             cfg.device, FluentIcon.SPEED_HIGH, self.tr("Device"),
             self.tr("NVIDIA GPU (CUDA, float16) is much faster; the CPU uses int8"),
@@ -158,6 +191,11 @@ class SettingsPage(ScrollArea):
                                            str(models_dir()), g)
         self.folder_card.clicked.connect(self._choose_folder)
         g.addSettingCard(self.folder_card)
+        self.reset_card = PushSettingCard(self.tr("Reset"), FluentIcon.SYNC, self.tr("Reset model list"),
+                                          self.tr("Bring back the preset models and remove the ones you added"), g)
+        self.reset_card.clicked.connect(self.resetCatalogRequested)
+        g.addSettingCard(self.reset_card)
+        self.refresh_models()
         self.layout_.addWidget(g)
 
         # Advanced
@@ -174,6 +212,11 @@ class SettingsPage(ScrollArea):
         self.layout_.addWidget(g)
 
         self.setWidget(body)
+
+    def refresh_models(self) -> None:
+        """The model list changed: update the default-model choice and the Reset button."""
+        self.default_model_card.refresh_models()
+        self.reset_card.button.setEnabled(not is_default_catalog())
 
     def _choose_folder(self) -> None:
         current = str(models_dir())

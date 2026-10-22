@@ -14,6 +14,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - 🪟 **Floating overlay** – An always-on-top caption bar for videos, games and calls. Drag it anywhere, resize it, or let clicks pass through it.
 - 🔒 **Private by design** – Speech is recognized on your PC and never uploaded.
 - 🧠 **Pick your model** – Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 (Mandarin + English), Breeze ASR 26 (Taigi) and Taiwan Tongues (Hokkien and Hakka).
+- ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
 
@@ -85,6 +86,7 @@ Everything the app writes stays next to `AppLiveCaption.exe`. Moving the folder 
 | History | `history\` |
 | Logs | `logs\app.log` (Settings → Advanced → Logs opens the folder) |
 | Models | `models\` (Settings → Model folder can point somewhere else, e.g. a folder several copies share) |
+| Your changes to the model list | `models.json` (only exists once you add or remove a model) |
 | GPU support | `cuda\` |
 
 If the app's folder can't be written to (for example under `C:\Program Files`), the app uses `%LOCALAPPDATA%\AppLiveCaption` instead. The `ALC_DATA_DIR` environment variable picks another folder (the tests use it).
@@ -202,7 +204,20 @@ Then open <http://localhost:8000>.
 
 ## Adding a model
 
-All models are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Every model runs on faster-whisper, so it must be in CTranslate2 format; a model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. Clicking a model's card on the Models page opens its page on Hugging Face.
+### In the app
+
+The **Models** page has an **Add model** button:
+
+- **Hugging Face:** paste a repository ID like `Systran/faster-whisper-large-v3` (or its huggingface.co link). The app checks that it's a faster-whisper model, reads its size and license, and gives it a card to download, like the presets.
+- **Folder on this PC:** pick a folder that holds a converted model. It's copied into the app's `models` folder, so the original can be moved or deleted afterwards.
+
+Only faster-whisper (CTranslate2) models work: `model.bin`, `config.json` and `tokenizer.json` must be at the top of the repository or folder. A model published only in Hugging Face transformers format can be converted with CTranslate2's `ct2-transformers-converter --quantization float16`. The app can't know which languages a model was trained on, so it lists all Whisper languages for it.
+
+Each card's **…** menu has **Delete files from disk** and **Remove from list**; removing offers to delete the downloaded files too (ticked by default). Your changes are stored in `models.json`, never in the preset list. **Settings → Reset model list** brings the presets back and removes the models you added at any time, and when every model has been removed the Models page shows a **Restore default models** button.
+
+### In the code
+
+The presets are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Clicking a model's card on the Models page opens its page on Hugging Face (or, for a model from a folder, its folder).
 
 | Model | Repository |
 | --- | --- |

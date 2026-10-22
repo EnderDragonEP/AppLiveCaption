@@ -20,7 +20,6 @@ from qfluentwidgets import (
     qconfig,
 )
 
-from .models.catalog import load_catalog
 from .paths import config_file
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
@@ -63,8 +62,8 @@ class Config(QConfig):
     captureSelection = ConfigItem("Live", "CaptureSelection", {}, DictValidator())
 
     # Speech recognition
-    defaultModel = OptionsConfigItem("ASR", "DefaultModel", DEFAULT_MODEL,
-                                     OptionsValidator([m.id for m in load_catalog()]))
+    # Any model id: the list of models can change, so the id may be one the user added (or removed).
+    defaultModel = ConfigItem("ASR", "DefaultModel", DEFAULT_MODEL)
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
     # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
     offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())
