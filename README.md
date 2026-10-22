@@ -219,7 +219,7 @@ Each card's **…** menu has **Delete files from disk** and **Remove from list**
 
 ### In the code
 
-The presets are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Clicking a model's card on the Models page opens its page on Hugging Face (or, for a model from a folder, its folder).
+The presets are listed in [app/models/catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json). Adding one only takes a new entry there (display name, Hugging Face repo, languages, approximate size, license). Ctrl+clicking a model's card on the Models page opens its page on Hugging Face (or, for a model from a folder, its folder).
 
 | Model | Repository |
 | --- | --- |

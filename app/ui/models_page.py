@@ -54,12 +54,14 @@ def _languages_text(info: ModelInfo) -> str:
 
 
 class _ItemCard(FlashMixin, CardWidget):
-    """A card that opens ``page_url`` when clicked and can be highlighted for a moment (``flash``).
+    """A card that opens ``page_url`` on Ctrl+click and can be highlighted for a moment (``flash``).
 
-    Subclasses call ``_build_frame`` and add ``detail`` (a label) for ``set_progress``.
+    Subclasses call ``_build_frame`` (after setting ``page_url``) and add ``detail`` (a label) for
+    ``set_progress``.
     """
 
     page_url = ""
+    link_hint = ""  # the hover hint: what Ctrl+click opens
 
     def _build_frame(self) -> QHBoxLayout:
         """Lay out the card: a row for the icon, text and status columns (returned
@@ -75,13 +77,17 @@ class _ItemCard(FlashMixin, CardWidget):
         self.progress.setRange(0, 1000)
         self.progress.hide()
         outer.addWidget(self.progress)
+        # Like a link in Office: a plain click does nothing, so a stray click doesn't open the browser.
+        self.setToolTip(self.link_hint)
+        self.installEventFilter(ToolTipFilter(self))
         return row
 
     def mouseReleaseEvent(self, e):  # noqa: N802 - Qt override
         super().mouseReleaseEvent(e)
-        # Buttons on the card handle their own clicks; this is a click on the
-        # card itself. Ignore right-clicks and drags released outside the card.
-        if e.button() == Qt.MouseButton.LeftButton and self.rect().contains(e.position().toPoint()):
+        # Buttons on the card handle their own clicks; this is a click on the card itself.
+        # Ignore right-clicks, clicks without Ctrl and drags released outside the card.
+        if (e.button() == Qt.MouseButton.LeftButton and e.modifiers() & Qt.KeyboardModifier.ControlModifier
+                and self.rect().contains(e.position().toPoint())):
             QDesktopServices.openUrl(QUrl(self.page_url))
 
     def reserve_progress_width(self, downloading: bool) -> None:
@@ -113,7 +119,6 @@ class ModelCard(_ItemCard):
         super().__init__(parent)
         self.info = info
         self._has_files = False
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
         lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.ROBOT, self)
@@ -177,6 +182,12 @@ class ModelCard(_ItemCard):
             return f"https://huggingface.co/{self.info.repo}"
         return QUrl.fromLocalFile(str(model_path(self.info))).toString()  # a local model: open its folder
 
+    @property
+    def link_hint(self) -> str:
+        if self.info.repo:
+            return self.tr("Ctrl+click to open the model's page on Hugging Face")
+        return self.tr("Ctrl+click to open the model's folder")
+
     def _show_menu(self) -> None:
         menu = RoundMenu(parent=self)
         menu.closedSignal.connect(menu.deleteLater)  # exec() doesn't wait for the menu to close
@@ -234,7 +245,7 @@ class GpuSupportCard(_ItemCard):
         self._thread: CudaDownloadThread | None = None
         self.gpu_name = ""
         self.usable = False  # CTranslate2 can use the GPU
-        self.setCursor(Qt.CursorShape.PointingHandCursor)
+        self.link_hint = self.tr("Ctrl+click to open the license of NVIDIA's libraries")
         lay = self._build_frame()
 
         icon = IconWidget(FluentIcon.SPEED_HIGH, self)
