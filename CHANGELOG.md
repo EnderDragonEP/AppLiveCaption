@@ -14,12 +14,12 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Unload a model.** The card of the model in use has an **Unload** button that frees the memory it uses. The Live page's model dropdown then shows **Select a model**.
 - **Choose what loads at start-up.** **Settings → Default model** now offers **None** and **Previous selection** (the model you used last) besides the models in the list.
 - **First-time setup.** At the first start, a short setup offers GPU support (on PCs with an NVIDIA GPU that needs it), suggests a model that's fast enough for the PC and downloads it, and asks which model to load at start-up. **Settings → First-time setup** opens it again. It replaces the start-up notification that suggested GPU support.
-- A notification when you pick or start a model that isn't downloaded, next to its highlighted card on the Models page.
+- A notification when you pick or start a model that isn't downloaded, next to its highlighted card on the Models page, and when you press **Start** with no model selected.
 - Descriptions for the overlay settings (text size, text color, background color and opacity) and for the name field when adding a model.
 
 ### Changed
 
-- **No model is loaded at start-up by default**, so the app doesn't take memory until you need a model. Pick one in the Model dropdown, or set **Settings → Default model**. Existing settings keep the default model they already have.
+- **No model is loaded at start-up by default**, so the app doesn't take memory until you need a model. First-time setup asks which one to load, and **Settings → Default model** changes it later. Existing settings keep the default model they already have.
 - **The number of caption lines follows the window's height.** The Live page and the overlay show as many of the newest lines as fit, so resizing them shows more or fewer lines.
 - **A model card's link opens on Ctrl+click**, like a link in Office, instead of on any click, so a stray click doesn't open your browser. Hovering a card says where the link goes, and clicking a card three times in a row without Ctrl explains how to open it.
 - Pressing **Start** with a downloaded model selected that isn't loaded (for example after loading it failed) now loads it and starts, instead of showing an error.
