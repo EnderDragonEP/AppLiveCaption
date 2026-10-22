@@ -88,11 +88,9 @@ def notice_text(kind: str, payload: dict) -> tuple[str, str, str] | None:
     return None
 
 
-def show_infobar(level: str, title: str, content: str, parent, duration: int = 6000, stacked: bool = False) -> InfoBar:
-    """``stacked``: the message under the title, and added widgets (buttons) under it, even for a short message."""
+def show_infobar(level: str, title: str, content: str, parent, duration: int = 6000) -> InfoBar:
     factory = {"info": InfoBar.info, "warning": InfoBar.warning, "success": InfoBar.success, "error": InfoBar.error}
-    vertical = stacked or len(content) >= 60
     return factory.get(level, InfoBar.info)(
-        title=title, content=content, orient=Qt.Orientation.Vertical if vertical else Qt.Orientation.Horizontal,
+        title=title, content=content, orient=Qt.Orientation.Horizontal if len(content) < 60 else Qt.Orientation.Vertical,
         isClosable=True, duration=duration, position=InfoBarPosition.TOP_RIGHT, parent=parent,
     )

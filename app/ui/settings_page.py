@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import QPoint, Qt, QUrl, Signal
+from PySide6.QtCore import Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -33,7 +33,6 @@ from ..config import NO_MODEL, PREVIOUS_MODEL, cfg, is_win11
 from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
-from .highlight import FlashMixin
 from .icons import app_icon
 
 
@@ -82,7 +81,7 @@ class FontSettingCard(SettingCard):
             self.setContent(font.family())
 
 
-class DefaultModelCard(FlashMixin, SettingCard):
+class DefaultModelCard(SettingCard):
     """The model loaded at start-up: none, the one used last time, or one of the current model list."""
 
     def __init__(self, parent=None):
@@ -116,6 +115,7 @@ class SettingsPage(ScrollArea):
     deviceChanged = Signal(str)
     modelFolderChanged = Signal(str)
     resetCatalogRequested = Signal()
+    setupRequested = Signal()
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -200,7 +200,11 @@ class SettingsPage(ScrollArea):
 
         # Advanced
         g = SettingCardGroup(self.tr("Advanced"), container)
-        logs = PushSettingCard(self.tr("Open folder"), FluentIcon.DOCUMENT, self.tr("Logs"), str(log_dir()), g)
+        setup = PushSettingCard(self.tr("Open"), FluentIcon.ROBOT, self.tr("First-time setup"),
+                                self.tr("Choose GPU support, a model and the model loaded at start-up again"), g)
+        setup.clicked.connect(self.setupRequested)
+        g.addSettingCard(setup)
+        logs =PushSettingCard(self.tr("Open folder"), FluentIcon.DOCUMENT, self.tr("Logs"), str(log_dir()), g)
         logs.clicked.connect(lambda: QDesktopServices.openUrl(QUrl.fromLocalFile(str(log_dir()))))
         g.addSettingCard(logs)
         self.layout_.addWidget(g)
@@ -217,12 +221,6 @@ class SettingsPage(ScrollArea):
         """The model list changed: update the default-model choice and the Reset button."""
         self.default_model_card.refresh_models()
         self.reset_card.button.setEnabled(not is_default_catalog())
-
-    def show_default_model(self) -> None:
-        """Scroll the Default model card to the top, under its group's title, and highlight it."""
-        card = self.default_model_card
-        self.verticalScrollBar().setValue(card.mapTo(self.widget(), QPoint(0, 0)).y() - 72)
-        card.flash()
 
     def _choose_folder(self) -> None:
         current = str(models_dir())

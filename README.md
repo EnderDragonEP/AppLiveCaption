@@ -33,7 +33,12 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 1. Get it from the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page, in either of two forms (Python isn't needed for either):
    - **Installer** (`AppLiveCaption-<version>-Setup.exe`): run it and pick **Install for me only** (no admin rights needed) or **for all users**. You get a Start menu entry, an optional desktop shortcut and an uninstaller.
    - **Portable** (the zip): unzip it anywhere you like (Documents, a USB stick, …) and run `AppLiveCaption.exe`. Everything the app saves stays in that folder.
-2. Pick a model in the **Model** dropdown. If it isn't downloaded yet, the app shows its card on the **Models** page; download it there and the app switches to it when it's done.
+2. The first time, a short **first-time setup** asks a few questions:
+   - whether to download GPU support (only if you have an NVIDIA GPU that needs it);
+   - which model to download (it suggests one that's fast enough for your PC);
+   - which model to load when the app starts.
+
+   It starts the downloads, and the model loads when it's ready. Skipped it? Pick a model in the **Model** dropdown instead. If that model isn't downloaded yet, the app shows its card on the **Models** page. Download it there, and the app switches to it when it's done. **Settings → First-time setup** opens the setup again.
 3. Click the source button (it says *System audio* at first) and choose **Microphone**, **System audio** or **Apps**. In Apps mode, tick the apps to caption. They're remembered and picked up again whenever they start.
 4. Choose **Auto-detect** or a language, then press **Start**. 🎉
 5. Want captions on top of everything? Turn on **Overlay**. Drag it to move it and drag its edges to resize it. Click-through (the pin button, Settings or the tray menu) lets clicks pass to the window below; turn it off again from the tray icon.
@@ -56,7 +61,7 @@ The app warns you when a model will probably be too slow for real time on your P
 
 ## GPU support
 
-To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. The app also offers this at start-up while models run on the CPU.
+To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. First-time setup offers this too.
 
 - Only the NVIDIA display driver is needed; you don't have to install the CUDA Toolkit.
 - The files come from NVIDIA's own packages on PyPI and are checked against SHA-256 hashes pinned in the source before anything is unpacked.

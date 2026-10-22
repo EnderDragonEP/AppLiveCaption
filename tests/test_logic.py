@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import paths  # noqa: E402
 from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
+from app.asr.hardware import GpuInfo, suggest_model  # noqa: E402
 from app.asr.streaming import PartialStabilizer, tokenize  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
 from app.audio.mixer import Limiter, TimedQueue  # noqa: E402
@@ -195,6 +196,27 @@ class PortablePathTests(unittest.TestCase):
         outside = (self.root / "shared models").resolve()
         self.assertEqual(paths.to_setting(outside), str(outside))
         self.assertEqual(paths.from_setting(str(outside)), outside)
+
+
+class SuggestModelTests(unittest.TestCase):
+    """First-time setup's suggested model."""
+
+    PRESETS = [("whisper-large-v3-turbo", "turbo"), ("breeze-asr-25", "large"), ("whisper-tiny", "tiny"),
+               ("whisper-base", "base"), ("whisper-small", "small"), ("whisper-medium", "medium")]
+
+    def test_gpu_gets_turbo(self):
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("RTX 4070", 8188, 7000)), "whisper-large-v3-turbo")
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", None), "whisper-large-v3-turbo")
+
+    def test_cpu_or_small_gpu_gets_a_lighter_model(self):
+        self.assertEqual(suggest_model(self.PRESETS, "cpu", None), "whisper-small")
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX150", 2048, 1800)), "whisper-small")
+
+    def test_a_trimmed_list(self):
+        self.assertEqual(suggest_model([("whisper-base", "base"), ("breeze-asr-25", "large")], "cpu", None),
+                         "whisper-base")
+        self.assertEqual(suggest_model([("breeze-asr-25", "large")], "cpu", None), "breeze-asr-25")
+        self.assertIsNone(suggest_model([], "cpu", None))
 
 
 if __name__ == "__main__":

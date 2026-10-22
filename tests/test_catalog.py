@@ -64,10 +64,10 @@ class CatalogListTests(CatalogTestCase):
         for m in catalog.load_catalog():
             catalog.remove_model(m.id)
         self.assertEqual(catalog.load_catalog(), ())
-        self.assertIsNone(catalog.default_model_id())
+        self.assertIsNone(catalog.get_model("whisper-large-v3-turbo"))
         catalog.reset_catalog()
         self.assertEqual(len(catalog.load_catalog()), PRESET_COUNT)
-        self.assertEqual(catalog.default_model_id(), "whisper-large-v3-turbo")
+        self.assertIsNotNone(catalog.get_model("whisper-large-v3-turbo"))
 
     def test_add_a_custom_model_and_it_survives_a_restart(self):
         info = catalog.add_custom_model(self.entry())

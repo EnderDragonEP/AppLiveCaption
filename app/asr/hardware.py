@@ -104,3 +104,16 @@ def realtime_risk(tier: str, device: str, gpu: GpuInfo | None) -> str | None:
     if gpu is not None and gpu.total_mb and _VRAM_NEED.get(tier, 4000) > gpu.total_mb * 0.9:
         return "vram_low"
     return None
+
+
+# The models first-time setup suggests, best first (all languages, fast enough for live captions).
+SUGGESTED_MODELS = ("whisper-large-v3-turbo", "whisper-small", "whisper-base", "whisper-tiny")
+
+
+def suggest_model(models: list[tuple[str, str]], device: str, gpu: GpuInfo | None) -> str | None:
+    """The model to suggest from ``models`` ((id, tier) pairs): the best of SUGGESTED_MODELS that keeps up in
+    real time on ``device``. Falls back to the first suggested (or listed) model when none would."""
+    tiers = dict(models)
+    listed = [m for m in SUGGESTED_MODELS if m in tiers]
+    fast = [m for m in listed if realtime_risk(tiers[m], device, gpu) is None]
+    return (fast or listed or [m for m, _ in models] or [None])[0]

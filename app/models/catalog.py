@@ -186,12 +186,6 @@ def get_model(model_id: str) -> ModelInfo | None:
     return None
 
 
-def default_model_id() -> str | None:
-    """The preferred model of the current list: the default one if listed, else the first."""
-    models = load_catalog()
-    return next((m.id for m in models if m.id == "whisper-large-v3-turbo"), models[0].id if models else None)
-
-
 def is_default_catalog() -> bool:
     """True when the list is exactly the presets (nothing removed, nothing added)."""
     user = _read_user()

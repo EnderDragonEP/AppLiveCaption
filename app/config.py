@@ -58,6 +58,8 @@ class Config(QConfig):
     # Follow the system theme by default (QConfig's own default is light).
     themeMode = OptionsConfigItem("QFluentWidgets", "ThemeMode", Theme.AUTO, OptionsValidator(Theme), EnumSerializer(Theme))
     micaEnabled = ConfigItem("Appearance", "MicaEnabled", is_win11(), BoolValidator())
+    # First-time setup (app/ui/setup_dialog.py) was shown and finished or skipped. Settings can open it again.
+    setupDone = ConfigItem("General", "SetupDone", False, BoolValidator())
 
     # Live captions
     modelId = ConfigItem("Live", "Model", DEFAULT_MODEL)
@@ -68,11 +70,7 @@ class Config(QConfig):
     # The model loaded at start-up: NO_MODEL, PREVIOUS_MODEL or any model id (the list of models can
     # change, so the id may be one the user added, or removed).
     defaultModel = ConfigItem("ASR", "DefaultModel", NO_MODEL)
-    # At start-up with no default model, say where to choose one (until "Don't show again").
-    defaultModelTip = ConfigItem("ASR", "DefaultModelTip", True, BoolValidator())
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
-    # Suggest downloading GPU support at start-up when an NVIDIA GPU has no CUDA libraries.
-    offerGpuSupport = ConfigItem("ASR", "OfferGpuSupport", True, BoolValidator())
     opencc = ConfigItem("ASR", "OpenCC", True, BoolValidator())
     modelFolder = ConfigItem("ASR", "ModelFolder", DEFAULT_MODEL_FOLDER, FolderPathValidator())
 

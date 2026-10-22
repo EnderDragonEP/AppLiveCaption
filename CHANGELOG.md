@@ -13,7 +13,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 - **Bring the presets back.** **Settings → Reset model list** restores the preset models at any time and removes the ones you added, optionally with their files. When every model has been removed, the Models page shows a **Restore default models** button.
 - **Unload a model.** The card of the model in use has an **Unload** button that frees the memory it uses. The Live page's model dropdown then shows **Select a model**.
 - **Choose what loads at start-up.** **Settings → Default model** now offers **None** and **Previous selection** (the model you used last) besides the models in the list.
-- A notification at start-up when no model is loaded, with a **Take me there** button that opens the Default model setting and highlights it.
+- **First-time setup.** At the first start, a short setup offers GPU support (on PCs with an NVIDIA GPU that needs it), suggests a model that's fast enough for the PC and downloads it, and asks which model to load at start-up. **Settings → First-time setup** opens it again. It replaces the start-up notification that suggested GPU support.
 - A notification when you pick or start a model that isn't downloaded, next to its highlighted card on the Models page.
 - Descriptions for the overlay settings (text size, text color, background color and opacity) and for the name field when adding a model.
 

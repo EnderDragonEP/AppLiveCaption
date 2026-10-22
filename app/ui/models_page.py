@@ -31,7 +31,6 @@ from .. import LICENSES_URL
 from ..asr import cuda_libs
 from ..asr.cuda_setup import active_dirs, cuda_libraries_found
 from ..asr.languages import language_name
-from ..config import cfg
 from ..i18n import tr
 from ..models.catalog import ModelInfo, add_custom_model, load_catalog, remove_model, reset_catalog
 from ..models.storage import (
@@ -48,7 +47,7 @@ from .messages import show_infobar
 from .model_dialogs import AddModelDialog, ConfirmDialog
 
 
-def _languages_text(info: ModelInfo) -> str:
+def languages_text(info: ModelInfo) -> str:
     if len(info.languages) > 10:
         return tr("{n} languages").format(n=len(info.languages))
     return ", ".join(info.language_label(c) if c in info.language_notes else language_name(c) for c in info.languages)
@@ -169,7 +168,7 @@ class ModelCard(_ItemCard):
         template = (tr("Download {size} · {backend} · Languages: {langs} · License: {lic}") if info.repo else
                     tr("Size {size} · {backend} · Languages: {langs} · License: {lic}"))
         meta_text = template.format(size=format_bytes(info.size_mb * 2**20), backend=info.backend,
-                                    langs=_languages_text(info), lic=info.license)
+                                    langs=languages_text(info), lic=info.license)
         if info.custom:
             meta_text += " · " + tr("Added by you")
         meta = CaptionLabel(meta_text, self)
@@ -269,6 +268,7 @@ class GpuSupportCard(_ItemCard):
     """Downloads NVIDIA's CUDA libraries (``app/asr/cuda_libs.py``) so models can run on the GPU."""
 
     installed = Signal()  # a download finished; the libraries can be used now
+    downloadEnded = Signal(bool)  # a download ended: True when it installed the libraries
 
     page_url = f"{LICENSES_URL}#nvidia-cuda-and-cudnn"
 
@@ -411,6 +411,7 @@ class GpuSupportCard(_ItemCard):
             t.wait(1000)
             t.deleteLater()
         self.update_state()
+        self.downloadEnded.emit(result == "ok")
         if result == "ok":
             self.installed.emit()
         elif result != "cancelled":
@@ -428,8 +429,6 @@ class GpuSupportCard(_ItemCard):
         box.cancelButton.setText(self.tr("Cancel"))
         if not box.exec():
             return
-        if cuda_libs.installed_dir() is not None:
-            cfg.set(cfg.offerGpuSupport, False)  # removed on purpose: don't suggest it again at start-up
         cuda_libs.remove(in_use)
         self.update_state()
 
@@ -610,12 +609,6 @@ class ModelsPage(QWidget):
             return
         self.refresh()
         # Wait for the page to be laid out after switching to it.
-        QTimer.singleShot(50, lambda: (self.scroll.ensureWidgetVisible(card, 0, 24), card.flash()))
-
-    def show_gpu_support(self) -> None:
-        """Scroll the GPU support card into view and highlight it."""
-        self.refresh()
-        card = self.gpu_card
         QTimer.singleShot(50, lambda: (self.scroll.ensureWidgetVisible(card, 0, 24), card.flash()))
 
     def set_gpu(self, name: str | None, usable: bool) -> None:

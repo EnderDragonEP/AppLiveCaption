@@ -6,8 +6,8 @@ import logging
 
 from PySide6.QtCore import QSize, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
-from PySide6.QtWidgets import QApplication, QHBoxLayout, QWidget
-from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
+from PySide6.QtWidgets import QApplication
+from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, SplashScreen
 
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
@@ -78,6 +78,10 @@ class MainWindow(FluentWindow):
         self._gpu_name = ""
         self._pending_model: str | None = None  # model to switch to once its download finishes
         self._after_unload = None  # runs once the controller has released the model (see _reset_catalog)
+        self._load_after_gpu: str | None = None  # a downloaded model waiting for GPU support's download
+        self._launched_with_start = auto_start
+        self._setup_checked = False  # first-time setup was considered (it's offered at the first GPU probe)
+        self._setup_open = False
 
         # Pages
         self.live = LivePage(self.captions, self)
@@ -150,8 +154,10 @@ class MainWindow(FluentWindow):
         self.models_page.modelsChanged.connect(self.live.refresh_models)
         self.models_page.downloadFinished.connect(self.on_download_finished)
         self.models_page.gpuSupportInstalled.connect(self._on_gpu_support_installed)
+        self.models_page.gpu_card.downloadEnded.connect(self._on_gpu_download_ended)
         self.models_page.catalogChanged.connect(self._on_catalog_changed)
         self.settings_page.resetCatalogRequested.connect(self._reset_catalog)
+        self.settings_page.setupRequested.connect(self.show_first_run_setup)
         self.history_page.refreshRequested.connect(self._reload_history)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
@@ -166,19 +172,13 @@ class MainWindow(FluentWindow):
     # -- the model list ---------------------------------------------------------------
     def _on_catalog_changed(self) -> None:
         """Models were added, removed or restored: bring the other pages in line."""
+        self._forget_removed_default()
         self.settings_page.refresh_models()
         c = self.controller
         if get_model(c.model_id or "") is None and c.model_state in (MODEL_READY, MODEL_LOADING):
             c.unload_model()  # the model in use is no longer in the list
         self.live.refresh_models()  # a selected model that left the list: "Select a model"
 
-        self._forget_removed_default()
-    def _reset_catalog(self) -> None:
-        """Settings → Reset model list: the presets come back, the models the user added are removed."""
-        if self.models_page.downloads.any_active():
-            show_infobar("warning", self.tr("A download is running"),
-                         self.tr("Wait for it to finish (or cancel it) before resetting the model list."), self)
-            return
     def _forget_removed_default(self) -> bool:
         """Settings → Default model is a model that's no longer in the list: make it None, instead of a
         blank choice that quietly loads the model used last. Returns whether it changed."""
@@ -188,10 +188,16 @@ class MainWindow(FluentWindow):
         cfg.set(cfg.defaultModel, NO_MODEL)
         return True
 
-        added = [m for m in load_catalog() if m.custom]
-        files = sum(disk_usage(m) for m in added)
+    def _reset_catalog(self) -> None:
+        """Settings → Reset model list: the presets come back, the models the user added are removed."""
         if self._after_unload is not None:
             return  # a reset is already waiting for the model in use to be released
+        if self.models_page.downloads.any_active():
+            show_infobar("warning", self.tr("A download is running"),
+                         self.tr("Wait for it to finish (or cancel it) before resetting the model list."), self)
+            return
+        added = [m for m in load_catalog() if m.custom]
+        files = sum(disk_usage(m) for m in added)
         content = self.tr("The preset models come back in the list.")
         if added:
             content += " " + self.tr("The {n} model(s) you added are removed from it.").format(n=len(added))
@@ -228,14 +234,14 @@ class MainWindow(FluentWindow):
     def _load_initial_model(self) -> None:
         """Load Settings → Default model: none, the one used last time, or a model (or else the
         last one used) if it's downloaded."""
+        if self._forget_removed_default():
+            self.settings_page.refresh_models()
         default = cfg.get(cfg.defaultModel)
         if default == NO_MODEL and self._auto_start:
             default = PREVIOUS_MODEL  # --start: caption with the model used last time
         if default == NO_MODEL:
             candidates = []
         elif default == PREVIOUS_MODEL:
-        if self._forget_removed_default():
-            self.settings_page.refresh_models()
             candidates = [cfg.get(cfg.modelId)]
         else:
             candidates = [default, cfg.get(cfg.modelId)]
@@ -246,32 +252,59 @@ class MainWindow(FluentWindow):
             self.controller.load_model(chosen, cfg.get(cfg.device))
             return
         # Nothing to load: show the chosen model if it isn't downloaded (Start then offers to download
-        # it), else "Select a model".
+        # it), else "Select a model". --start is dropped too: it would otherwise start captioning as soon
+        # as the user loads a model later.
+        self._auto_start = False
         self.live.select_model(next((m for m in candidates if get_model(m)), None))
         self.live.set_device(self.tr("No model loaded"))
-        if default == NO_MODEL and cfg.get(cfg.defaultModelTip):
-            QTimer.singleShot(1200, self._show_default_model_tip)
 
-    def _show_default_model_tip(self) -> None:
-        """No model is loaded at start-up (Default model: None): say where to change that."""
-        bar = show_infobar("info", self.tr("No model loaded at start-up"),
-                           self.tr("Choose one to load each time in Settings → Default model."), self, duration=-1,
-                           stacked=True)
-        row = QWidget(bar)  # the buttons side by side (a long message puts the bar's widgets in a column)
-        buttons = QHBoxLayout(row)
-        buttons.setContentsMargins(0, 0, 0, 0)
-        open_btn = PushButton(self.tr("Take me there"), row)
-        open_btn.clicked.connect(lambda: (bar.close(), self.show_default_model_setting()))
-        never = PushButton(self.tr("Don't show again"), row)
-        never.clicked.connect(lambda: (cfg.set(cfg.defaultModelTip, False), bar.close()))
-        buttons.addWidget(open_btn)
-        buttons.addWidget(never)
-        buttons.addStretch(1)
-        bar.addWidget(row)
+    # -- first-time setup ---------------------------------------------------------
+    def _gpu_to_offer(self) -> str | None:
+        """The NVIDIA GPU that downloading GPU support would let models run on, if that's worth offering."""
+        gpu = self.models_page.gpu_card
+        if (gpu.gpu_name and not gpu.usable and cfg.get(cfg.device) != "cpu" and not gpu.downloading
+                and cuda_libs.installed_dir() is None and not cuda_libs.removal_scheduled()):
+            return gpu.gpu_name
+        return None
 
-    def show_default_model_setting(self) -> None:
-        self.switchTo(self.settings_page)
-        QTimer.singleShot(50, self.settings_page.show_default_model)  # once the page is laid out
+    def show_first_run_setup(self) -> None:
+        """Ask for GPU support, a model and the model at start-up (first start, or Settings → First-time setup)."""
+        from .setup_dialog import FirstRunDialog
+
+        if self._setup_open:
+            return
+        self._setup_open = True
+        try:
+            dialog = FirstRunDialog(self._gpu_to_offer(), bool(self._gpu_name), nvidia_gpu(),
+                                    cfg.get(cfg.defaultModel), self)
+            accepted = dialog.exec()
+            cfg.set(cfg.setupDone, True)  # skipped counts too: it isn't shown at start-up again
+            if accepted:
+                self._apply_setup(dialog.choices())
+        finally:
+            self._setup_open = False
+
+    def _apply_setup(self, choices) -> None:
+        cfg.set(cfg.defaultModel, choices.default_model)
+        self.settings_page.refresh_models()
+        downloads = []
+        if choices.gpu_support and self._gpu_to_offer():
+            self.models_page.gpu_card.start_download()
+            downloads.append(self.tr("GPU support"))
+        info = get_model(choices.model_id or "")
+        if info is not None:
+            if is_downloaded(info):
+                self.request_model(info.id)
+            else:
+                cfg.set(cfg.modelId, info.id)  # "the model I used last" from now on
+                self.live.select_model(info.id)
+                self.download_model(info.id)
+                downloads.append(info.name)
+        if downloads:
+            self.switchTo(self.models_page)
+            show_infobar("info", self.tr("Downloading {what}").format(what=self.tr(" and ").join(downloads)),
+                         self.tr("Follow the progress here. The model loads when it's ready.") if info and
+                         not is_downloaded(info) else self.tr("Follow the progress here."), self)
 
     def request_model(self, model_id: str) -> None:
         """The user picked a model: load it, or show its card on the Models page to download it."""
@@ -317,7 +350,18 @@ class MainWindow(FluentWindow):
         self.live.refresh_models()
         if ok and self._pending_model == model_id:
             self._pending_model = None
+            if self.models_page.gpu_card.downloading:
+                # GPU support is on its way (first-time setup starts both): load the model once it's there,
+                # rather than on the CPU now, with a "too slow" warning, and again on the GPU later.
+                self._load_after_gpu = model_id
+                return
             self.request_model(model_id)
+
+    def _on_gpu_download_ended(self, ok: bool) -> None:
+        if ok or self._load_after_gpu is None:
+            return  # (installed: _on_gpu_support_probed loads the waiting model, on the GPU)
+        model_id, self._load_after_gpu = self._load_after_gpu, None
+        self.request_model(model_id)  # GPU support failed or was cancelled: use the CPU
 
     def _on_model_state(self, state: str, model_id: str) -> None:
         info = get_model(model_id)
@@ -350,31 +394,12 @@ class MainWindow(FluentWindow):
         self._gpu_name = name if usable else ""
         self._update_device_label()
         self.models_page.set_gpu(name, usable)
-        if (name and not usable and cfg.get(cfg.device) != "cpu" and cfg.get(cfg.offerGpuSupport)
-                and cuda_libs.installed_dir() is None and not cuda_libs.removal_scheduled()):
-            QTimer.singleShot(1500, lambda: self._offer_gpu_support(name))
-
-    def _offer_gpu_support(self, gpu_name: str) -> None:
-        """Models run on the CPU although there is an NVIDIA GPU: suggest downloading GPU support."""
-        bar = show_infobar("info", self.tr("Use your NVIDIA GPU"), self.tr(
-            "Models run on the CPU now. Download GPU support ({size}) to run them on your {gpu}, "
-            "many times faster.").format(size=format_bytes(cuda_libs.DOWNLOAD_SIZE), gpu=gpu_name),
-            self, duration=-1)
-        row = QWidget(bar)  # the buttons side by side (a long message puts the bar's widgets in a column)
-        buttons = QHBoxLayout(row)
-        buttons.setContentsMargins(0, 0, 0, 0)
-        setup = PushButton(self.tr("Set up"), row)
-        setup.clicked.connect(lambda: (bar.close(), self.show_gpu_support()))
-        never = PushButton(self.tr("Don't ask again"), row)
-        never.clicked.connect(lambda: (cfg.set(cfg.offerGpuSupport, False), bar.close()))
-        buttons.addWidget(setup)
-        buttons.addWidget(never)
-        buttons.addStretch(1)
-        bar.addWidget(row)
-
-    def show_gpu_support(self) -> None:
-        self.switchTo(self.models_page)
-        self.models_page.show_gpu_support()
+        if not self._setup_checked:
+            # First start: the setup needs to know about the GPU, so it opens once the GPU was probed. (Not for
+            # a start minimized at sign-in or with --start: it waits for the next normal start.)
+            self._setup_checked = True
+            if not cfg.get(cfg.setupDone) and not self._launched_with_start and not self.isMinimized():
+                QTimer.singleShot(300, self.show_first_run_setup)
 
     def _on_gpu_support_installed(self) -> None:
         run_async(lambda: probe_gpu(refresh=True), self._on_gpu_support_probed, self)
@@ -382,6 +407,9 @@ class MainWindow(FluentWindow):
     def _on_gpu_support_probed(self, result) -> None:
         name, usable = result
         self._on_gpu_probe(result)
+        if self._load_after_gpu is not None:
+            model_id, self._load_after_gpu = self._load_after_gpu, None
+            self.request_model(model_id)  # downloaded while GPU support was; on the GPU now if it can be used
         if not usable:
             show_infobar("warning", self.tr("GPU support installed, but the GPU can't be used"), self.tr(
                 "Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU."),
