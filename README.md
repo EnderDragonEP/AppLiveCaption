@@ -51,7 +51,7 @@ By default no model is loaded when the app starts, so it doesn't take memory unt
 
 | You have | Try |
 | --- | --- |
-| An NVIDIA GPU (6 GB+) | Whisper large-v3-turbo (the default): partial captions in about 0.3 s on an RTX 4070 Laptop |
+| An NVIDIA GPU (6 GB+) | Whisper large-v3-turbo (first-time setup suggests it): partial captions in about 0.3 s on an RTX 4070 Laptop |
 | Taiwanese Mandarin, or Mandarin mixed with English | Breeze ASR 25 (GPU) |
 | Taiwanese Hokkien (Taigi) | Breeze ASR 26 (GPU) |
 | Hakka | Taiwan Tongues ASR CE (GPU) |
@@ -66,7 +66,7 @@ To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB
 - Only the NVIDIA display driver is needed; you don't have to install the CUDA Toolkit.
 - The files come from NVIDIA's own packages on PyPI and are checked against SHA-256 hashes pinned in the source before anything is unpacked.
 - The card's delete button removes them again. Windows locks DLLs that are in use, so they're deleted the next time the app starts.
-- No internet on that PC? Copy the app folder (or just its `cuda` folder) from another PC.
+- No internet on that PC? Copy the `cuda` folder from another PC: it's next to `AppLiveCaption.exe` in the portable version, and in `%LOCALAPPDATA%\AppLiveCaption` in the installed one.
 
 <details markdown="1">
 <summary>Technical details</summary>
@@ -139,8 +139,8 @@ To go back to an older version, do the same with that version's zip (or, install
 
 Audio never leaves your PC. The app goes online only when you ask it to:
 
-- **Downloading a model** from Hugging Face (Models page).
-- **Downloading GPU support** from PyPI (Models page).
+- **Downloading a model** from Hugging Face (Models page or first-time setup).
+- **Downloading GPU support** from PyPI (Models page or first-time setup).
 - **Check for updates**, which asks the GitHub API for the latest release.
 
 Everything else runs offline: the app sets `HF_HUB_OFFLINE=1` at start-up and loads models from their local folders only.
@@ -240,7 +240,7 @@ python -m unittest discover -s tests
 
 ## Website
 
-The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest zip. To preview it:
+The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one). To preview it:
 
 ```powershell
 python tools/build_site.py
@@ -302,7 +302,7 @@ The app loads `app\i18n\app_<locale>.qm` for the Windows display language automa
 ```text
 app/
   main.py              entry point (sets offline mode, theme, splash)
-  paths.py             where the app keeps its data (next to the exe)
+  paths.py             where the app keeps its data (next to the exe, or in the user's profile when installed)
   config.py            settings (qfluentwidgets QConfig)
   cli.py               console tools
   audio/               capture (PyAudioWPatch, process loopback via comtypes),
@@ -312,7 +312,10 @@ app/
                        (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
   core/                controller (worker thread) and history
-  ui/                  main window, pages, source flyout, overlay, tray
+  ui/                  main window, pages, first-time setup, dialogs, source flyout, overlay, tray
+installer/             Inno Setup script for the installer
+site/                  the project website
+tools/                 build and website helpers
 ```
 
 <details markdown="1">
