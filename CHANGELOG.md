@@ -7,11 +7,13 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
-- **Traditional Chinese (Taiwan) and Simplified Chinese.** The whole app is translated, including language names, in Taiwan and Mainland wording. The app uses one when Chinese comes before English in your Windows language list.
-- **Settings → Language** switches between English, 繁體中文 (台灣), 简体中文 (中国) and following Windows. The change applies after a restart, and a **Restart now** button does that for you.
+- **Traditional and Simplified Chinese.** The whole app is translated, including language names. The app uses one when Chinese comes before English in your Windows language list.
+- **Settings → Language** switches between English, 繁體中文, 简体中文 and following Windows. The change applies after a restart, and a **Restart now** button does that for you.
 
 ### Changed
 
+- **Chinese output goes both ways.** The "Traditional Chinese output" switch is now **Settings → Chinese output**: Traditional Chinese, Simplified Chinese, or as recognized. Your earlier choice carries over.
+- **The first start follows Windows.** When Simplified Chinese comes before Traditional in your Windows language list, a new install writes captions in Simplified Chinese with the Microsoft YaHei UI font; otherwise it keeps Traditional Chinese and Microsoft JhengHei UI.
 - The app is about 20 MB smaller (installer 52 MB, portable zip 75 MB): it no longer includes files it never loads.
 
 ## [1.1.0] - 2026-10-23

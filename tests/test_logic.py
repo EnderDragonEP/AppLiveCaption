@@ -22,12 +22,35 @@ from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
 from app.asr.hardware import GpuInfo, suggest_model  # noqa: E402
 from app.asr.streaming import PartialStabilizer, tokenize  # noqa: E402
+from app.asr.textconv import CHINESE_OFF, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, ChineseConverter  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
 from app.audio.mixer import Limiter, TimedQueue  # noqa: E402
 from app.core.history import HistoryLine, HistoryStore  # noqa: E402
+from app.i18n import windows_chinese_script  # noqa: E402
 from app.models.catalog import get_model, load_catalog  # noqa: E402
 from app.models.downloader import _selected_files  # noqa: E402
 from app.models.storage import is_downloaded, model_path, verify  # noqa: E402
+
+
+class ChineseOutputTests(unittest.TestCase):
+    def test_both_directions(self):
+        self.assertEqual(ChineseConverter(CHINESE_TRADITIONAL).convert("软件和文件夹"), "軟體和資料夾")
+        self.assertEqual(ChineseConverter(CHINESE_SIMPLIFIED).convert("軟體和資料夾"), "软件和文件夹")
+        self.assertEqual(ChineseConverter(CHINESE_OFF).convert("软件和資料夾"), "软件和資料夾")
+        self.assertEqual(ChineseConverter(CHINESE_SIMPLIFIED).convert("Hello"), "Hello")
+
+    def test_switching_while_running(self):
+        conv = ChineseConverter(CHINESE_TRADITIONAL)
+        self.assertEqual(conv.convert("语言"), "語言")
+        conv.output = CHINESE_SIMPLIFIED
+        self.assertEqual(conv.convert("語言"), "语言")
+
+    def test_windows_chinese_script(self):
+        self.assertEqual(windows_chinese_script(["en-US", "zh-Hant-TW", "zh-TW"]), "traditional")
+        self.assertEqual(windows_chinese_script(["zh-Hans-CN", "en-US"]), "simplified")
+        self.assertEqual(windows_chinese_script(["en-US", "zh-Hant-HK", "zh-Hans-CN"]), "traditional")
+        self.assertEqual(windows_chinese_script(["zh-Hans-SG"]), "simplified")
+        self.assertIsNone(windows_chinese_script(["en-US", "ja-JP"]))
 
 
 class FilterTests(unittest.TestCase):

@@ -24,7 +24,7 @@ from ..audio.vad import FRAME, StreamingVAD
 from .backend import ASRBackend, Transcript
 from .filters import HallucinationFilter, normalize
 from .languages import CHINESE_CODES
-from .textconv import ChineseConverter
+from .textconv import CHINESE_TRADITIONAL, ChineseConverter
 
 log = logging.getLogger(__name__)
 
@@ -134,16 +134,15 @@ class _Utterance:
 
 
 class StreamingTranscriber:
-    def __init__(self, backend: ASRBackend, language: str | None = None, convert_chinese: bool = True,
+    def __init__(self, backend: ASRBackend, language: str | None = None, chinese_output: str = CHINESE_TRADITIONAL,
                  base_prompt: str = "", config: StreamingConfig | None = None):
         self.backend = backend
         self.language = language or None
-        self.convert_chinese = convert_chinese
         self.base_prompt = base_prompt
         self.cfg = config or StreamingConfig()
         self.vad = StreamingVAD()
         self.filter = HallucinationFilter()
-        self.converter = ChineseConverter()
+        self.converter = ChineseConverter(chinese_output)  # (its .output can change while running)
         self.stabilizer = PartialStabilizer()
         self.pos = 0  # samples consumed since the session started (incl. dropped)
         self._pre_roll: list[np.ndarray] = []
@@ -278,7 +277,7 @@ class StreamingTranscriber:
         return tr, time.monotonic() - t0
 
     def _postprocess(self, text: str, language: str | None) -> str:
-        if self.convert_chinese and text and (language in CHINESE_CODES or language is None):
+        if text and (language in CHINESE_CODES or language is None):
             text = self.converter.convert(text)
         return text
 

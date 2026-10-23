@@ -33,6 +33,16 @@ def language_label(code: str, info=None) -> str:
     return tr(info.language_label(code) if info is not None else language_name(code), LANGUAGES_CONTEXT)
 
 
+def windows_chinese_script(tags: list[str] | None = None) -> str | None:
+    """"traditional" or "simplified": the script of the first Chinese language in Windows' language list
+    (``tags``, for testing), or None without one."""
+    for tag in QLocale.system().uiLanguages() if tags is None else tags:
+        locale = QLocale(tag)
+        if locale.language() == QLocale.Language.Chinese:
+            return "traditional" if locale.script() == QLocale.Script.TraditionalChineseScript else "simplified"
+    return None
+
+
 def _translation_for(tag: str) -> str | None:
     """The app_<name> translation for a language tag like "zh-Hant-TW", if one exists ("" for English)."""
     locale = QLocale(tag)
@@ -57,7 +67,9 @@ def available_languages() -> list[tuple[str, str]]:
         code = qm.stem.removeprefix("app_")
         locale = QLocale(code)
         name = locale.nativeLanguageName()
-        if "_" in code:  # a translation for one country or region, like zh_TW
+        # A translation for one country or region (pt_BR) says which, except Chinese: its name already
+        # says the script (繁體中文, 简体中文), which is what matters, and several places write each one.
+        if "_" in code and locale.language() != QLocale.Language.Chinese:
             name += f" ({locale.nativeTerritoryName()})"
         languages.append((code, name))
     return languages

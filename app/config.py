@@ -20,7 +20,11 @@ from qfluentwidgets import (
     qconfig,
 )
 
+from .asr.textconv import CHINESE_OFF, CHINESE_OUTPUTS, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL
 from .paths import config_file
+
+# Caption fonts drawn the way Traditional and Simplified Chinese readers expect.
+TRADITIONAL_FONT, SIMPLIFIED_FONT = "Microsoft JhengHei UI", "Microsoft YaHei UI"
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
 # Settings → Default model choices besides a model id (model ids never contain ":").
@@ -74,11 +78,13 @@ class Config(QConfig):
     # change, so the id may be one the user added, or removed).
     defaultModel = ConfigItem("ASR", "DefaultModel", NO_MODEL)
     device = OptionsConfigItem("ASR", "Device", "auto", OptionsValidator(["auto", "cuda", "cpu"]))
-    opencc = ConfigItem("ASR", "OpenCC", True, BoolValidator())
+    # Convert Chinese captions to Traditional or Simplified Chinese, or not (app/asr/textconv.py).
+    # The first run picks it from Windows' language list (_first_run_defaults).
+    chineseOutput = OptionsConfigItem("ASR", "ChineseOutput", CHINESE_TRADITIONAL, OptionsValidator(CHINESE_OUTPUTS))
     modelFolder = ConfigItem("ASR", "ModelFolder", DEFAULT_MODEL_FOLDER, FolderPathValidator())
 
     # Caption appearance (Live Captions page)
-    captionFont = ConfigItem("Captions", "FontFamily", "Microsoft JhengHei UI")
+    captionFont = ConfigItem("Captions", "FontFamily", TRADITIONAL_FONT)  # (Simplified: see _first_run_defaults)
     captionFontSize = RangeConfigItem("Captions", "FontSize", 24, RangeValidator(10, 72))
     # A caption color left at its default follows the light/dark theme instead.
     finalColor = ColorConfigItem("Captions", "FinalColor", QColor(32, 32, 32))
@@ -103,14 +109,34 @@ def _migrate_custom_colors_switch() -> None:
     cfg.set(cfg.partialColor, cfg.partialColor.defaultValue)
 
 
+def _first_run_defaults() -> None:
+    """No settings saved yet: match the Chinese output and the caption font to Windows' language list,
+    when it has Simplified Chinese before any Traditional (the defaults suit Traditional and the rest)."""
+    from .i18n import windows_chinese_script
+
+    if windows_chinese_script() == "simplified":
+        cfg.set(cfg.chineseOutput, CHINESE_SIMPLIFIED)
+        cfg.set(cfg.captionFont, SIMPLIFIED_FONT)
+
+
 cfg = Config()
-_legacy_switch_off = False
 try:
     import json as _json
 
-    _legacy_switch_off = _json.loads(config_file().read_text(encoding="utf-8")).get("Captions", {}).get("CustomColors") is False
+    _saved = _json.loads(config_file().read_text(encoding="utf-8"))
+except FileNotFoundError:
+    _saved = None  # the first run
 except (OSError, ValueError):
-    pass
+    _saved = {}
+if _saved is not None and not isinstance(_saved, dict):
+    _saved = {}
 qconfig.load(str(config_file()), cfg)
-if _legacy_switch_off:
-    _migrate_custom_colors_switch()
+if _saved is None:
+    _first_run_defaults()
+else:
+    if _saved.get("Captions", {}).get("CustomColors") is False:
+        _migrate_custom_colors_switch()
+    # "Traditional Chinese output" used to be a switch.
+    _asr = _saved.get("ASR", {})
+    if "OpenCC" in _asr and "ChineseOutput" not in _asr:
+        cfg.set(cfg.chineseOutput, CHINESE_TRADITIONAL if _asr["OpenCC"] else CHINESE_OFF)

@@ -2111,77 +2111,92 @@
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="226"/>
-        <source>Traditional Chinese output</source>
-        <translation>輸出繁體中文</translation>
-    </message>
-    <message>
-        <location filename="../ui/settings_page.py" line="227"/>
-        <source>Convert Simplified Chinese to Traditional Chinese (OpenCC s2twp)</source>
-        <translation>將簡體中文轉換為繁體中文（OpenCC s2twp）</translation>
+        <location filename="../ui/settings_page.py" line="228"/>
+        <source>Chinese output</source>
+        <translation>中文輸出</translation>
     </message>
     <message>
         <location filename="../ui/settings_page.py" line="229"/>
+        <source>Write Chinese captions in Traditional or Simplified characters, with OpenCC</source>
+        <translation>以 OpenCC 將中文字幕轉為繁體或簡體字</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="230"/>
+        <source>As recognized</source>
+        <translation>維持辨識結果</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="230"/>
+        <source>Simplified Chinese</source>
+        <translation>簡體中文</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="230"/>
+        <source>Traditional Chinese</source>
+        <translation>繁體中文</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>Choose folder</source>
         <translation>選擇資料夾</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="229"/>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>Model folder</source>
         <translation>模型資料夾</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="237"/>
         <source>Reset</source>
         <translation>重設</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="237"/>
         <source>Reset model list</source>
         <translation>重設模型清單</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="234"/>
+        <location filename="../ui/settings_page.py" line="238"/>
         <source>Bring back the preset models and remove the ones you added</source>
         <translation>還原預設的模型，並移除你新增的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="241"/>
+        <location filename="../ui/settings_page.py" line="245"/>
         <source>Advanced</source>
         <translation>進階</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="242"/>
+        <location filename="../ui/settings_page.py" line="246"/>
         <source>Open</source>
         <translation>開啟</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="242"/>
+        <location filename="../ui/settings_page.py" line="246"/>
         <source>First-time setup</source>
         <translation>初次設定</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="243"/>
+        <location filename="../ui/settings_page.py" line="247"/>
         <source>Choose GPU support, a model and the model loaded at start-up again</source>
         <translation>重新選擇顯示卡支援、模型，以及啟動時載入的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="246"/>
+        <location filename="../ui/settings_page.py" line="250"/>
         <source>Open folder</source>
         <translation>開啟資料夾</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="246"/>
+        <location filename="../ui/settings_page.py" line="250"/>
         <source>Logs</source>
         <translation>記錄檔</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="252"/>
+        <location filename="../ui/settings_page.py" line="256"/>
         <source>About</source>
         <translation>關於</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="266"/>
+        <location filename="../ui/settings_page.py" line="270"/>
         <source>Choose the model folder</source>
         <translation>選擇模型資料夾</translation>
     </message>

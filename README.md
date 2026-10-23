@@ -298,7 +298,9 @@ The presets are listed in [app/models/catalog.json](https://github.com/EnderDrag
 
 ## Translating the UI
 
-The app comes in English, **Traditional Chinese (Taiwan)** and **Simplified Chinese**. **Settings → Language** picks one (it applies after a restart, and the app offers to restart). Left at **Use system setting**, it takes the first language in your Windows language list (Settings → Time & language → Language & region) that it has, so English stays English even when Chinese is further down the list. Chinese gets one translation per script: Hong Kong and Macau use the Taiwan one, Singapore the Simplified one.
+The app comes in English, **Traditional Chinese** and **Simplified Chinese**. **Settings → Language** picks one (it applies after a restart, and the app offers to restart). Left at **Use system setting**, it takes the first language in your Windows language list (Settings → Time & language → Language & region) that it has, so English stays English even when Chinese is further down the list. Chinese gets one translation per script, whichever country or region Windows names (Taiwan, Hong Kong, Macau; China, Singapore).
+
+Chinese **captions** have their own setting, **Settings → Chinese output**: Traditional Chinese, Simplified Chinese or as recognized, converted with OpenCC. On the very first start the app looks at the Windows language list: with Simplified Chinese before any Traditional, it picks Simplified and the Microsoft YaHei UI caption font; otherwise Traditional and Microsoft JhengHei UI.
 
 All UI text goes through `tr()` (language names through `language_label()`), and translations live in [app/i18n/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/app/i18n): `app_<locale>.ts` to edit, `app_<locale>.qm` that the app loads. The build bundles every `.qm`. After changing UI text, update and compile them:
 
@@ -310,7 +312,7 @@ Get-ChildItem app\i18n\*.ts | ForEach-Object { pyside6-lrelease $_.FullName -qm 
 
 From WSL, `tools/update_translations.sh` runs the first and last steps for every `.ts` with the Windows Python's tools; after translating, `tools/update_translations.sh --release` compiles them again. To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
 
-The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); a few of its strings are overridden for Taiwan wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
+The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); the app overrides a few of its strings with its own wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
 
 ## How it works
 
@@ -323,7 +325,7 @@ app/
   audio/               capture (PyAudioWPatch, process loopback via comtypes),
                        app list (pycaw), resampling (soxr), mixer + limiter, Silero VAD
   asr/                 faster-whisper backend, streaming (partials/finals, LocalAgreement,
-                       prompts), hallucination filter, OpenCC, GPU support
+                       prompts), hallucination filter, Chinese conversion (OpenCC), GPU support
                        (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
   core/                controller (worker thread) and history

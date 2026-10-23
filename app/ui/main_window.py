@@ -97,7 +97,7 @@ class MainWindow(FluentWindow):
         self.live.languageChanged.connect(lambda c: self.controller.set_language(None if c == "auto" else c))
         self.live.selectionChanged.connect(self._on_selection_changed)
         self.live.overlayToggled.connect(self.set_overlay_visible)
-        cfg.opencc.valueChanged.connect(self.controller.set_opencc)
+        cfg.chineseOutput.valueChanged.connect(self.controller.set_chinese_output)
 
         # Controller -> UI
         c = self.controller
@@ -460,7 +460,7 @@ class MainWindow(FluentWindow):
         sel = self.live.selection
         lang = self.live.selected_language()
         self.captions.clear()
-        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.opencc), selection_summary(sel))
+        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.chineseOutput), selection_summary(sel))
 
     def _on_selection_changed(self, sel) -> None:
         if self.controller.is_running:

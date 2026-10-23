@@ -223,9 +223,13 @@ class SettingsPage(ScrollArea):
             texts=[self.tr("Automatic (GPU if available)"), self.tr("NVIDIA GPU"), self.tr("CPU")], parent=g)
         cfg.device.valueChanged.connect(lambda v: self.deviceChanged.emit(str(v)))
         g.addSettingCard(self.device_card)
-        g.addSettingCard(SwitchSettingCard(FluentIcon.LANGUAGE, self.tr("Traditional Chinese output"),
-                                           self.tr("Convert Simplified Chinese to Traditional Chinese (OpenCC s2twp)"),
-                                           cfg.opencc, g))
+        # (Same order as CHINESE_OUTPUTS: off, traditional, simplified.)
+        self.chinese_card = ComboBoxSettingCard(
+            cfg.chineseOutput, FluentIcon.LANGUAGE, self.tr("Chinese output"),
+            self.tr("Write Chinese captions in Traditional or Simplified characters, with OpenCC"),
+            texts=[self.tr("As recognized"), self.tr("Traditional Chinese"), self.tr("Simplified Chinese")],
+            parent=g)
+        g.addSettingCard(self.chinese_card)
         self.folder_card = PushSettingCard(self.tr("Choose folder"), FluentIcon.FOLDER, self.tr("Model folder"),
                                            str(models_dir()), g)
         self.folder_card.clicked.connect(self._choose_folder)
