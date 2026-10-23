@@ -14,6 +14,10 @@
   <meta property="og:url" content="https://enderdragonep.github.io/AppLiveCaption/">
   <meta property="og:image" content="https://enderdragonep.github.io/AppLiveCaption/img/screenshot-live.png">
   <meta name="twitter:card" content="summary_large_image">
+  <link rel="alternate" hreflang="en" href="https://enderdragonep.github.io/AppLiveCaption/">
+  <link rel="alternate" hreflang="zh-Hant" href="https://enderdragonep.github.io/AppLiveCaption/zh-TW/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://enderdragonep.github.io/AppLiveCaption/zh-CN/">
+  <link rel="alternate" hreflang="x-default" href="https://enderdragonep.github.io/AppLiveCaption/">
   <link rel="icon" href="icon.svg" type="image/svg+xml">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="stylesheet" href="styles.css">
@@ -24,6 +28,22 @@
       try { theme = localStorage.getItem("theme"); } catch (e) {}
       if (theme === "light" || theme === "dark") document.documentElement.dataset.theme = theme;
       document.documentElement.classList.add("js");
+    })();
+    // On the English page: go to the language picked in the menu before, or else, on a first visit,
+    // to the translation the browser prefers (tools/build_site.py writes them to zh-TW/ and zh-CN/).
+    (function () {
+      if (document.documentElement.lang !== "en") return;
+      var lang = null;
+      try { lang = localStorage.getItem("lang"); } catch (e) {}
+      if (!lang) {
+        var tags = navigator.languages || [navigator.language || ""];
+        for (var i = 0; i < tags.length && !lang; i++) {
+          var tag = String(tags[i]).toLowerCase();
+          if (tag.indexOf("en") === 0) lang = "en";
+          else if (tag.indexOf("zh") === 0) lang = /hant|-tw|-hk|-mo/.test(tag) ? "zh-TW" : "zh-CN";
+        }
+      }
+      if (lang === "zh-TW" || lang === "zh-CN") location.replace(lang + "/" + location.hash);
     })();
   </script>
 </head>
@@ -70,6 +90,16 @@
       <a href="#faq">FAQ</a>
     </nav>
     <div class="nav-actions">
+      <details class="lang-menu">
+        <summary class="btn btn-subtle btn-icon" aria-label="Language" title="Language">
+          <svg class="icon"><use href="#i-translate"/></svg>
+        </summary>
+        <div class="lang-list">
+          <a href="./" aria-current="page" lang="en" hreflang="en" data-lang="en">English</a>
+          <a href="zh-TW/" lang="zh-Hant" hreflang="zh-Hant" data-lang="zh-TW">繁體中文</a>
+          <a href="zh-CN/" lang="zh-Hans" hreflang="zh-Hans" data-lang="zh-CN">简体中文</a>
+        </div>
+      </details>
       <a class="btn btn-subtle btn-icon" href="https://github.com/EnderDragonEP/AppLiveCaption" aria-label="Source code on GitHub" title="Source code on GitHub">
         <svg class="icon"><use href="#i-code"/></svg>
       </a>

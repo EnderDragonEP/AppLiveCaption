@@ -8,6 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - **Traditional and Simplified Chinese.** The whole app is translated, including language names. The app uses one when Chinese comes before English in your Windows language list.
+- **The website in Chinese.** The project page has Traditional and Simplified Chinese versions, with a language menu; a browser set to Chinese gets its version on the first visit.
 - **Settings → Language** switches between English, 繁體中文, 简体中文 and following Windows. The change applies after a restart, and a **Restart now** button does that for you.
 
 ### Changed

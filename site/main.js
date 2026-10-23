@@ -6,6 +6,58 @@ const REPO = "EnderDragonEP/AppLiveCaption";
 const root = document.documentElement;
 const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)");
 
+// -- Text this script writes, per page language (the page's own text is translated by
+//    tools/build_site.py from site/i18n/) ------------------------------------------------
+
+const TEXT = {
+  en: {
+    switchTo: (theme) => `Switch to ${theme} theme`,
+    light: "light",
+    dark: "dark",
+    download: (version, size) => (version ? `Download v${version} · ${size}` : `Download · ${size}`),
+    portable: (size) => `Get the portable zip · ${size}`,
+    demo: [
+      "Hi everyone, and welcome back to the channel!",
+      "Today we're building a tiny weather station.",
+      "It measures temperature, humidity and air pressure.",
+      "今天我們要帶大家逛台灣最熱鬧的夜市！",
+      "第一站是基隆廟口，這裡的鼎邊趖真的超好吃。",
+      "Captions show up while people are still talking.",
+    ],
+  },
+  "zh-Hant": {
+    switchTo: (theme) => `切換為${theme}主題`,
+    light: "淺色",
+    dark: "深色",
+    download: (version, size) => (version ? `下載 v${version} · ${size}` : `下載 · ${size}`),
+    portable: (size) => `下載免安裝版 · ${size}`,
+    demo: [
+      "大家好，歡迎回到我的頻道！",
+      "今天我們要做一個小小的氣象站。",
+      "它可以測量溫度、濕度和氣壓。",
+      "接下來帶大家逛最熱鬧的夜市！",
+      "第一站是基隆廟口，這裡的鼎邊趖真的超好吃。",
+      "大家說話的同時，字幕就會出現。",
+    ],
+  },
+  "zh-Hans": {
+    switchTo: (theme) => `切换为${theme}主题`,
+    light: "浅色",
+    dark: "深色",
+    download: (version, size) => (version ? `下载 v${version} · ${size}` : `下载 · ${size}`),
+    portable: (size) => `下载便携版 · ${size}`,
+    demo: [
+      "大家好，欢迎回到我的频道！",
+      "今天我们要做一个小小的气象站。",
+      "它可以测量温度、湿度和气压。",
+      "接下来带大家逛最热闹的夜市！",
+      "第一站是基隆庙口，这里的鼎边趖真的超好吃。",
+      "大家说话的同时，字幕就会出现。",
+    ],
+  },
+};
+const T = TEXT[root.lang] || TEXT.en;
+
 // -- Theme ---------------------------------------------------------------------------
 // Follows the OS until the button is used; the choice is remembered.
 
@@ -16,9 +68,9 @@ function currentTheme() {
 }
 
 function updateThemeButton() {
-  const next = currentTheme() === "dark" ? "light" : "dark";
-  themeButton.setAttribute("aria-label", `Switch to ${next} theme`);
-  themeButton.title = `Switch to ${next} theme`;
+  const next = currentTheme() === "dark" ? T.light : T.dark;
+  themeButton.setAttribute("aria-label", T.switchTo(next));
+  themeButton.title = T.switchTo(next);
 }
 
 themeButton.addEventListener("click", () => {
@@ -29,6 +81,23 @@ themeButton.addEventListener("click", () => {
 });
 matchMedia("(prefers-color-scheme: dark)").addEventListener("change", updateThemeButton);
 updateThemeButton();
+
+// -- Language menu: remember the choice (the English page goes there next time), and close
+//    the menu on a click elsewhere or Escape --------------------------------------------
+
+const langMenu = document.querySelector(".lang-menu");
+for (const link of document.querySelectorAll("[data-lang]")) {
+  link.addEventListener("click", () => {
+    try { localStorage.setItem("lang", link.dataset.lang); } catch (e) { /* not remembered */ }
+  });
+}
+document.addEventListener("click", (e) => { if (langMenu.open && !langMenu.contains(e.target)) langMenu.open = false; });
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape" && langMenu.open) {
+    langMenu.open = false;
+    langMenu.querySelector("summary").focus();
+  }
+});
 
 // -- Navigation bar: a hairline once the page scrolls ----------------------------------
 
@@ -80,14 +149,7 @@ tabs.forEach((tab, i) => {
 
 // -- Caption demo: words appear in gray while "someone speaks", then the line turns final.
 
-const SENTENCES = [
-  "Hi everyone, and welcome back to the channel!",
-  "Today we're building a tiny weather station.",
-  "It measures temperature, humidity and air pressure.",
-  "今天我們要帶大家逛台灣最熱鬧的夜市！",
-  "第一站是基隆廟口，這裡的鼎邊趖真的超好吃。",
-  "Captions show up while people are still talking.",
-];
+const SENTENCES = T.demo;
 
 const finalLine = document.querySelector("[data-demo-final]");
 const partialLine = document.querySelector("[data-demo-partial]");
@@ -139,12 +201,12 @@ async function loadRelease() {
   if (!file) return;
   document.querySelectorAll("a[data-download]").forEach((a) => { a.href = file.browser_download_url; });
   document.querySelectorAll("[data-download-label]").forEach((el) => {
-    el.textContent = version ? `Download v${version} · ${megabytes(file)}` : `Download · ${megabytes(file)}`;
+    el.textContent = T.download(version, megabytes(file));
   });
   if (setup && zip) {
     document.querySelectorAll("a[data-portable-link]").forEach((a) => { a.href = zip.browser_download_url; });
     document.querySelectorAll("[data-portable-label]").forEach((el) => {
-      el.textContent = `Get the portable zip · ${megabytes(zip)}`;
+      el.textContent = T.portable(megabytes(zip));
     });
   } else {
     // The main buttons already download the zip (or the release has no files): no second link needed.

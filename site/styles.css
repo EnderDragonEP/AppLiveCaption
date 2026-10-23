@@ -210,6 +210,44 @@ p { margin: 0; text-wrap: pretty; }
 .nav-links a:hover { background: var(--subtle-hover); color: var(--fg1); text-decoration: none; }
 
 .nav-actions { display: flex; align-items: center; gap: 4px; margin-left: auto; }
+
+/* Language menu: a Fluent flyout under its button. */
+.lang-menu { position: relative; }
+.lang-menu > summary { list-style: none; }
+.lang-menu > summary::-webkit-details-marker { display: none; }
+.lang-menu[open] > summary { background: var(--subtle-hover); color: var(--fg1); }
+.lang-list {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 60;
+  display: grid;
+  min-width: 160px;
+  padding: 4px;
+  border: 1px solid var(--stroke2);
+  border-radius: var(--radius-xl);
+  background: var(--bg1);
+  box-shadow: var(--shadow16);
+}
+.lang-list a {
+  position: relative;
+  padding: 7px 12px 7px 16px;
+  border-radius: var(--radius-m);
+  color: var(--fg1);
+  font-size: 14px;
+  line-height: 20px;
+}
+.lang-list a:hover { background: var(--subtle-hover); color: var(--fg1); text-decoration: none; }
+.lang-list a[aria-current="page"]::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: var(--radius-circle);
+  background: var(--brand-fg);
+}
 .nav-download { margin-left: 8px; }
 
 /* The theme button shows the theme it switches to. */
