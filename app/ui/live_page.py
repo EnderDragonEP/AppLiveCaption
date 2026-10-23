@@ -23,9 +23,9 @@ from qfluentwidgets import (
     qconfig,
 )
 
-from ..asr.languages import language_name
 from ..audio.capture import CaptureSelection
 from ..config import cfg
+from ..i18n import language_label
 from ..models.catalog import ModelInfo, get_model, load_catalog
 from ..models.storage import is_downloaded
 from .caption_model import CaptionModel
@@ -214,7 +214,7 @@ class LivePage(QWidget):
     def set_languages(self, codes: list[str], info: ModelInfo | None = None) -> None:
         info = info or get_model(self.selected_model_id() or "")
         detect = info is None or info.auto_detect
-        ordered = sorted(codes, key=lambda c: (c not in ("zh", "en"), language_name(c)))
+        ordered = sorted(codes, key=lambda c: (c not in ("zh", "en"), language_label(c)))
         self._languages = (["auto"] if detect else []) + ordered
         current = cfg.get(cfg.language)
         self.lang_combo.blockSignals(True)
@@ -223,8 +223,7 @@ class LivePage(QWidget):
             if code == "auto":
                 self.lang_combo.addItem(self.tr("Auto-detect"))
             else:
-                label = info.language_label(code) if info else language_name(code)
-                self.lang_combo.addItem(self.tr(label))
+                self.lang_combo.addItem(language_label(code, info))
         if current not in self._languages:
             # Without auto-detect the model uses its own language. The saved choice
             # is kept for the next model that can auto-detect.

@@ -298,15 +298,19 @@ The presets are listed in [app/models/catalog.json](https://github.com/EnderDrag
 
 ## Translating the UI
 
-All UI text is English and goes through `tr()`. To add Traditional Chinese:
+The app comes in English and **Traditional Chinese (Taiwan)**. It picks the first language in your Windows language list (Settings → Time & language → Language & region) that it has, so English stays English even when Chinese is further down the list. Traditional Chinese for Hong Kong and Macau uses the Taiwan translation.
+
+All UI text goes through `tr()` (language names through `language_label()`), and translations live in [app/i18n/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/app/i18n): `app_<locale>.ts` to edit, `app_<locale>.qm` that the app loads. The build bundles every `.qm`. After changing UI text, update and compile them:
 
 ```powershell
-pyside6-lupdate (Get-ChildItem app -Recurse -Filter *.py).FullName -ts app\i18n\app_zh_TW.ts
-pyside6-linguist app\i18n\app_zh_TW.ts          # translate
+pyside6-lupdate (Get-ChildItem app -Recurse -Filter *.py).FullName -no-obsolete -ts app\i18n\app_zh_TW.ts
+pyside6-linguist app\i18n\app_zh_TW.ts          # translate the new lines
 pyside6-lrelease app\i18n\app_zh_TW.ts -qm app\i18n\app_zh_TW.qm
 ```
 
-The app loads `app\i18n\app_<locale>.qm` for the Windows display language automatically, and the build bundles any `.qm` files it finds.
+From WSL, `tools/update_translations.sh` runs the first and last steps for every `.ts` with the Windows Python's tools; after translating, `tools/update_translations.sh --release` compiles them again. To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`).
+
+The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); a few of its strings are overridden for Taiwan wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
 
 ## How it works
 

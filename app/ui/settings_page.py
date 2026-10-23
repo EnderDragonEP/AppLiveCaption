@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import Qt, QUrl, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -34,6 +34,15 @@ from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
 from .icons import app_icon
+
+
+# Strings of the widget library's color cards, translated by the app too: the library's own Traditional
+# Chinese uses Mainland wording for them (默認顏色). The app's translation is checked first (app/i18n.py).
+LIBRARY_STRINGS = (
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Default color"),
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Custom color"),
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Choose color"),
+)
 
 
 class AppInfoCard(PrimaryPushSettingCard):
