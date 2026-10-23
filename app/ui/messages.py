@@ -88,9 +88,13 @@ def notice_text(kind: str, payload: dict) -> tuple[str, str, str] | None:
     return None
 
 
-def show_infobar(level: str, title: str, content: str, parent, duration: int = 6000) -> InfoBar:
+def show_infobar(level: str, title: str, content: str, parent, duration: int = 6000,
+                 with_buttons: bool = False) -> InfoBar:
+    """``with_buttons``: buttons will be added (bar.addWidget); they go under the message, so a long
+    translation can't push them off the window."""
     factory = {"info": InfoBar.info, "warning": InfoBar.warning, "success": InfoBar.success, "error": InfoBar.error}
+    vertical = with_buttons or len(content) >= 60
     return factory.get(level, InfoBar.info)(
-        title=title, content=content, orient=Qt.Orientation.Horizontal if len(content) < 60 else Qt.Orientation.Vertical,
+        title=title, content=content, orient=Qt.Orientation.Vertical if vertical else Qt.Orientation.Horizontal,
         isClosable=True, duration=duration, position=InfoBarPosition.TOP_RIGHT, parent=parent,
     )

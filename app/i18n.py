@@ -38,20 +38,46 @@ def _translation_for(tag: str) -> str | None:
     locale = QLocale(tag)
     if locale.language() == QLocale.Language.English:
         return ""  # the app's own language
-    if locale.language() == QLocale.Language.Chinese and locale.script() == QLocale.Script.TraditionalChineseScript:
-        locale = QLocale("zh_TW")  # also for Hong Kong and Macau: the Taiwan translation reads fine there
+    if locale.language() == QLocale.Language.Chinese:
+        # One translation per script: Taiwan's also for Hong Kong and Macau, Mainland's also for Singapore.
+        traditional = locale.script() == QLocale.Script.TraditionalChineseScript
+        locale = QLocale("zh_TW" if traditional else "zh_CN")
     name = f"app_{locale.name()}"
     return name if (resource_dir() / "i18n" / f"{name}.qm").is_file() else None
 
 
-def install_translator(app) -> QTranslator | None:
-    """Load the translation for the first language in Windows' language list that the app has, together
-    with the widget library's own translation (dialog buttons, menus, the color picker, ...).
+AUTO_LANGUAGE = "auto"  # Settings → Language: follow Windows
 
-    The list is walked in order, and English counts as available: Qt's own QTranslator.load(QLocale)
-    would skip English (it has no .qm file) and pick a language the user ranked lower.
+
+def available_languages() -> list[tuple[str, str]]:
+    """(code, name) of each UI language, English first, each named in its own language (so it can be
+    found whatever language the app is in)."""
+    languages = [("en", "English")]
+    for qm in sorted((resource_dir() / "i18n").glob("app_*.qm")):
+        code = qm.stem.removeprefix("app_")
+        locale = QLocale(code)
+        name = locale.nativeLanguageName()
+        if "_" in code:  # a translation for one country or region, like zh_TW
+            name += f" ({locale.nativeTerritoryName()})"
+        languages.append((code, name))
+    return languages
+
+
+def install_translator(app) -> QTranslator | None:
+    """Load the translation for Settings → Language, together with the widget library's own translation
+    (dialog buttons, menus, the color picker, ...).
+
+    "auto" takes the first language in Windows' language list that the app has. The list is walked in
+    order, and English counts as available: Qt's own QTranslator.load(QLocale) would skip English (it has
+    no .qm file) and pick a language the user ranked lower.
     """
-    name = next((n for n in map(_translation_for, QLocale.system().uiLanguages()) if n is not None), "")
+    from .config import cfg
+
+    chosen = cfg.get(cfg.uiLanguage)
+    if chosen == AUTO_LANGUAGE or chosen not in dict(available_languages()):  # (a translation that's gone)
+        name = next((n for n in map(_translation_for, QLocale.system().uiLanguages()) if n is not None), "")
+    else:
+        name = "" if chosen == "en" else f"app_{chosen}"
     if not name:
         return None
     translator = QTranslator(app)

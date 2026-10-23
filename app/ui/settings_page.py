@@ -30,6 +30,7 @@ from qfluentwidgets import (
 
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
 from ..config import NO_MODEL, PREVIOUS_MODEL, cfg, is_win11
+from ..i18n import AUTO_LANGUAGE, available_languages
 from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
@@ -90,6 +91,31 @@ class FontSettingCard(SettingCard):
             self.setContent(font.family())
 
 
+class LanguageCard(SettingCard):
+    """The UI language: Windows' choice, or one of the languages the app has a translation for."""
+
+    changed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(FluentIcon.LANGUAGE, self.tr("Language"),
+                         self.tr("The language of the app. It changes when the app restarts."), parent)
+        self.combo = ComboBox(self)
+        self.combo.setMinimumWidth(220)
+        self.combo.addItem(self.tr("Use system setting"), userData=AUTO_LANGUAGE)
+        for code, name in available_languages():
+            self.combo.addItem(name, userData=code)
+        index = self.combo.findData(cfg.get(cfg.uiLanguage))
+        self.combo.setCurrentIndex(max(index, 0))  # (a translation that's gone: the system setting)
+        self.hBoxLayout.addWidget(self.combo, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+        self.combo.currentIndexChanged.connect(self._on_index)
+
+    def _on_index(self, index: int) -> None:
+        if index >= 0:
+            cfg.set(cfg.uiLanguage, self.combo.itemData(index))
+            self.changed.emit()
+
+
 class DefaultModelCard(SettingCard):
     """The model loaded at start-up: none, the one used last time, or one of the current model list."""
 
@@ -125,6 +151,7 @@ class SettingsPage(ScrollArea):
     modelFolderChanged = Signal(str)
     resetCatalogRequested = Signal()
     setupRequested = Signal()
+    languageChanged = Signal()  # Settings → Language changed (it applies after a restart)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -153,6 +180,9 @@ class SettingsPage(ScrollArea):
                                            self.tr("Translucent window background (Windows 11)"), cfg.micaEnabled, g)
         self.mica_card.setVisible(is_win11())
         g.addSettingCard(self.mica_card)
+        self.language_card = LanguageCard(g)
+        self.language_card.changed.connect(self.languageChanged)
+        g.addSettingCard(self.language_card)
         self.layout_.addWidget(g)
 
         # Captions

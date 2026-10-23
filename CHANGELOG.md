@@ -3,6 +3,17 @@
 All notable changes to AppLiveCaption are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Traditional Chinese (Taiwan) and Simplified Chinese.** The whole app is translated, including language names, in Taiwan and Mainland wording. The app uses one when Chinese comes before English in your Windows language list.
+- **Settings → Language** switches between English, 繁體中文 (台灣), 简体中文 (中国) and following Windows. The change applies after a restart, and a **Restart now** button does that for you.
+
+### Changed
+
+- The app is about 20 MB smaller (installer 52 MB, portable zip 75 MB): it no longer includes files it never loads.
+
 ## [1.1.0] - 2026-10-23
 
 ### Added
@@ -43,5 +54,6 @@ The first release.
 - Portable: settings, history, logs, models and GPU support are kept next to the exe.
 - A manual check for updates in Settings → About.
 
+[Unreleased]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...HEAD
 [1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...HEAD
 [1.0.0]: https://github.com/EnderDragonEP/AppLiveCaption/releases/tag/v1.0.0

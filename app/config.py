@@ -58,6 +58,9 @@ class Config(QConfig):
     # Follow the system theme by default (QConfig's own default is light).
     themeMode = OptionsConfigItem("QFluentWidgets", "ThemeMode", Theme.AUTO, OptionsValidator(Theme), EnumSerializer(Theme))
     micaEnabled = ConfigItem("Appearance", "MicaEnabled", is_win11(), BoolValidator())
+    # The UI language: "auto" (Windows' language list), "en", or a translation's locale such as "zh_TW"
+    # (app/i18n.py). It applies when the app starts.
+    uiLanguage = ConfigItem("Appearance", "Language", "auto")
     # First-time setup (app/ui/setup_dialog.py) was shown and finished or skipped. Settings can open it again.
     setupDone = ConfigItem("General", "SetupDone", False, BoolValidator())
 

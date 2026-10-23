@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+import sys
 
-from PySide6.QtCore import QSize, QTimer, QUrl
+from PySide6.QtCore import QProcess, QSize, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, SplashScreen
+from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
 
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
@@ -158,6 +159,7 @@ class MainWindow(FluentWindow):
         self.models_page.catalogChanged.connect(self._on_catalog_changed)
         self.settings_page.resetCatalogRequested.connect(self._reset_catalog)
         self.settings_page.setupRequested.connect(self.show_first_run_setup)
+        self.settings_page.languageChanged.connect(self._offer_restart)
         self.history_page.refreshRequested.connect(self._reload_history)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
@@ -556,6 +558,29 @@ class MainWindow(FluentWindow):
         self.showNormal()
         self.raise_()
         self.activateWindow()
+
+    # -- language ---------------------------------------------------------------
+    def _offer_restart(self) -> None:
+        """Settings → Language changed: it applies when the app starts, so offer to restart now."""
+        if getattr(self, "_restart_bar", None) is not None:
+            self._restart_bar.close()  # (one bar, however often the language is changed)
+        bar = self._restart_bar = show_infobar(
+            "info", self.tr("Restart to change the language"),
+            self.tr("The new language is used the next time the app starts."), self, duration=-1, with_buttons=True)
+        button = PushButton(self.tr("Restart now"), bar)
+        button.clicked.connect(self.restart)
+        bar.addWidget(button)
+        bar.closedSignal.connect(lambda: setattr(self, "_restart_bar", None))
+
+    def restart(self) -> None:
+        """Start a new copy of the app (as it was started, without --start or --minimized) and quit."""
+        args = [a for a in sys.argv[1:] if a not in ("--start", "--minimized")]
+        if not getattr(sys, "frozen", False):
+            args = [sys.argv[0], *args]  # from source: the script (app/main.py or AppLiveCaption.pyw)
+        if not QProcess.startDetached(sys.executable, args):
+            show_infobar("error", self.tr("Couldn't restart"), self.tr("Close the app and start it again."), self)
+            return
+        self.close()
 
     def closeEvent(self, e):  # noqa: N802
         self.overlay.save_geometry()
