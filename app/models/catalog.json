@@ -13,45 +13,6 @@
       "description": "Close to large-v3 accuracy and much faster. A good default for real-time captioning on a GPU. (Formerly mobiuslabsgmbh/faster-whisper-large-v3-turbo.)"
     },
     {
-      "id": "taiwan-tongues-asr-ce",
-      "name": "Taiwan Tongues ASR CE",
-      "repo": "adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0",
-      "backend": "faster-whisper",
-      "languages": ["zh", "en"],
-      "language_notes": {"zh": "Mandarin / Taiwanese Hokkien / Hakka"},
-      "size_mb": 3090,
-      "license": "TRAIL v0.1 (TWM Responsible AI License)",
-      "tier": "large",
-      "initial_prompt": "繁體中文",
-      "description": "Whisper large-v2 fine-tuned for Mandarin, Taiwanese Hokkien, Hakka and English (CTranslate2 inference build). The model has no separate nan/hak language tokens: Hokkien and Hakka are recognised under zh. (Formerly adi-gov-tw/Taiwan-Tongues-ASR-CE.)"
-    },
-    {
-      "id": "breeze-asr-25",
-      "name": "Breeze ASR 25",
-      "repo": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
-      "backend": "faster-whisper",
-      "languages": ["zh", "en"],
-      "language_notes": {"zh": "Taiwanese Mandarin (with English code-switching)"},
-      "size_mb": 2949,
-      "license": "Apache-2.0",
-      "tier": "large",
-      "description": "Whisper large-v2 fine-tuned by MediaTek Research for Taiwanese Mandarin, English and switching between them mid-sentence. CTranslate2 conversion of MediaTek-Research/Breeze-ASR-25 by SoybeanMilk."
-    },
-    {
-      "id": "breeze-asr-26",
-      "name": "Breeze ASR 26 (Taigi)",
-      "repo": "SoybeanMilk/faster-whisper-Breeze-ASR-26",
-      "backend": "faster-whisper",
-      "languages": ["zh"],
-      "language_notes": {"zh": "Taiwanese Hokkien (Taigi)"},
-      "auto_detect": false,
-      "extra_files": {"tokenizer.json": "SoybeanMilk/faster-whisper-Breeze-ASR-25"},
-      "size_mb": 2949,
-      "license": "Apache-2.0",
-      "tier": "large",
-      "description": "Whisper large-v2 fine-tuned by MediaTek Research on about 10,000 hours of synthetic Taiwanese Hokkien (Taigi) speech. Writes Taigi speech as Mandarin Chinese characters, not Taigi orthography (台語正字). CTranslate2 conversion of MediaTek-Research/Breeze-ASR-26 by SoybeanMilk."
-    },
-    {
       "id": "whisper-tiny",
       "name": "Whisper tiny",
       "repo": "Systran/faster-whisper-tiny",
@@ -127,6 +88,45 @@
       "license": "MIT",
       "tier": "large",
       "description": "Most accurate Whisper; needs a GPU."
+    },
+    {
+      "id": "breeze-asr-25",
+      "name": "Breeze ASR 25",
+      "repo": "SoybeanMilk/faster-whisper-Breeze-ASR-25",
+      "backend": "faster-whisper",
+      "languages": ["zh", "en"],
+      "language_notes": {"zh": "Taiwanese Mandarin (with English code-switching)"},
+      "size_mb": 2949,
+      "license": "Apache-2.0",
+      "tier": "large",
+      "description": "Whisper large-v2 fine-tuned by MediaTek Research for Taiwanese Mandarin, English and switching between them mid-sentence. CTranslate2 conversion of MediaTek-Research/Breeze-ASR-25 by SoybeanMilk."
+    },
+    {
+      "id": "breeze-asr-26",
+      "name": "Breeze ASR 26 (Taigi)",
+      "repo": "SoybeanMilk/faster-whisper-Breeze-ASR-26",
+      "backend": "faster-whisper",
+      "languages": ["zh"],
+      "language_notes": {"zh": "Taiwanese Hokkien (Taigi)"},
+      "auto_detect": false,
+      "extra_files": {"tokenizer.json": "SoybeanMilk/faster-whisper-Breeze-ASR-25"},
+      "size_mb": 2949,
+      "license": "Apache-2.0",
+      "tier": "large",
+      "description": "Whisper large-v2 fine-tuned by MediaTek Research on about 10,000 hours of synthetic Taiwanese Hokkien (Taigi) speech. Writes Taigi speech as Mandarin Chinese characters, not Taigi orthography (台語正字). CTranslate2 conversion of MediaTek-Research/Breeze-ASR-26 by SoybeanMilk."
+    },
+    {
+      "id": "taiwan-tongues-asr-ce",
+      "name": "Taiwan Tongues ASR CE",
+      "repo": "adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0",
+      "backend": "faster-whisper",
+      "languages": ["zh", "en"],
+      "language_notes": {"zh": "Mandarin / Taiwanese Hokkien / Hakka"},
+      "size_mb": 3090,
+      "license": "TRAIL v0.1 (TWM Responsible AI License)",
+      "tier": "large",
+      "initial_prompt": "繁體中文",
+      "description": "Whisper large-v2 fine-tuned for Mandarin, Taiwanese Hokkien, Hakka and English (CTranslate2 inference build). The model has no separate nan/hak language tokens: Hokkien and Hakka are recognised under zh. (Formerly adi-gov-tw/Taiwan-Tongues-ASR-CE.)"
     }
   ]
 }

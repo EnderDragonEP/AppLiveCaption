@@ -280,11 +280,11 @@ The presets are listed in [app/models/catalog.json](https://github.com/EnderDrag
 | Model | Repository |
 | --- | --- |
 | Whisper large-v3-turbo | `dropbox-dash/faster-whisper-large-v3-turbo` |
-| Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` |
-| Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
-| Breeze ASR 26 (Taigi) | `SoybeanMilk/faster-whisper-Breeze-ASR-26` |
 | Whisper tiny / base / small / medium | `Systran/faster-whisper-{size}` |
 | Whisper large v1 / v2 / v3 | `Systran/faster-whisper-large-{v1,v2,v3}` |
+| Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
+| Breeze ASR 26 (Taigi) | `SoybeanMilk/faster-whisper-Breeze-ASR-26` |
+| Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` |
 
 <details markdown="1">
 <summary>Notes on the models</summary>
