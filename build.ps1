@@ -167,7 +167,7 @@ try {
         Invoke-Checked $Python @('-m', 'pip', 'install', '--disable-pip-version-check', '-r', 'requirements.txt')
     }
 
-    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc numpy huggingface_hub PyInstaller'
+    $modules = 'PySide6 qfluentwidgets faster_whisper ctranslate2 onnxruntime pyaudiowpatch comtypes pycaw psutil soxr opencc pypinyin numpy huggingface_hub PyInstaller'
     $check = "import importlib.util as u; print(' '.join(m for m in '$modules'.split() if u.find_spec(m) is None))"
     $missing = Get-Output $Python @('-c', $check)
     if ($null -eq $missing) { throw "Could not run $Python." }

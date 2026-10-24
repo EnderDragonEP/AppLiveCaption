@@ -17,6 +17,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
+- 🏷️ **Keyword alerts** – Get highlighted, beeped or notified when a word or name is said. Chinese keywords also catch words that sound the same, typed as 漢字, Zhuyin or Pinyin.
 
 ## Screenshots
 
@@ -46,6 +47,28 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 The status line shows the latency and the device in use. You can switch models while captioning: the app pauses, loads the new one in the background and carries on.
 
 By default no model is loaded when the app starts, so it doesn't take memory until you need it. To have one ready at start-up, set **Settings → Default model** to a model, or to **Previous selection** for the one you used last. The **Unload** button on the model's card frees it again.
+
+## Keyword alerts
+
+The **Keywords** tab watches the captions for words you care about: your name, a stock, a topic in a long meeting. Add a keyword and, when it's said, the app can:
+
+- **highlight** it in the live captions, the overlay and History (in a color you pick);
+- **play** Windows' notification sound, at most once per caption line;
+- **show a Windows notification** while the app isn't the active window, at most one every 10 seconds and silent when **Play a sound** is off (click it to bring the app back);
+- **list** it under **Recent matches**, with the time and the line.
+
+An alert comes as soon as the keyword is in the part of a line that won't change any more, so you don't have to wait for the speaker to pause.
+
+English and other languages match whole words, in any case (`cat` doesn't match *category*). **Chinese matches by sound**, with tones ignored, so a keyword still works when the model writes a different character that sounds the same: 台北 also finds 臺北, 抬北 or 台被. Polyphones are read the way the words around them say (銀行 *hang*, 行人 *xing*). A Chinese keyword can be typed as:
+
+| | Example |
+| --- | --- |
+| 漢字, Traditional or Simplified | 台北 |
+| Zhuyin, with or without tones and spaces | ㄊㄞˊ ㄅㄟˇ |
+| Pinyin, with tone marks, tone numbers or apostrophes | tái běi, tai2 bei3, tai'bei |
+| Pinyin in plain letters, with **Match by sound** ticked on its row | taibei |
+
+(A keyword in plain letters is matched as text, since many English words also spell Pinyin: *time* is ti me, *China* is chi na. When it spells Pinyin, its row gets a **Match by sound** check box. Pinyin follows the usual spelling rule that a syllable starting with a, o or e needs an apostrophe, so *henan* is he nan and *xi'an* is xi an.) The Keywords tab shows how each keyword is matched. **模糊音** switches make sounds that are often mixed up count as the same: zh = z, ch = c, sh = s, n = l, f = h, an = ang, en = eng and in = ing. Chinese readings come from [pypinyin](https://github.com/mozillazg/python-pinyin).
 
 ## Which model should I use?
 
@@ -87,7 +110,7 @@ The app also uses the same libraries when they're already on the PC, in this ord
 
 ## To do
 
-- [ ] Keyword detection (text highlighting, audio alerts)
+- [x] Keyword detection (text highlighting, audio alerts)
 - [x] Dynamically adjusted line counts
 - [x] Support custom model import
 - [ ] Model catalog export and import
@@ -211,7 +234,7 @@ python -m app.cli transcribe --model breeze-asr-25 --wav speech.wav   # simulate
 .\build.ps1
 ```
 
-The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11` finds, otherwise `python` on PATH), checks the required packages, runs the unit tests and builds `dist\AppLiveCaption\AppLiveCaption.exe` with PyInstaller. The folder is about 210 MB (about 80 MB zipped), and a build takes 1–2 minutes. Models and GPU support aren't bundled; users download them from inside the app.
+The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11` finds, otherwise `python` on PATH), checks the required packages, runs the unit tests and builds `dist\AppLiveCaption\AppLiveCaption.exe` with PyInstaller. The folder is about 195 MB (about 75 MB zipped), and a build takes 1–2 minutes. Models and GPU support aren't bundled; users download them from inside the app.
 
 | Option | Effect |
 | --- | --- |
@@ -224,11 +247,17 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
 
-The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.1.0` so the update check finds it.
+**Working in WSL?** The build has to run on Windows: PyInstaller can't cross-compile, and the app is Windows-only. [tools/build_windows.sh](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_windows.sh) does it from WSL. It copies the source to `%LOCALAPPDATA%\AppLiveCaption-build` on the Windows drive, runs `build.ps1` there with your Windows Python (and any options you pass), and copies the results back into `dist/`. `--zip` also makes the portable `dist/AppLiveCaption.zip`.
+
+```bash
+tools/build_windows.sh --zip -Installer
+```
+
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.2.0` so the update check finds it.
 
 The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
 
-The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.1.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.2.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
 <details markdown="1">
 <summary>What the build leaves out, and why</summary>
@@ -251,7 +280,9 @@ python -m unittest discover -s tests
 
 ## Website
 
-The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one), with a link to the portable zip under them. To preview it:
+The project page at <https://enderdragonep.github.io/AppLiveCaption/> lives in [site/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site): plain HTML, CSS and JavaScript styled with [Fluent 2](https://fluent2.microsoft.design/) design tokens, with no build tools. [tools/build_site.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_site.py) adds the screenshots from `.asset`, the app icon and the version, and the [Pages workflow](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/.github/workflows/pages.yml) deploys it on every push to `main`. The download buttons ask GitHub for the latest release, so they always point at the newest installer (or the zip, for a release without one), with a link to the portable zip under them.
+
+The site is in English, Traditional Chinese (`/zh-TW/`) and Simplified Chinese (`/zh-CN/`), with a language menu in the navigation bar. The first visit to the English page goes to the Chinese version a browser set to Chinese prefers, and a choice made in the menu is remembered. `site/index.html` is the only page to edit: [site/i18n/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/site/i18n) holds the translations, keyed by the English text, and `build_site.py` writes the translated pages from it, listing any text that isn't translated yet. The few texts the script writes itself (download labels, the caption demo) are translated in `site/main.js`. To preview it:
 
 ```powershell
 python tools/build_site.py
@@ -280,11 +311,11 @@ The presets are listed in [app/models/catalog.json](https://github.com/EnderDrag
 | Model | Repository |
 | --- | --- |
 | Whisper large-v3-turbo | `dropbox-dash/faster-whisper-large-v3-turbo` |
-| Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` |
-| Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
-| Breeze ASR 26 (Taigi) | `SoybeanMilk/faster-whisper-Breeze-ASR-26` |
 | Whisper tiny / base / small / medium | `Systran/faster-whisper-{size}` |
 | Whisper large v1 / v2 / v3 | `Systran/faster-whisper-large-{v1,v2,v3}` |
+| Breeze ASR 25 | `SoybeanMilk/faster-whisper-Breeze-ASR-25` |
+| Breeze ASR 26 (Taigi) | `SoybeanMilk/faster-whisper-Breeze-ASR-26` |
+| Taiwan Tongues ASR CE | `adi-gov-tw/Taiwan-Tongues-ASR-CE-v1.0` |
 
 <details markdown="1">
 <summary>Notes on the models</summary>
@@ -298,15 +329,21 @@ The presets are listed in [app/models/catalog.json](https://github.com/EnderDrag
 
 ## Translating the UI
 
-All UI text is English and goes through `tr()`. To add Traditional Chinese:
+The app comes in English, **Traditional Chinese** and **Simplified Chinese**. **Settings → Language** picks one (it applies after a restart, and the app offers to restart). Left at **Use system setting**, it takes the first language in your Windows language list (Settings → Time & language → Language & region) that it has, so English stays English even when Chinese is further down the list. Chinese gets one translation per script, whichever country or region Windows names (Taiwan, Hong Kong, Macau; China, Singapore).
+
+Chinese **captions** have their own setting, **Settings → Chinese output**: Traditional Chinese, Simplified Chinese or as recognized, converted with OpenCC. On the very first start the app looks at the Windows language list: with Simplified Chinese before any Traditional, it picks Simplified and the Microsoft YaHei UI caption font; otherwise Traditional and Microsoft JhengHei UI.
+
+All UI text goes through `tr()` (language names through `language_label()`), and translations live in [app/i18n/](https://github.com/EnderDragonEP/AppLiveCaption/tree/main/app/i18n): `app_<locale>.ts` to edit, `app_<locale>.qm` that the app loads. The build bundles every `.qm`. After changing UI text, update and compile them:
 
 ```powershell
-pyside6-lupdate (Get-ChildItem app -Recurse -Filter *.py).FullName -ts app\i18n\app_zh_TW.ts
-pyside6-linguist app\i18n\app_zh_TW.ts          # translate
-pyside6-lrelease app\i18n\app_zh_TW.ts -qm app\i18n\app_zh_TW.qm
+pyside6-lupdate (Get-ChildItem app -Recurse -Filter *.py).FullName -no-obsolete -ts (Get-ChildItem app\i18n\*.ts).FullName
+pyside6-linguist app\i18n\app_zh_TW.ts app\i18n\app_zh_CN.ts   # translate the new lines
+Get-ChildItem app\i18n\*.ts | ForEach-Object { pyside6-lrelease $_.FullName -qm ($_.FullName -replace '\.ts$', '.qm') }
 ```
 
-The app loads `app\i18n\app_<locale>.qm` for the Windows display language automatically, and the build bundles any `.qm` files it finds.
+From WSL, `tools/update_translations.sh` runs the first and last steps for every `.ts` with the Windows Python's tools; after translating, `tools/update_translations.sh --release` compiles them again. To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
+
+The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); the app overrides a few of its strings with its own wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
 
 ## How it works
 
@@ -319,10 +356,10 @@ app/
   audio/               capture (PyAudioWPatch, process loopback via comtypes),
                        app list (pycaw), resampling (soxr), mixer + limiter, Silero VAD
   asr/                 faster-whisper backend, streaming (partials/finals, LocalAgreement,
-                       prompts), hallucination filter, OpenCC, GPU support
+                       prompts), hallucination filter, Chinese conversion (OpenCC), GPU support
                        (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
-  core/                controller (worker thread) and history
+  core/                controller (worker thread), history, keyword matching (keywords.py)
   ui/                  main window, pages, first-time setup, dialogs, source flyout, overlay, tray
 installer/             Inno Setup script for the installer
 site/                  the project website

@@ -18,6 +18,7 @@ from ..asr.backend import ASRBackend, GpuFailure, ModelLoadError, OutOfMemory, U
 from ..asr.factory import BackendUnavailable, create_backend
 from ..asr.hardware import gpu_info, realtime_risk, resolve_device
 from ..asr.streaming import StreamingTranscriber
+from ..asr.textconv import CHINESE_TRADITIONAL
 from ..audio.capture import CaptureManager, CaptureSelection
 from ..models.catalog import ModelInfo, get_model
 from ..models.storage import is_downloaded, model_path, verify
@@ -59,7 +60,7 @@ class AsrWorker(QThread):
         self.transcriber: StreamingTranscriber | None = None
         self.selection = CaptureSelection()
         self.language: str | None = None
-        self.opencc = True
+        self.chinese_output = CHINESE_TRADITIONAL
         self.running = False
         self._last_levels = 0.0
         self._last_drop_notice = 0.0
@@ -262,10 +263,10 @@ class AsrWorker(QThread):
         self._cmd_load(info.id, "cpu")
 
     # -- capture --------------------------------------------------------------
-    def _cmd_start(self, selection: CaptureSelection, language: str | None, opencc: bool) -> None:
+    def _cmd_start(self, selection: CaptureSelection, language: str | None, chinese_output: str) -> None:
         self.selection = selection
         self.language = language
-        self.opencc = opencc
+        self.chinese_output = chinese_output
         if self.backend is None:
             self.error.emit("no_model", "")
             return
@@ -274,7 +275,7 @@ class AsrWorker(QThread):
     def _start(self) -> None:
         assert self.backend is not None and self.model is not None
         self.transcriber = StreamingTranscriber(self.backend, language=self._effective_language(),
-                                                convert_chinese=self.opencc, base_prompt=self.model.initial_prompt)
+                                                chinese_output=self.chinese_output, base_prompt=self.model.initial_prompt)
         try:
             self.capture.start(self.selection)
         except Exception as exc:  # noqa: BLE001
@@ -320,10 +321,10 @@ class AsrWorker(QThread):
             self._flush()
             self.transcriber.language = self._effective_language()
 
-    def _cmd_set_opencc(self, enabled: bool) -> None:
-        self.opencc = enabled
+    def _cmd_set_chinese_output(self, output: str) -> None:
+        self.chinese_output = output
         if self.transcriber is not None:
-            self.transcriber.convert_chinese = enabled
+            self.transcriber.converter.output = output
 
 
 class CaptionController(QObject):
@@ -382,10 +383,10 @@ class CaptionController(QObject):
         self.model_id = None
         self.worker.post("unload")
 
-    def start(self, selection: CaptureSelection, language: str | None, opencc: bool, source_label: str) -> None:
+    def start(self, selection: CaptureSelection, language: str | None, chinese_output: str, source_label: str) -> None:
         self.selection = selection
         self.source_label = source_label
-        self.worker.post("start", selection=selection, language=language, opencc=opencc)
+        self.worker.post("start", selection=selection, language=language, chinese_output=chinese_output)
 
     def stop(self) -> None:
         self.worker.post("stop")
@@ -400,8 +401,8 @@ class CaptionController(QObject):
     def set_language(self, language: str | None) -> None:
         self.worker.post("set_language", language=language)
 
-    def set_opencc(self, enabled: bool) -> None:
-        self.worker.post("set_opencc", enabled=enabled)
+    def set_chinese_output(self, output: str) -> None:
+        self.worker.post("set_chinese_output", output=output)
 
     def shutdown(self) -> None:
         self.worker.post("quit")

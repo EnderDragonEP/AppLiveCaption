@@ -1,7 +1,7 @@
 ; Inno Setup script for the installed version of AppLiveCaption (the portable version is the zip).
 ; build.ps1 -Installer builds the app, then runs:
 ;
-;     ISCC /DAppVersion=1.1.0 installer\AppLiveCaption.iss
+;     ISCC /DAppVersion=1.2.0 installer\AppLiveCaption.iss
 ;
 ; and writes dist\AppLiveCaption-<version>-Setup.exe. Setup asks whether to install for the current
 ; user only (no admin; %LOCALAPPDATA%\Programs) or for all users (Program Files). Either way it puts

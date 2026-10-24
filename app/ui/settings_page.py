@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import os
 
-from PySide6.QtCore import Qt, QUrl, Signal
+from PySide6.QtCore import QT_TRANSLATE_NOOP, Qt, QUrl, Signal
 from PySide6.QtGui import QDesktopServices, QFont
 from PySide6.QtWidgets import QFileDialog, QFontDialog, QHBoxLayout, QLabel, QVBoxLayout, QWidget
 from qfluentwidgets import (
@@ -30,10 +30,20 @@ from qfluentwidgets import (
 
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
 from ..config import NO_MODEL, PREVIOUS_MODEL, cfg, is_win11
+from ..i18n import AUTO_LANGUAGE, available_languages
 from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
 from ..paths import log_dir, to_setting
 from .icons import app_icon
+
+
+# Strings of the widget library's color cards, translated by the app too: the library's own Traditional
+# Chinese uses Mainland wording for them (默認顏色). The app's translation is checked first (app/i18n.py).
+LIBRARY_STRINGS = (
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Default color"),
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Custom color"),
+    QT_TRANSLATE_NOOP("CustomColorSettingCard", "Choose color"),
+)
 
 
 class AppInfoCard(PrimaryPushSettingCard):
@@ -81,6 +91,31 @@ class FontSettingCard(SettingCard):
             self.setContent(font.family())
 
 
+class LanguageCard(SettingCard):
+    """The UI language: Windows' choice, or one of the languages the app has a translation for."""
+
+    changed = Signal()
+
+    def __init__(self, parent=None):
+        super().__init__(FluentIcon.LANGUAGE, self.tr("Language"),
+                         self.tr("The language of the app. It changes when the app restarts."), parent)
+        self.combo = ComboBox(self)
+        self.combo.setMinimumWidth(220)
+        self.combo.addItem(self.tr("Use system setting"), userData=AUTO_LANGUAGE)
+        for code, name in available_languages():
+            self.combo.addItem(name, userData=code)
+        index = self.combo.findData(cfg.get(cfg.uiLanguage))
+        self.combo.setCurrentIndex(max(index, 0))  # (a translation that's gone: the system setting)
+        self.hBoxLayout.addWidget(self.combo, 0, Qt.AlignmentFlag.AlignRight)
+        self.hBoxLayout.addSpacing(16)
+        self.combo.currentIndexChanged.connect(self._on_index)
+
+    def _on_index(self, index: int) -> None:
+        if index >= 0:
+            cfg.set(cfg.uiLanguage, self.combo.itemData(index))
+            self.changed.emit()
+
+
 class DefaultModelCard(SettingCard):
     """The model loaded at start-up: none, the one used last time, or one of the current model list."""
 
@@ -116,6 +151,7 @@ class SettingsPage(ScrollArea):
     modelFolderChanged = Signal(str)
     resetCatalogRequested = Signal()
     setupRequested = Signal()
+    languageChanged = Signal()  # Settings → Language changed (it applies after a restart)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -144,6 +180,12 @@ class SettingsPage(ScrollArea):
                                            self.tr("Translucent window background (Windows 11)"), cfg.micaEnabled, g)
         self.mica_card.setVisible(is_win11())
         g.addSettingCard(self.mica_card)
+        g.addSettingCard(SwitchSettingCard(FluentIcon.MINIMIZE, self.tr("Minimize to tray"),
+                                           self.tr("Minimizing hides the window. Click the tray icon to bring it back"),
+                                           cfg.minimizeToTray, g))
+        self.language_card = LanguageCard(g)
+        self.language_card.changed.connect(self.languageChanged)
+        g.addSettingCard(self.language_card)
         self.layout_.addWidget(g)
 
         # Captions
@@ -184,9 +226,13 @@ class SettingsPage(ScrollArea):
             texts=[self.tr("Automatic (GPU if available)"), self.tr("NVIDIA GPU"), self.tr("CPU")], parent=g)
         cfg.device.valueChanged.connect(lambda v: self.deviceChanged.emit(str(v)))
         g.addSettingCard(self.device_card)
-        g.addSettingCard(SwitchSettingCard(FluentIcon.LANGUAGE, self.tr("Traditional Chinese output"),
-                                           self.tr("Convert Simplified Chinese to Traditional Chinese (OpenCC s2twp)"),
-                                           cfg.opencc, g))
+        # (Same order as CHINESE_OUTPUTS: off, traditional, simplified.)
+        self.chinese_card = ComboBoxSettingCard(
+            cfg.chineseOutput, FluentIcon.LANGUAGE, self.tr("Chinese output"),
+            self.tr("Write Chinese captions in Traditional or Simplified characters, with OpenCC"),
+            texts=[self.tr("As recognized"), self.tr("Traditional Chinese"), self.tr("Simplified Chinese")],
+            parent=g)
+        g.addSettingCard(self.chinese_card)
         self.folder_card = PushSettingCard(self.tr("Choose folder"), FluentIcon.FOLDER, self.tr("Model folder"),
                                            str(models_dir()), g)
         self.folder_card.clicked.connect(self._choose_folder)

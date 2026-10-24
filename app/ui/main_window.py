@@ -3,11 +3,12 @@
 from __future__ import annotations
 
 import logging
+import sys
 
-from PySide6.QtCore import QSize, QTimer, QUrl
+from PySide6.QtCore import QEvent, QProcess, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
-from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, SplashScreen
+from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
 
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
@@ -24,6 +25,7 @@ from .download import format_bytes
 from .icons import app_icon
 from .live_page import LivePage
 from .messages import error_text, notice_text, show_infobar
+from .notify import show_tray_message
 from .source_picker import selection_summary
 
 log = logging.getLogger(__name__)
@@ -96,7 +98,7 @@ class MainWindow(FluentWindow):
         self.live.languageChanged.connect(lambda c: self.controller.set_language(None if c == "auto" else c))
         self.live.selectionChanged.connect(self._on_selection_changed)
         self.live.overlayToggled.connect(self.set_overlay_visible)
-        cfg.opencc.valueChanged.connect(self.controller.set_opencc)
+        cfg.chineseOutput.valueChanged.connect(self.controller.set_chinese_output)
 
         # Controller -> UI
         c = self.controller
@@ -138,13 +140,22 @@ class MainWindow(FluentWindow):
 
     def _create_pages(self) -> None:
         from .history_page import HistoryPage
+        from .keyword_service import KeywordService
+        from .keywords_page import KeywordsPage
         from .models_page import ModelsPage
         from .settings_page import SettingsPage
 
+        # Navigation order: Live captions, Keywords, Models, History (Settings at the bottom).
+        self.keywords = KeywordService(self.captions, self)
+        self.keywords_page = KeywordsPage(self.keywords, self)
+        self.keywords_page.testNotificationRequested.connect(self._test_keyword_notification)
+        self.addSubInterface(self.keywords_page, FluentIcon.TAG, self.tr("Keywords"))
         self.models_page = ModelsPage(self)
         self.addSubInterface(self.models_page, FluentIcon.LIBRARY, self.tr("Models"))
-        self.history_page = HistoryPage(self.controller.history, self)
+        self.history_page = HistoryPage(self.controller.history, self.keywords, self)
         self.addSubInterface(self.history_page, FluentIcon.HISTORY, self.tr("History"))
+        self.keywords.changed.connect(self.history_page.mark_keywords)
+        self.keywords.heard.connect(self._on_keyword_heard)
         self.settings_page = SettingsPage(self)
         self.addSubInterface(self.settings_page, FluentIcon.SETTING, self.tr("Settings"), NavigationItemPosition.BOTTOM)
 
@@ -158,6 +169,7 @@ class MainWindow(FluentWindow):
         self.models_page.catalogChanged.connect(self._on_catalog_changed)
         self.settings_page.resetCatalogRequested.connect(self._reset_catalog)
         self.settings_page.setupRequested.connect(self.show_first_run_setup)
+        self.settings_page.languageChanged.connect(self._offer_restart)
         self.history_page.refreshRequested.connect(self._reload_history)
         self.settings_page.deviceChanged.connect(self._on_device_setting)
         self.settings_page.modelFolderChanged.connect(self._on_model_folder)
@@ -458,7 +470,7 @@ class MainWindow(FluentWindow):
         sel = self.live.selection
         lang = self.live.selected_language()
         self.captions.clear()
-        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.opencc), selection_summary(sel))
+        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.chineseOutput), selection_summary(sel))
 
     def _on_selection_changed(self, sel) -> None:
         if self.controller.is_running:
@@ -503,6 +515,7 @@ class MainWindow(FluentWindow):
         self.tray.clickThroughToggled.connect(lambda on: cfg.set(cfg.overlayClickThrough, on))
         self.tray.updateCheckRequested.connect(self._check_updates_from_tray)
         self.tray.quitRequested.connect(self.close)
+        self.tray.messageClicked.connect(self.show_and_raise)  # a keyword notification
         self.tray.show()
         if cfg.get(cfg.overlayVisible):
             QTimer.singleShot(300, lambda: self.set_overlay_visible(True))
@@ -553,9 +566,67 @@ class MainWindow(FluentWindow):
         show_infobar("warning", self.tr("Couldn't check for updates"), message, self, 5000)
 
     def show_and_raise(self) -> None:
-        self.showNormal()
+        """Bring the window back (from the tray, a notification, ...) as it was: maximized stays maximized."""
+        self.setWindowState((self.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive)
+        self.show()
         self.raise_()
         self.activateWindow()
+
+    # -- keywords ---------------------------------------------------------------
+    def _on_keyword_heard(self, keywords: str, line: str) -> None:
+        """Keywords page: a Windows notification while the app is in the background (at most one every
+        NOTIFY_GAP seconds; with Windows' sound only when "Play a sound" is on), else the alert sound."""
+        background = not self.isVisible() or self.isMinimized() or not self.isActiveWindow()
+        sound = cfg.get(cfg.keywordSound)
+        if cfg.get(cfg.keywordNotify) and background and self.tray.isVisible() and self.keywords.may_notify():
+            show_tray_message(self.tray, self.tr("Keyword detected: {keywords}").format(keywords=keywords), line,
+                              app_icon(), silent=not sound)
+        elif sound:
+            self.keywords.play_sound()
+
+    def _test_keyword_notification(self) -> None:
+        """The Keywords page's Show button: a sample alert, with the first keyword in the list."""
+        keyword = next((k["text"] for k in cfg.get(cfg.keywords) if k.get("enabled", True)), self.tr("keyword"))
+        show_tray_message(self.tray, self.tr("Keyword detected: {keywords}").format(keywords=keyword),
+                          self.tr("This is how a keyword alert looks."), app_icon(), silent=not cfg.get(cfg.keywordSound))
+
+    # -- language ---------------------------------------------------------------
+    def _offer_restart(self) -> None:
+        """Settings → Language changed: it applies when the app starts, so offer to restart now."""
+        if getattr(self, "_restart_bar", None) is not None:
+            self._restart_bar.close()  # (one bar, however often the language is changed)
+        bar = self._restart_bar = show_infobar(
+            "info", self.tr("Restart to change the language"),
+            self.tr("The new language is used the next time the app starts."), self, duration=-1, with_buttons=True)
+        button = PushButton(self.tr("Restart now"), bar)
+        button.clicked.connect(self.restart)
+        bar.addWidget(button)
+        bar.closedSignal.connect(lambda: setattr(self, "_restart_bar", None))
+
+    def restart(self) -> None:
+        """Quit and start a new copy of the app (as it was started, without --start or --minimized). The new
+        copy starts only once this one has shut down (closeEvent): the model released and everything saved."""
+        args = [a for a in sys.argv[1:] if a not in ("--start", "--minimized")]
+        if not getattr(sys, "frozen", False):
+            args = [sys.argv[0], *args]  # from source: the script (app/main.py or AppLiveCaption.pyw)
+        self._restart_args = args
+        self.close()
+
+    def changeEvent(self, e):  # noqa: N802 - Qt override
+        super().changeEvent(e)
+        # Settings → Minimize to tray: a minimized window leaves the taskbar; the tray icon brings it back.
+        if (e.type() == QEvent.Type.WindowStateChange and self.isMinimized() and cfg.get(cfg.minimizeToTray)
+                and hasattr(self, "tray") and self.tray.isVisible()):
+            QTimer.singleShot(0, self._hide_to_tray)  # (after Windows has finished minimizing it)
+
+    def _hide_to_tray(self) -> None:
+        if not self.isMinimized():
+            return  # restored in the meantime
+        self.hide()
+        if not cfg.get(cfg.trayHintShown):
+            cfg.set(cfg.trayHintShown, True)
+            self.tray.showMessage(APP_NAME, self.tr("Minimized to tray. You can change it in Settings."),
+                                  app_icon(), 6000)
 
     def closeEvent(self, e):  # noqa: N802
         self.overlay.save_geometry()
@@ -564,4 +635,7 @@ class MainWindow(FluentWindow):
         self.models_page.shutdown()
         self.controller.shutdown()
         super().closeEvent(e)
+        if getattr(self, "_restart_args", None) is not None and not QProcess.startDetached(sys.executable,
+                                                                                            self._restart_args):
+            log.error("Couldn't restart: %s %s", sys.executable, self._restart_args)
         QApplication.quit()

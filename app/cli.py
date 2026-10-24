@@ -17,6 +17,8 @@ import wave
 
 import numpy as np
 
+from .asr.textconv import CHINESE_OFF, CHINESE_OUTPUTS, CHINESE_TRADITIONAL
+
 
 def _utf8_console() -> None:
     for stream in (sys.stdout, sys.stderr):
@@ -174,7 +176,10 @@ def main(argv: list[str] | None = None) -> None:
     tr.add_argument("--language", default="auto")
     tr.add_argument("--device", choices=["auto", "cuda", "cpu"], default="auto")
     tr.add_argument("--wav", help="transcribe a 16-bit WAV file in simulated real time instead of live audio")
-    tr.add_argument("--no-opencc", action="store_true")
+    tr.add_argument("--chinese", choices=CHINESE_OUTPUTS, default=CHINESE_TRADITIONAL,
+                    help="convert Chinese captions to Traditional or Simplified Chinese, or leave them (off)")
+    # The option's name before --chinese, still accepted.
+    tr.add_argument("--no-opencc", dest="chinese", action="store_const", const=CHINESE_OFF, help=argparse.SUPPRESS)
     tr.set_defaults(func=cmd_transcribe)
 
     args = p.parse_args(argv)

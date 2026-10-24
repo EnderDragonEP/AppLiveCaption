@@ -30,8 +30,7 @@ from qfluentwidgets import (
 from .. import LICENSES_URL
 from ..asr import cuda_libs
 from ..asr.cuda_setup import active_dirs, cuda_libraries_found
-from ..asr.languages import language_name
-from ..i18n import tr
+from ..i18n import language_label, tr
 from ..models.catalog import ModelInfo, add_custom_model, load_catalog, remove_model, reset_catalog
 from ..models.storage import (
     delete_model,
@@ -50,7 +49,7 @@ from .model_dialogs import AddModelDialog, ConfirmDialog
 def languages_text(info: ModelInfo) -> str:
     if len(info.languages) > 10:
         return tr("{n} languages").format(n=len(info.languages))
-    return ", ".join(info.language_label(c) if c in info.language_notes else language_name(c) for c in info.languages)
+    return tr(", ").join(language_label(c, info) for c in info.languages)  # (a translation may use its own separator)
 
 
 class _HideOnEnter(QObject):

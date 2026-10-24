@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import collections
+from typing import Callable
 
 from PySide6.QtCore import QObject, Signal
+from PySide6.QtGui import QColor
 
 
 class CaptionModel(QObject):
@@ -15,6 +17,10 @@ class CaptionModel(QObject):
         self.finals: collections.deque[str] = collections.deque(maxlen=max_lines)
         self.partial = ""
         self.partial_stable = ""
+        self.final_count = 0  # finals added so far (the deque only keeps the newest)
+        # Keyword highlighting (app/ui/keyword_service.py): the (start, end) spans to mark in a line.
+        self.highlighter: Callable[[str], list[tuple[int, int]]] | None = None
+        self.highlight_color = QColor("#ffc83d")
 
     def set_partial(self, text: str, stable: str) -> None:
         self.partial = text
@@ -24,6 +30,7 @@ class CaptionModel(QObject):
     def add_final(self, text: str) -> None:
         if text:
             self.finals.append(text)
+            self.final_count += 1
         self.partial = ""
         self.partial_stable = ""
         self.changed.emit()
