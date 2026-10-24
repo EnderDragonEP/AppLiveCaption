@@ -143,7 +143,8 @@
   "Chinese matches by sound, so a misheard 台北 written as 臺北 or 抬北 still counts": "中文按读音匹配，即使 台北 被识别成 臺北 或 抬北 也算数",
   "Type keywords as 漢字, Zhuyin or Pinyin, with optional 模糊音 like zh = z and n = l": "可用汉字、注音或拼音输入关键词，也可开启模糊音，例如 zh = z、n = l",
   "Can it tell me when someone says my name?": "有人说到我的名字时，它能提醒我吗？",
-  "Yes. Add it on the Keywords page: it's highlighted when it's said, and the app plays a sound or, while you're in another app, shows a Windows notification. Chinese names match by sound too, so a different character that sounds the same still counts.": "可以。在“关键词”页面添加你的名字：有人说到时它会被高亮显示，应用会播放提示音，或在你使用其他应用时显示 Windows 通知。中文名字也按读音匹配，所以同音的不同字也算数。"
+  "Yes. Add it on the Keywords page: it's highlighted when it's said, and the app plays a sound or, while you're in another app, shows a Windows notification. Chinese names match by sound too, so a different character that sounds the same still counts.": "可以。在“关键词”页面添加你的名字：有人说到时它会被高亮显示，应用会播放提示音，或在你使用其他应用时显示 Windows 通知。中文名字也按读音匹配，所以同音的不同字也算数。",
+  "Add the words to listen for, as 漢字, Zhuyin or Pinyin, and choose how you're told: a highlight, a sound or a notification.": "添加要留意的词语，可用汉字、注音或拼音输入，并选择提醒方式：高亮、提示音或通知。"
  },
  "html": {
   "First-time setup offers GPU support (about 1 GB, once), or click <strong>Download</strong> on the NVIDIA GPU support card on the Models page. A model that's already loaded moves to the GPU as soon as it finishes. Only the display driver is needed; you don't have to install the CUDA Toolkit.": "首次设置会提供显卡支持（约 1 GB，只需下载一次），你也可以在“模型”页面的 NVIDIA 显卡支持卡片上点<strong>下载</strong>。下载完成后，已加载的模型会立刻改用显卡。只需要显卡驱动程序，不必安装 CUDA Toolkit。"

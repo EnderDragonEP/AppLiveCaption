@@ -263,6 +263,7 @@
       <div class="tabs reveal">
         <div class="tab-list" role="tablist" aria-label="Screenshots">
           <button class="tab" role="tab" id="tab-live" aria-controls="panel-live" aria-selected="true" type="button">Live captions</button>
+          <button class="tab" role="tab" id="tab-keywords" aria-controls="panel-keywords" aria-selected="false" tabindex="-1" type="button">Keywords</button>
           <button class="tab" role="tab" id="tab-models" aria-controls="panel-models" aria-selected="false" tabindex="-1" type="button">Models</button>
           <button class="tab" role="tab" id="tab-history" aria-controls="panel-history" aria-selected="false" tabindex="-1" type="button">History</button>
         </div>
@@ -270,6 +271,11 @@
           <img class="shot" src="img/screenshot-live.png" width="2200" height="1440" loading="lazy"
                alt="The Live captions page: Stop button, the selected app, model and language, and the captions">
           <p class="tab-caption">Pick a model, choose what to listen to and press Start. The status line shows the latency and the device in use.</p>
+        </div>
+        <div class="tab-panel" role="tabpanel" id="panel-keywords" aria-labelledby="tab-keywords" tabindex="0" hidden>
+          <img class="shot" src="img/screenshot-keywords.png" width="2200" height="1440" loading="lazy"
+               alt="The Keywords page with keywords in English, Chinese, Zhuyin and Pinyin">
+          <p class="tab-caption">Add the words to listen for, as 漢字, Zhuyin or Pinyin, and choose how you're told: a highlight, a sound or a notification.</p>
         </div>
         <div class="tab-panel" role="tabpanel" id="panel-models" aria-labelledby="tab-models" tabindex="0" hidden>
           <img class="shot" src="img/screenshot-models.png" width="2200" height="1440" loading="lazy"
