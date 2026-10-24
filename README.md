@@ -21,13 +21,17 @@ No cloud and no account: once a model is downloaded, it works without internet.
 
 ## Screenshots
 
-The overlay floats on top of anything, here a night-market vlog in Mandarin:
+The overlay floats on top of anything, here a night-market vlog in Mandarin, with the keywords 夜市 and ㄐㄧ ㄌㄨㄥˊ (基隆) highlighted:
 
-![The floating caption overlay over a video](.asset/screenshot-overlay.jpg)
+![The floating caption overlay over a video, with two keywords highlighted](.asset/screenshot-overlay.jpg)
 
-| 🧠 Models and GPU support | 📜 History |
+| 🏷️ Keywords | 🧠 Models and GPU support |
 | --- | --- |
-| ![The Models page, with GPU support installed and a model downloading](.asset/screenshot-models.png) | ![The History page with saved sessions](.asset/screenshot-history.png) |
+| ![The Keywords page with keywords in English, Chinese, Zhuyin and Pinyin](.asset/screenshot-keywords.png) | ![The Models page, with GPU support installed, a model in use and another one downloading](.asset/screenshot-models.png) |
+
+| 📜 History |
+| --- |
+| ![The History page with saved sessions and a highlighted keyword](.asset/screenshot-history.png) |
 
 ## Quick start
 

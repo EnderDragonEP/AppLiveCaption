@@ -57,7 +57,7 @@
   "GPU boost": "显卡加速",
   "Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.": "有 NVIDIA 显卡？点一下就能下载显卡支持，字幕快上好几倍。没有显卡？用 CPU 也能运行。",
   "Traditional or Simplified": "繁体或简体",
-  "Chinese captions come out in Traditional or Simplified characters, as you prefer. The app speaks English, 繁體中文 and 简体中文 too.": "中文字幕可按你的喜好以繁体或简体呈现。应用界面也有 English、繁體中文和简体中文。",
+  "Chinese captions come out in Traditional or Simplified characters, as you prefer.": "中文字幕可按你的喜好以繁体或简体呈现。",
   "History": "历史记录",
   "Every session is saved. Copy it, or export it as TXT or SRT subtitles.": "每次的字幕都会保存。可以复制，或导出为 TXT 或 SRT 字幕文件。",
   "Install it, or carry it": "安装，或随身带走",
@@ -133,7 +133,23 @@
   "Report a problem": "报告问题",
   "Third-party notices": "第三方声明",
   "Captions are generated automatically and can be incomplete or wrong; don't rely on them where accuracy matters, such as medical, legal or safety-critical situations. AppLiveCaption is a personal project and is not affiliated with or endorsed by Microsoft, OpenAI, MediaTek, Hugging Face or NVIDIA. Icons:": "字幕是自动生成的，可能不完整或有错误；在医疗、法律或关乎安全等需要准确的场合，请勿依赖字幕。AppLiveCaption 是个人项目，与 Microsoft、OpenAI、MediaTek、Hugging Face 或 NVIDIA 无关，也未获得其认可。图标：",
-  "Project links": "项目链接"
+  "Project links": "项目链接",
+  "Keywords": "关键词",
+  "Keyword alerts": "关键词提醒",
+  "Hear your name, a stock or a topic? It's highlighted, and you get a sound or a notification. Chinese keywords match by sound, typed as 漢字, Zhuyin or Pinyin.": "有人提到你的名字、某只股票或某个话题？它会被高亮显示，并以提示音或通知提醒你。中文关键词按读音匹配，可以用汉字、注音或拼音输入。",
+  "Stays out of the way": "不打扰你",
+  "Minimize it and it waits in the tray, still captioning, until you need the window again.": "最小化后，它会待在系统托盘里继续生成字幕，等你需要时再打开窗口。",
+  "Speaks your language": "说你的语言",
+  "The app comes in English, 繁體中文 and 简体中文, and follows your Windows language.": "应用界面有 English、繁體中文和简体中文，并会跟随你的 Windows 语言。",
+  "Never miss your name": "不再错过你的名字",
+  "Add the words you care about, and the app tells you the moment someone says one.": "添加你关心的词语，只要有人说出来，应用就会马上提醒你。",
+  "The Keywords page with keywords in English, Chinese, Zhuyin and Pinyin": "“关键词”页面：英文、中文、注音和拼音的关键词",
+  "Highlighted in the live captions, the overlay and History": "在实时字幕、浮动字幕和历史记录中高亮显示",
+  "A sound, or a Windows notification while you're in another app": "播放提示音，或在你使用其他应用时显示 Windows 通知",
+  "Chinese matches by sound, so a misheard 台北 written as 臺北 or 抬北 still counts": "中文按读音匹配，即使 台北 被识别成 臺北 或 抬北 也算数",
+  "Type keywords as 漢字, Zhuyin or Pinyin, with optional 模糊音 like zh = z and n = l": "可用汉字、注音或拼音输入关键词，也可开启模糊音，例如 zh = z、n = l",
+  "Can it tell me when someone says my name?": "有人说到我的名字时，它能提醒我吗？",
+  "Yes. Add it on the Keywords page: it's highlighted when it's said, and the app plays a sound or, while you're in another app, shows a Windows notification. Chinese names match by sound too, so a different character that sounds the same still counts.": "可以。在“关键词”页面添加你的名字：有人说到时它会被高亮显示，应用会播放提示音，或在你使用其他应用时显示 Windows 通知。中文名字也按读音匹配，所以同音的不同字也算数。"
  },
  "html": {
   "First-time setup offers GPU support (about 1 GB, once), or click <strong>Download</strong> on the NVIDIA GPU support card on the Models page. A model that's already loaded moves to the GPU as soon as it finishes. Only the display driver is needed; you don't have to install the CUDA Toolkit.": "首次设置会提供显卡支持（约 1 GB，只需下载一次），你也可以在“模型”页面的 NVIDIA 显卡支持卡片上点<strong>下载</strong>。下载完成后，已加载的模型会立刻改用显卡。只需要显卡驱动程序，不必安装 CUDA Toolkit。"
