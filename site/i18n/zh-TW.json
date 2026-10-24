@@ -135,13 +135,7 @@
   "Keywords": "關鍵字",
   "Keyword alerts": "關鍵字提醒",
   "Hear your name, a stock or a topic? It's highlighted, and you get a sound or a notification. Chinese keywords match by sound, typed as 漢字, Zhuyin or Pinyin.": "有人提到你的名字、某檔股票或某個話題？它會被標示出來，並以音效或通知提醒你。中文關鍵字依發音比對，可以用漢字、注音或拼音輸入。",
-  "Never miss your name": "不再錯過你的名字",
-  "Add the words you care about, and the app tells you the moment someone says one.": "加入你在意的字詞，只要有人說出來，應用程式就會馬上提醒你。",
   "The Keywords page with keywords in English, Chinese, Zhuyin and Pinyin": "「關鍵字」頁面：英文、中文、注音和拼音的關鍵字",
-  "Highlighted in the live captions, the overlay and History": "在即時字幕、浮動字幕和記錄中標示出來",
-  "A sound, or a Windows notification while you're in another app": "播放音效，或在你使用其他應用程式時顯示 Windows 通知",
-  "Chinese matches by sound, so a misheard 台北 written as 臺北 or 抬北 still counts": "中文依發音比對，就算 台北 被辨識成 臺北 或 抬北 也算數",
-  "Type keywords as 漢字, Zhuyin or Pinyin, with optional 模糊音 like zh = z and n = l": "可用漢字、注音或拼音輸入關鍵字，也可開啟模糊音，例如 zh = z、n = l",
   "Can it tell me when someone says my name?": "有人說到我的名字時，它能提醒我嗎？",
   "Yes. Add it on the Keywords page: it's highlighted when it's said, and the app plays a sound or, while you're in another app, shows a Windows notification. Chinese names match by sound too, so a different character that sounds the same still counts.": "可以。在「關鍵字」頁面加入你的名字：有人說到時它會被標示出來，應用程式會播放音效，或在你使用其他應用程式時顯示 Windows 通知。中文名字也依發音比對，所以同音的不同字也算數。",
   "Add the words to listen for, as 漢字, Zhuyin or Pinyin, and choose how you're told: a highlight, a sound or a notification.": "加入要留意的字詞，可用漢字、注音或拼音輸入，並選擇提醒方式：標示、音效或通知。"
