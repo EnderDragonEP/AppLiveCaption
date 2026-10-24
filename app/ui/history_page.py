@@ -5,7 +5,7 @@ from __future__ import annotations
 from datetime import datetime
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QGuiApplication, QKeySequence, QShortcut
+from PySide6.QtGui import QColor, QFont, QGuiApplication, QKeySequence, QShortcut, QTextCharFormat, QTextCursor
 from PySide6.QtWidgets import QFileDialog, QHBoxLayout, QListWidgetItem, QSplitter, QVBoxLayout, QWidget
 from qfluentwidgets import (
     CaptionLabel,
@@ -18,6 +18,7 @@ from qfluentwidgets import (
     ToolTipFilter,
 )
 
+from ..config import cfg
 from ..core.history import HistorySession, HistoryStore
 from .messages import show_infobar
 
@@ -26,10 +27,12 @@ class HistoryPage(QWidget):
     # Refresh (button or F5): save the session being captioned, then reload().
     refreshRequested = Signal()
 
-    def __init__(self, store: HistoryStore, parent=None):
+    def __init__(self, store: HistoryStore, keywords=None, parent=None):
+        """``keywords``: the KeywordService, whose keywords are highlighted in the transcript."""
         super().__init__(parent)
         self.setObjectName("historyPage")
         self.store = store
+        self.keywords = keywords
         self.sessions: list[HistorySession] = []
 
         root = QVBoxLayout(self)
@@ -122,6 +125,31 @@ class HistoryPage(QWidget):
             self.text.appendPlainText(text[len(shown) + 1:])
         elif not keep_scroll or text != shown:
             self.text.setPlainText(text)
+        self.mark_keywords()
+
+    def mark_keywords(self) -> None:
+        """Highlight the keywords in the transcript (Keywords page)."""
+        # The text box's style sheet sets the text color, and Qt lets that win over a word's own color, so the
+        # mark is the highlight color made see-through, and bold: readable with white (dark theme) or black text.
+        doc = self.text.document()
+        doc.setUndoRedoEnabled(False)
+        cursor = QTextCursor(doc)
+        cursor.select(QTextCursor.SelectionType.Document)
+        cursor.setCharFormat(QTextCharFormat())  # earlier marks (the keywords may have changed)
+        if self.keywords is None or not cfg.get(cfg.keywordHighlight):
+            return
+        color = QColor(cfg.get(cfg.keywordColor))
+        color.setAlpha(110)
+        fmt = QTextCharFormat()
+        fmt.setBackground(color)
+        fmt.setFontWeight(QFont.Weight.Bold)
+        block = doc.firstBlock()
+        while block.isValid():
+            for start, end in self.keywords.spans(block.text()):
+                cursor.setPosition(block.position() + start)
+                cursor.setPosition(block.position() + end, QTextCursor.MoveMode.KeepAnchor)
+                cursor.setCharFormat(fmt)
+            block = block.next()
 
     def _copy(self) -> None:
         s = self._current()

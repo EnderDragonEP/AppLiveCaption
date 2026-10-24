@@ -12,8 +12,23 @@ from PySide6.QtWidgets import QWidget
 from .caption_model import CaptionModel
 
 
+def _marked(text: str, highlighter, color: QColor) -> str:
+    """``text`` as HTML, with the spans ``highlighter`` returns marked in ``color``."""
+    if not highlighter:
+        return html.escape(text)
+    ink = "#000000" if color.lightness() > 140 else "#ffffff"  # readable on the mark
+    out, pos = [], 0
+    for start, end in highlighter(text):
+        out += [html.escape(text[pos:start]),
+                f'<span style="background-color:{color.name()}; color:{ink};">{html.escape(text[start:end])}</span>']
+        pos = end
+    out.append(html.escape(text[pos:]))
+    return "".join(out)
+
+
 def build_document(finals: list[str], partial: str, font: QFont, final_color: QColor, partial_color: QColor,
-                   width: float, align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft) -> QTextDocument:
+                   width: float, align: Qt.AlignmentFlag = Qt.AlignmentFlag.AlignLeft, highlighter=None,
+                   highlight_color: QColor | None = None) -> QTextDocument:
     doc = QTextDocument()
     doc.setDefaultFont(font)
     opt = QTextOption()
@@ -22,9 +37,11 @@ def build_document(finals: list[str], partial: str, font: QFont, final_color: QC
     doc.setDefaultTextOption(opt)
     doc.setDocumentMargin(0)
     gap = max(2, font.pointSize() // 3)
-    parts = [f'<p style="margin:0 0 {gap}px 0; color:{final_color.name()};">{html.escape(t)}</p>' for t in finals]
+    color = highlight_color or QColor("#ffc83d")
+    parts = [f'<p style="margin:0 0 {gap}px 0; color:{final_color.name()};">{_marked(t, highlighter, color)}</p>'
+             for t in finals]
     if partial:
-        parts.append(f'<p style="margin:0; color:{partial_color.name()};">{html.escape(partial)}</p>')
+        parts.append(f'<p style="margin:0; color:{partial_color.name()};">{_marked(partial, highlighter, color)}</p>')
     doc.setHtml("".join(parts))
     doc.setTextWidth(width)
     return doc
@@ -43,7 +60,8 @@ def draw_captions(painter: QPainter, model: CaptionModel, rect: QRectF, font: QF
     finals, partial = model.last_lines(max(2, fit))
     if not finals and not partial:
         return False
-    doc = build_document(finals, partial, font, final_color, partial_color, rect.width())
+    doc = build_document(finals, partial, font, final_color, partial_color, rect.width(),
+                         highlighter=model.highlighter, highlight_color=model.highlight_color)
     height = doc.size().height()
     # The top of the oldest text line that still fits in full (or of the newest
     # line, if not even that one fits).

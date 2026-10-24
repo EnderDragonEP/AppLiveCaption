@@ -7,6 +7,8 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 
 ### Added
 
+- **Keyword alerts.** A new **Keywords** tab watches the captions for words or names. When one is said, it's highlighted in the live captions, the overlay and History, and the app plays a sound or shows a Windows notification, and lists it under Recent matches. Chinese keywords match by sound, tones ignored, so a misheard character that sounds the same still counts; they can be typed as 漢字, Zhuyin or Pinyin, and 模糊音 switches (zh = z, n = l, in = ing, ...) loosen the match.
+- **Minimize to tray.** Minimizing the window now hides it to the tray icon (click the icon to bring it back), and the first time a tray message says where it went. Turn it off in **Settings → Minimize to tray**. Starting with `--minimized` also goes straight to the tray.
 - **Traditional and Simplified Chinese.** The whole app is translated, including language names. The app uses one when Chinese comes before English in your Windows language list.
 - **The website in Chinese.** The project page has Traditional and Simplified Chinese versions, with a language menu; a browser set to Chinese gets its version on the first visit.
 - **Settings → Language** switches between English, 繁體中文, 简体中文 and following Windows. The change applies after a restart, and a **Restart now** button does that for you.

@@ -314,6 +314,16 @@
         <source>Playing</source>
         <translation>正在播放</translation>
     </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="49"/>
+        <source>Also matches what sounds like: {sound}</source>
+        <translation>也匹配读音相同的字：{sound}</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="49"/>
+        <source>Matches the text, in any case</source>
+        <translation>匹配文字，不区分大小写</translation>
+    </message>
 </context>
 <context>
     <name>AddModelDialog</name>
@@ -621,6 +631,19 @@
     </message>
 </context>
 <context>
+    <name>FuzzyCard</name>
+    <message>
+        <location filename="../ui/keywords_page.py" line="99"/>
+        <source>Similar sounds (模糊音)</source>
+        <translation>模糊音</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="100"/>
+        <source>Chinese keywords already match any tone. Tick the sounds that should also count as the same, for speakers or models that mix them up.</source>
+        <translation>中文关键词本来就不区分声调。勾选也要视为相同的读音，适用于容易混淆这些音的说话人或模型。</translation>
+    </message>
+</context>
+<context>
     <name>GpuSupportCard</name>
     <message>
         <location filename="../ui/models_page.py" line="279"/>
@@ -753,105 +776,231 @@
 <context>
     <name>HistoryPage</name>
     <message>
-        <location filename="../ui/history_page.py" line="38"/>
+        <location filename="../ui/history_page.py" line="41"/>
         <source>History</source>
         <translation>历史记录</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="41"/>
+        <location filename="../ui/history_page.py" line="44"/>
         <source>Refresh</source>
         <translation>刷新</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="42"/>
+        <location filename="../ui/history_page.py" line="45"/>
         <source>Show the latest lines (F5)</source>
         <translation>显示最新内容（F5）</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="47"/>
+        <location filename="../ui/history_page.py" line="50"/>
         <source>Copy</source>
         <translation>复制</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="49"/>
+        <location filename="../ui/history_page.py" line="52"/>
         <source>Export TXT</source>
         <translation>导出 TXT</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="51"/>
+        <location filename="../ui/history_page.py" line="54"/>
         <source>Export SRT</source>
         <translation>导出 SRT</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="53"/>
+        <location filename="../ui/history_page.py" line="56"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="55"/>
-        <location filename="../ui/history_page.py" line="158"/>
+        <location filename="../ui/history_page.py" line="58"/>
+        <location filename="../ui/history_page.py" line="186"/>
         <source>Clear all</source>
         <translation>全部清除</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="79"/>
+        <location filename="../ui/history_page.py" line="82"/>
         <source>Transcripts of your captioning sessions appear here.</source>
         <translation>每次生成字幕的文字记录会显示在这里。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="91"/>
+        <location filename="../ui/history_page.py" line="94"/>
         <source>{title}  ·  {n} lines  ·  {m} min</source>
         <translation>{title}  ·  {n} 行  ·  {m} 分钟</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="130"/>
+        <location filename="../ui/history_page.py" line="158"/>
         <source>Copied</source>
         <translation>已复制</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="130"/>
+        <location filename="../ui/history_page.py" line="158"/>
         <source>The transcript is on the clipboard.</source>
         <translation>文字记录已复制到剪贴板。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="137"/>
+        <location filename="../ui/history_page.py" line="165"/>
         <source>Text files (*.txt)</source>
         <translation>文本文件 (*.txt)</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="137"/>
+        <location filename="../ui/history_page.py" line="165"/>
         <source>Subtitles (*.srt)</source>
         <translation>字幕文件 (*.srt)</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="138"/>
+        <location filename="../ui/history_page.py" line="166"/>
         <source>Export transcript</source>
         <translation>导出文字记录</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="145"/>
+        <location filename="../ui/history_page.py" line="173"/>
         <source>Export failed</source>
         <translation>导出失败</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="147"/>
+        <location filename="../ui/history_page.py" line="175"/>
         <source>Exported</source>
         <translation>已导出</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="156"/>
+        <location filename="../ui/history_page.py" line="184"/>
         <source>Clear history?</source>
         <translation>要清除历史记录吗？</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="156"/>
+        <location filename="../ui/history_page.py" line="184"/>
         <source>Delete all saved transcripts? This can&apos;t be undone.</source>
         <translation>要删除所有已保存的文字记录吗？此操作无法撤销。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="159"/>
+        <location filename="../ui/history_page.py" line="187"/>
         <source>Cancel</source>
         <translation>取消</translation>
+    </message>
+</context>
+<context>
+    <name>KeywordRow</name>
+    <message>
+        <location filename="../ui/keywords_page.py" line="72"/>
+        <source>On</source>
+        <translation>开</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="73"/>
+        <source>Off</source>
+        <translation>关</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="78"/>
+        <source>Remove</source>
+        <translation>移除</translation>
+    </message>
+</context>
+<context>
+    <name>KeywordsPage</name>
+    <message>
+        <location filename="../ui/keywords_page.py" line="140"/>
+        <source>Keywords</source>
+        <translation>关键词</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="141"/>
+        <source>Get an alert when a word or a name is said. Chinese keywords also match words that sound the same, and can be typed as 漢字, Zhuyin or Pinyin.</source>
+        <translation>有人说到某个词或名字时提醒你。中文关键词也会匹配读音相同的字，可以用汉字、注音或拼音输入。</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="153"/>
+        <source>A word or a name, e.g. Ender, 台北, ㄊㄞˊ ㄅㄟˇ or taibei</source>
+        <translation>词或名字，例如 Ender、台北、ㄊㄞˊ ㄅㄟˇ 或 taibei</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="158"/>
+        <source>Add</source>
+        <translation>添加</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="170"/>
+        <source>No keywords yet.</source>
+        <translation>还没有关键词。</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="176"/>
+        <source>When a keyword is heard</source>
+        <translation>听到关键词时</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="177"/>
+        <source>Highlight it</source>
+        <translation>突出显示</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="178"/>
+        <source>In the live captions, the overlay and History</source>
+        <translation>在实时字幕、浮动字幕和历史记录中</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="180"/>
+        <source>Highlight color</source>
+        <translation>突出显示颜色</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="181"/>
+        <source>The color keywords are marked with</source>
+        <translation>标记关键词的颜色</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="182"/>
+        <source>Play a sound</source>
+        <translation>播放提示音</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="183"/>
+        <source>Windows&apos; notification sound, once per caption line</source>
+        <translation>Windows 的通知提示音，每行字幕最多一次</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="184"/>
+        <source>Play</source>
+        <translation>播放</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="189"/>
+        <source>Show a notification</source>
+        <translation>显示通知</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="190"/>
+        <source>A Windows notification while the app isn&apos;t the active window</source>
+        <translation>应用不在前台时，显示 Windows 通知</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="192"/>
+        <source>Show</source>
+        <translation>显示</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="200"/>
+        <source>Chinese sound matching</source>
+        <translation>中文读音匹配</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="206"/>
+        <source>Recent matches</source>
+        <translation>最近的匹配结果</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="208"/>
+        <source>Clear</source>
+        <translation>清除</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="216"/>
+        <source>Matches show up here while captioning.</source>
+        <translation>生成字幕时，匹配结果会显示在这里。</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="253"/>
+        <source>{keyword} is in the list already.</source>
+        <translation>{keyword} 已在列表中。</translation>
     </message>
 </context>
 <context>
@@ -1514,210 +1663,236 @@
         <translation>实时字幕</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="146"/>
+        <location filename="../ui/main_window.py" line="153"/>
         <source>Models</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="148"/>
+        <location filename="../ui/main_window.py" line="155"/>
         <source>History</source>
         <translation>历史记录</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="150"/>
+        <location filename="../ui/main_window.py" line="151"/>
+        <source>Keywords</source>
+        <translation>关键词</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="159"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="198"/>
+        <location filename="../ui/main_window.py" line="207"/>
         <source>A download is running</source>
         <translation>正在下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="199"/>
+        <location filename="../ui/main_window.py" line="208"/>
         <source>Wait for it to finish (or cancel it) before resetting the model list.</source>
         <translation>请等下载完成（或取消下载）后，再重置模型列表。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="203"/>
+        <location filename="../ui/main_window.py" line="212"/>
         <source>The preset models come back in the list.</source>
         <translation>预置的模型会回到列表中。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="205"/>
+        <location filename="../ui/main_window.py" line="214"/>
         <source>The {n} model(s) you added are removed from it.</source>
         <translation>你添加的 {n} 个模型会从列表中移除。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="206"/>
+        <location filename="../ui/main_window.py" line="215"/>
         <source>Reset the model list?</source>
         <translation>要重置模型列表吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="206"/>
+        <location filename="../ui/main_window.py" line="215"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="207"/>
+        <location filename="../ui/main_window.py" line="216"/>
         <source>Also delete the files of the models you added ({size})</source>
         <translation>同时删除你添加的模型的文件（{size}）</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="261"/>
-        <location filename="../ui/main_window.py" line="383"/>
+        <location filename="../ui/main_window.py" line="270"/>
+        <location filename="../ui/main_window.py" line="392"/>
         <source>No model loaded</source>
         <translation>未加载模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="295"/>
+        <location filename="../ui/main_window.py" line="304"/>
         <source>GPU support</source>
         <translation>显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="307"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source>Downloading {what}</source>
         <translation>正在下载：{what}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="307"/>
+        <location filename="../ui/main_window.py" line="316"/>
         <source> and </source>
         <translation> 和 </translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="308"/>
+        <location filename="../ui/main_window.py" line="317"/>
         <source>Follow the progress here. The model loads when it&apos;s ready.</source>
         <translation>可在这里查看进度。下载完成后会加载模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="309"/>
+        <location filename="../ui/main_window.py" line="318"/>
         <source>Follow the progress here.</source>
         <translation>可在这里查看进度。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="327"/>
+        <location filename="../ui/main_window.py" line="336"/>
         <source>Download it here, and the app switches to it when it&apos;s done.</source>
         <translation>在这里下载，完成后应用会切换到这个模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="342"/>
+        <location filename="../ui/main_window.py" line="351"/>
         <source>{name} isn&apos;t downloaded</source>
         <translation>{name} 尚未下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="416"/>
+        <location filename="../ui/main_window.py" line="425"/>
         <source>GPU support installed, but the GPU can&apos;t be used</source>
         <translation>已安装显卡支持，但无法使用显卡</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="417"/>
+        <location filename="../ui/main_window.py" line="426"/>
         <source>Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU.</source>
         <translation>请更新 NVIDIA 显卡驱动程序，然后重启应用。在此之前模型会继续在 CPU 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="420"/>
+        <location filename="../ui/main_window.py" line="429"/>
         <source>GPU support installed</source>
         <translation>已安装显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="421"/>
+        <location filename="../ui/main_window.py" line="430"/>
         <source>Models now run on your {gpu}.</source>
         <translation>模型现在会在你的 {gpu} 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="432"/>
+        <location filename="../ui/main_window.py" line="441"/>
         <source>GPU</source>
         <translation>GPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="434"/>
+        <location filename="../ui/main_window.py" line="443"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="446"/>
+        <location filename="../ui/main_window.py" line="455"/>
         <source>Select a model first</source>
         <translation>请先选择模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="447"/>
+        <location filename="../ui/main_window.py" line="456"/>
         <source>Pick one in the Model dropdown, then press Start.</source>
         <translation>请从“模型”下拉列表中选择一个，再按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="454"/>
+        <location filename="../ui/main_window.py" line="463"/>
         <source>Download it here, then press Start.</source>
         <translation>请在这里下载，然后按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="537"/>
+        <location filename="../ui/main_window.py" line="547"/>
         <source>Checking…</source>
         <translation>正在检查…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="537"/>
+        <location filename="../ui/main_window.py" line="547"/>
         <source>Check for updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="542"/>
+        <location filename="../ui/main_window.py" line="552"/>
         <source>You&apos;re up to date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="543"/>
+        <location filename="../ui/main_window.py" line="553"/>
         <source>Version {version} is the latest version.</source>
         <translation>版本 {version} 是最新版本。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="545"/>
+        <location filename="../ui/main_window.py" line="555"/>
         <source>Version {version} is available</source>
         <translation>有新版本 {version}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="546"/>
+        <location filename="../ui/main_window.py" line="556"/>
         <source>You have version {version}. Open the download page on GitHub?</source>
         <translation>你当前使用的是版本 {version}。要打开 GitHub 上的下载页面吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="548"/>
+        <location filename="../ui/main_window.py" line="558"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="549"/>
+        <location filename="../ui/main_window.py" line="559"/>
         <source>Later</source>
         <translation>稍后</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="555"/>
+        <location filename="../ui/main_window.py" line="565"/>
         <source>Couldn&apos;t check for updates</source>
         <translation>无法检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="568"/>
+        <location filename="../ui/main_window.py" line="578"/>
+        <location filename="../ui/main_window.py" line="585"/>
+        <source>Heard: {keywords}</source>
+        <translation>听到：{keywords}</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="584"/>
+        <source>keyword</source>
+        <translation>关键词</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="586"/>
+        <source>This is how a keyword alert looks.</source>
+        <translation>关键词提醒看起来会是这样。</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="594"/>
         <source>Restart to change the language</source>
         <translation>重启以更改语言</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="569"/>
+        <location filename="../ui/main_window.py" line="595"/>
         <source>The new language is used the next time the app starts.</source>
         <translation>下次启动应用时会使用新的语言。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="570"/>
+        <location filename="../ui/main_window.py" line="596"/>
         <source>Restart now</source>
         <translation>立即重启</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="581"/>
+        <location filename="../ui/main_window.py" line="607"/>
         <source>Couldn&apos;t restart</source>
         <translation>无法重启</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="581"/>
+        <location filename="../ui/main_window.py" line="607"/>
         <source>Close the app and start it again.</source>
         <translation>请关闭应用后重新打开。</translation>
+    </message>
+    <message>
+        <location filename="../ui/main_window.py" line="624"/>
+        <source>Still running here. Click to open.</source>
+        <translation>仍在这里运行，单击即可打开。</translation>
     </message>
 </context>
 <context>
@@ -1991,212 +2166,222 @@
         <translation>半透明窗口背景（Windows 11）</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="189"/>
+        <location filename="../ui/settings_page.py" line="183"/>
+        <source>Minimize to tray</source>
+        <translation>最小化到系统托盘</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="184"/>
+        <source>Minimizing hides the window. Click the tray icon to bring it back</source>
+        <translation>最小化时隐藏窗口，单击托盘图标即可恢复</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="192"/>
         <source>Captions</source>
         <translation>字幕</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="191"/>
+        <location filename="../ui/settings_page.py" line="194"/>
         <source>Caption size</source>
         <translation>字幕大小</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="192"/>
+        <location filename="../ui/settings_page.py" line="195"/>
         <source>Font size on the Live captions page</source>
         <translation>“实时字幕”页面的字号</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="193"/>
+        <location filename="../ui/settings_page.py" line="196"/>
         <source>Caption color</source>
         <translation>字幕颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="194"/>
+        <location filename="../ui/settings_page.py" line="197"/>
         <source>Finished lines</source>
         <translation>已完成的字幕</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="195"/>
+        <location filename="../ui/settings_page.py" line="198"/>
         <source>Partial caption color</source>
         <translation>识别中字幕的颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="196"/>
+        <location filename="../ui/settings_page.py" line="199"/>
         <source>The line that is still being recognized</source>
         <translation>仍在识别中的那一行</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="200"/>
+        <location filename="../ui/settings_page.py" line="203"/>
         <source>Floating overlay</source>
         <translation>浮动字幕</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="201"/>
+        <location filename="../ui/settings_page.py" line="204"/>
         <source>Overlay text size</source>
         <translation>浮动字幕字号</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="202"/>
+        <location filename="../ui/settings_page.py" line="205"/>
         <source>Font size in the floating overlay</source>
         <translation>浮动字幕的字号</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="203"/>
+        <location filename="../ui/settings_page.py" line="206"/>
         <source>Background opacity</source>
         <translation>背景不透明度</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="204"/>
+        <location filename="../ui/settings_page.py" line="207"/>
         <source>0% is fully see-through, 100% is solid</source>
         <translation>0% 为完全透明，100% 为完全不透明</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="205"/>
+        <location filename="../ui/settings_page.py" line="208"/>
         <source>Overlay text color</source>
         <translation>浮动字幕文字颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="206"/>
+        <location filename="../ui/settings_page.py" line="209"/>
         <source>The line still being recognized is shown in a softer shade</source>
         <translation>仍在识别中的那一行会以较淡的颜色显示</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="209"/>
+        <location filename="../ui/settings_page.py" line="212"/>
         <source>Overlay background color</source>
         <translation>浮动字幕背景颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="210"/>
+        <location filename="../ui/settings_page.py" line="213"/>
         <source>Its transparency is set by Background opacity</source>
         <translation>透明度由“背景不透明度”设置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="211"/>
+        <location filename="../ui/settings_page.py" line="214"/>
         <source>Click-through</source>
         <translation>鼠标穿透</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="212"/>
+        <location filename="../ui/settings_page.py" line="215"/>
         <source>Mouse clicks pass through the overlay to the window below</source>
         <translation>鼠标点击会穿过浮动字幕，传到下方的窗口</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="217"/>
+        <location filename="../ui/settings_page.py" line="220"/>
         <source>Speech recognition</source>
         <translation>语音识别</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="221"/>
+        <location filename="../ui/settings_page.py" line="224"/>
         <source>Device</source>
         <translation>运算设备</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="222"/>
+        <location filename="../ui/settings_page.py" line="225"/>
         <source>NVIDIA GPU (CUDA, float16) is much faster; the CPU uses int8</source>
         <translation>NVIDIA 显卡（CUDA、float16）快得多；CPU 使用 int8</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="223"/>
+        <location filename="../ui/settings_page.py" line="226"/>
         <source>Automatic (GPU if available)</source>
         <translation>自动（有显卡时使用 GPU）</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="223"/>
+        <location filename="../ui/settings_page.py" line="226"/>
         <source>NVIDIA GPU</source>
         <translation>NVIDIA 显卡</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="223"/>
+        <location filename="../ui/settings_page.py" line="226"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="228"/>
+        <location filename="../ui/settings_page.py" line="231"/>
         <source>Chinese output</source>
         <translation>中文输出</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="229"/>
+        <location filename="../ui/settings_page.py" line="232"/>
         <source>Write Chinese captions in Traditional or Simplified characters, with OpenCC</source>
         <translation>用 OpenCC 将中文字幕转为繁体或简体字</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="230"/>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>As recognized</source>
         <translation>保持识别结果</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="230"/>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>Simplified Chinese</source>
         <translation>简体中文</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="230"/>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>Traditional Chinese</source>
         <translation>繁体中文</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="236"/>
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="236"/>
         <source>Model folder</source>
         <translation>模型文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="237"/>
+        <location filename="../ui/settings_page.py" line="240"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="237"/>
+        <location filename="../ui/settings_page.py" line="240"/>
         <source>Reset model list</source>
         <translation>重置模型列表</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="238"/>
+        <location filename="../ui/settings_page.py" line="241"/>
         <source>Bring back the preset models and remove the ones you added</source>
         <translation>恢复预置的模型，并移除你添加的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="245"/>
+        <location filename="../ui/settings_page.py" line="248"/>
         <source>Advanced</source>
         <translation>高级</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="246"/>
+        <location filename="../ui/settings_page.py" line="249"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="246"/>
+        <location filename="../ui/settings_page.py" line="249"/>
         <source>First-time setup</source>
         <translation>首次设置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="247"/>
+        <location filename="../ui/settings_page.py" line="250"/>
         <source>Choose GPU support, a model and the model loaded at start-up again</source>
         <translation>重新选择显卡支持、模型以及启动时加载的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="250"/>
+        <location filename="../ui/settings_page.py" line="253"/>
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="250"/>
+        <location filename="../ui/settings_page.py" line="253"/>
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="256"/>
+        <location filename="../ui/settings_page.py" line="259"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="270"/>
+        <location filename="../ui/settings_page.py" line="273"/>
         <source>Choose the model folder</source>
         <translation>选择模型文件夹</translation>
     </message>

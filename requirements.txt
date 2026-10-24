@@ -43,6 +43,9 @@ hf-xet>=1.4
 # they share the "opencc" folder and overwrite each other's files.
 opencc-python-reimplemented>=0.1.7
 
+# Keyword detection: Chinese keywords matched by sound (Pinyin and Zhuyin).
+pypinyin==0.55.0
+
 # Packaging (only needed to build the .exe; 6.22 is the tested version).
 pyinstaller>=6.22
 pyinstaller-hooks-contrib>=2026.7

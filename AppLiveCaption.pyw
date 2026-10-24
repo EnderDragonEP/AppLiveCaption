@@ -26,6 +26,7 @@ REQUIRED = {
     "psutil": "psutil",
     "soxr": "soxr",
     "opencc": "opencc-python-reimplemented",
+    "pypinyin": "pypinyin",
     "numpy": "numpy",
     "huggingface_hub": "huggingface_hub",
 }

@@ -17,6 +17,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
+- 🏷️ **Keyword alerts** – Get highlighted, beeped or notified when a word or name is said. Chinese keywords also catch words that sound the same, typed as 漢字, Zhuyin or Pinyin.
 
 ## Screenshots
 
@@ -46,6 +47,27 @@ The overlay floats on top of anything, here a night-market vlog in Mandarin:
 The status line shows the latency and the device in use. You can switch models while captioning: the app pauses, loads the new one in the background and carries on.
 
 By default no model is loaded when the app starts, so it doesn't take memory until you need it. To have one ready at start-up, set **Settings → Default model** to a model, or to **Previous selection** for the one you used last. The **Unload** button on the model's card frees it again.
+
+## Keyword alerts
+
+The **Keywords** tab watches the captions for words you care about: your name, a stock, a topic in a long meeting. Add a keyword and, when it's said, the app can:
+
+- **highlight** it in the live captions, the overlay and History (in a color you pick);
+- **play** Windows' notification sound, at most once per caption line;
+- **show a Windows notification** while the app isn't the active window (click it to bring the app back);
+- **list** it under **Recent matches**, with the time and the line.
+
+An alert comes as soon as the keyword is in the part of a line that won't change any more, so you don't have to wait for the speaker to pause.
+
+English and other languages match whole words, in any case (`cat` doesn't match *category*). **Chinese matches by sound**, with tones ignored, so a keyword still works when the model writes a different character that sounds the same: 台北 also finds 臺北, 抬北 or 台被. Polyphones are read the way the words around them say (銀行 *hang*, 行人 *xing*). A Chinese keyword can be typed as:
+
+| | Example |
+| --- | --- |
+| 漢字, Traditional or Simplified | 台北 |
+| Zhuyin, with or without tones and spaces | ㄊㄞˊ ㄅㄟˇ |
+| Pinyin, with tone marks, tone numbers or none | tái běi, tai2 bei3, taibei |
+
+(Plain Latin letters count as Pinyin only when they split into two or more syllables, so English words like *he* or *man* never match Chinese by sound.) The Keywords tab shows how each keyword is matched. **模糊音** switches make sounds that are often mixed up count as the same: zh = z, ch = c, sh = s, n = l, f = h, an = ang, en = eng and in = ing. Chinese readings come from [pypinyin](https://github.com/mozillazg/python-pinyin).
 
 ## Which model should I use?
 
@@ -87,7 +109,7 @@ The app also uses the same libraries when they're already on the PC, in this ord
 
 ## To do
 
-- [ ] Keyword detection (text highlighting, audio alerts)
+- [x] Keyword detection (text highlighting, audio alerts)
 - [x] Dynamically adjusted line counts
 - [x] Support custom model import
 - [ ] Model catalog export and import
@@ -211,7 +233,7 @@ python -m app.cli transcribe --model breeze-asr-25 --wav speech.wav   # simulate
 .\build.ps1
 ```
 
-The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11` finds, otherwise `python` on PATH), checks the required packages, runs the unit tests and builds `dist\AppLiveCaption\AppLiveCaption.exe` with PyInstaller. The folder is about 210 MB (about 80 MB zipped), and a build takes 1–2 minutes. Models and GPU support aren't bundled; users download them from inside the app.
+The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11` finds, otherwise `python` on PATH), checks the required packages, runs the unit tests and builds `dist\AppLiveCaption\AppLiveCaption.exe` with PyInstaller. The folder is about 195 MB (about 75 MB zipped), and a build takes 1–2 minutes. Models and GPU support aren't bundled; users download them from inside the app.
 
 | Option | Effect |
 | --- | --- |
@@ -223,6 +245,12 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 | `-Installer` | Also build the installer, `dist\AppLiveCaption-<version>-Setup.exe` (about 55 MB). Needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`. |
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
+
+**Working in WSL?** The build has to run on Windows: PyInstaller can't cross-compile, and the app is Windows-only. [tools/build_windows.sh](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_windows.sh) does it from WSL. It copies the source to `%LOCALAPPDATA%\AppLiveCaption-build` on the Windows drive, runs `build.ps1` there with your Windows Python (and any options you pass), and copies the results back into `dist/`. `--zip` also makes the portable `dist/AppLiveCaption.zip`.
+
+```bash
+tools/build_windows.sh --zip -Installer
+```
 
 The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.1.0` so the update check finds it.
 
@@ -330,7 +358,7 @@ app/
                        prompts), hallucination filter, Chinese conversion (OpenCC), GPU support
                        (cuda_libs.py downloads it, cuda_setup.py finds it)
   models/              catalog, downloader, local storage
-  core/                controller (worker thread) and history
+  core/                controller (worker thread), history, keyword matching (keywords.py)
   ui/                  main window, pages, first-time setup, dialogs, source flyout, overlay, tray
 installer/             Inno Setup script for the installer
 site/                  the project website

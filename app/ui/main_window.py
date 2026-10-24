@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import sys
 
-from PySide6.QtCore import QProcess, QSize, QTimer, QUrl
+from PySide6.QtCore import QEvent, QProcess, QSize, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
@@ -139,13 +139,22 @@ class MainWindow(FluentWindow):
 
     def _create_pages(self) -> None:
         from .history_page import HistoryPage
+        from .keyword_service import KeywordService
+        from .keywords_page import KeywordsPage
         from .models_page import ModelsPage
         from .settings_page import SettingsPage
 
+        # Navigation order: Live captions, Keywords, Models, History (Settings at the bottom).
+        self.keywords = KeywordService(self.captions, self)
+        self.keywords_page = KeywordsPage(self.keywords, self)
+        self.keywords_page.testNotificationRequested.connect(self._test_keyword_notification)
+        self.addSubInterface(self.keywords_page, FluentIcon.TAG, self.tr("Keywords"))
         self.models_page = ModelsPage(self)
         self.addSubInterface(self.models_page, FluentIcon.LIBRARY, self.tr("Models"))
-        self.history_page = HistoryPage(self.controller.history, self)
+        self.history_page = HistoryPage(self.controller.history, self.keywords, self)
         self.addSubInterface(self.history_page, FluentIcon.HISTORY, self.tr("History"))
+        self.keywords.changed.connect(self.history_page.mark_keywords)
+        self.keywords.heard.connect(self._on_keyword_heard)
         self.settings_page = SettingsPage(self)
         self.addSubInterface(self.settings_page, FluentIcon.SETTING, self.tr("Settings"), NavigationItemPosition.BOTTOM)
 
@@ -505,6 +514,7 @@ class MainWindow(FluentWindow):
         self.tray.clickThroughToggled.connect(lambda on: cfg.set(cfg.overlayClickThrough, on))
         self.tray.updateCheckRequested.connect(self._check_updates_from_tray)
         self.tray.quitRequested.connect(self.close)
+        self.tray.messageClicked.connect(self.show_and_raise)  # a keyword notification
         self.tray.show()
         if cfg.get(cfg.overlayVisible):
             QTimer.singleShot(300, lambda: self.set_overlay_visible(True))
@@ -559,6 +569,22 @@ class MainWindow(FluentWindow):
         self.raise_()
         self.activateWindow()
 
+    # -- keywords ---------------------------------------------------------------
+    def _on_keyword_heard(self, keywords: str, line: str) -> None:
+        """Keywords page: a Windows notification while the app is in the background (Windows plays its
+        own sound with it), else the alert sound."""
+        background = not self.isVisible() or self.isMinimized() or not self.isActiveWindow()
+        if cfg.get(cfg.keywordNotify) and background and self.tray.isVisible():
+            self.tray.showMessage(self.tr("Heard: {keywords}").format(keywords=keywords), line, app_icon(), 6000)
+        elif cfg.get(cfg.keywordSound):
+            self.keywords.play_sound()
+
+    def _test_keyword_notification(self) -> None:
+        """The Keywords page's Show button: a sample alert, with the first keyword in the list."""
+        keyword = next((k["text"] for k in cfg.get(cfg.keywords) if k.get("enabled", True)), self.tr("keyword"))
+        self.tray.showMessage(self.tr("Heard: {keywords}").format(keywords=keyword),
+                              self.tr("This is how a keyword alert looks."), app_icon(), 6000)
+
     # -- language ---------------------------------------------------------------
     def _offer_restart(self) -> None:
         """Settings → Language changed: it applies when the app starts, so offer to restart now."""
@@ -581,6 +607,22 @@ class MainWindow(FluentWindow):
             show_infobar("error", self.tr("Couldn't restart"), self.tr("Close the app and start it again."), self)
             return
         self.close()
+
+    def changeEvent(self, e):  # noqa: N802 - Qt override
+        super().changeEvent(e)
+        # Settings → Minimize to tray: a minimized window leaves the taskbar; the tray icon brings it back.
+        if (e.type() == QEvent.Type.WindowStateChange and self.isMinimized() and cfg.get(cfg.minimizeToTray)
+                and hasattr(self, "tray") and self.tray.isVisible()):
+            QTimer.singleShot(0, self._hide_to_tray)  # (after Windows has finished minimizing it)
+
+    def _hide_to_tray(self) -> None:
+        if not self.isMinimized():
+            return  # restored in the meantime
+        self.hide()
+        if not cfg.get(cfg.trayHintShown):
+            cfg.set(cfg.trayHintShown, True)
+            self.tray.showMessage(APP_NAME, self.tr("Still running here. Click to open."),
+                                  app_icon(), 6000)
 
     def closeEvent(self, e):  # noqa: N802
         self.overlay.save_geometry()

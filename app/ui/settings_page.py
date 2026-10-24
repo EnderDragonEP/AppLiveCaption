@@ -180,6 +180,9 @@ class SettingsPage(ScrollArea):
                                            self.tr("Translucent window background (Windows 11)"), cfg.micaEnabled, g)
         self.mica_card.setVisible(is_win11())
         g.addSettingCard(self.mica_card)
+        g.addSettingCard(SwitchSettingCard(FluentIcon.MINIMIZE, self.tr("Minimize to tray"),
+                                           self.tr("Minimizing hides the window. Click the tray icon to bring it back"),
+                                           cfg.minimizeToTray, g))
         self.language_card = LanguageCard(g)
         self.language_card.changed.connect(self.languageChanged)
         g.addSettingCard(self.language_card)

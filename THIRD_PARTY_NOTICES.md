@@ -47,6 +47,7 @@ It is built on the open-source components below. The released `AppLiveCaption.ex
 | psutil | 7.2.2 | BSD-3-Clause | <https://github.com/giampaolo/psutil> |
 | pycaw | 20260927 | MIT | <https://github.com/AndreMiras/pycaw> |
 | Pygments | 2.20.0 | BSD-2-Clause | <https://github.com/pygments/pygments> |
+| pypinyin | 0.55.0 | MIT | <https://github.com/mozillazg/python-pinyin> |
 | pywin32 | 310 | PSF-2.0 / BSD-3-Clause style | <https://github.com/mhammond/pywin32> |
 | PyYAML | 6.0.3 | MIT | <https://github.com/yaml/pyyaml> |
 | rich | 14.3.4 | MIT | <https://github.com/Textualize/rich> |

@@ -21,6 +21,7 @@ from qfluentwidgets import (
 )
 
 from .asr.textconv import CHINESE_OFF, CHINESE_OUTPUTS, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL
+from .core.keywords import FUZZY
 from .paths import config_file
 
 # Caption fonts drawn the way Traditional and Simplified Chinese readers expect.
@@ -58,6 +59,31 @@ class DictValidator(ConfigValidator):
         return value if isinstance(value, dict) else {}
 
 
+class KeywordListValidator(ConfigValidator):
+    """[{"text": str, "enabled": bool}, ...]: the Keywords page's list."""
+
+    def validate(self, value):
+        return isinstance(value, list) and all(
+            isinstance(k, dict) and isinstance(k.get("text"), str) and isinstance(k.get("enabled", True), bool)
+            for k in value)
+
+    def correct(self, value):
+        if not isinstance(value, list):
+            return []
+        return [{"text": k["text"], "enabled": bool(k.get("enabled", True))} for k in value
+                if isinstance(k, dict) and isinstance(k.get("text"), str) and k["text"].strip()]
+
+
+class FuzzyValidator(ConfigValidator):
+    """The 模糊音 pairs switched on (app/core/keywords.py FUZZY)."""
+
+    def validate(self, value):
+        return isinstance(value, list) and all(v in FUZZY for v in value)
+
+    def correct(self, value):
+        return [v for v in value if v in FUZZY] if isinstance(value, list) else []
+
+
 class Config(QConfig):
     # Follow the system theme by default (QConfig's own default is light).
     themeMode = OptionsConfigItem("QFluentWidgets", "ThemeMode", Theme.AUTO, OptionsValidator(Theme), EnumSerializer(Theme))
@@ -67,6 +93,9 @@ class Config(QConfig):
     uiLanguage = ConfigItem("Appearance", "Language", "auto")
     # First-time setup (app/ui/setup_dialog.py) was shown and finished or skipped. Settings can open it again.
     setupDone = ConfigItem("General", "SetupDone", False, BoolValidator())
+    # Minimizing hides the window; the tray icon brings it back. The first time, a tray message says so.
+    minimizeToTray = ConfigItem("General", "MinimizeToTray", True, BoolValidator())
+    trayHintShown = ConfigItem("General", "TrayHintShown", False, BoolValidator())
 
     # Live captions
     modelId = ConfigItem("Live", "Model", DEFAULT_MODEL)
@@ -98,6 +127,14 @@ class Config(QConfig):
     overlayOpacity = RangeConfigItem("Overlay", "BackgroundOpacity", 70, RangeValidator(0, 100))
     overlayTextColor = ColorConfigItem("Overlay", "TextColor", QColor(255, 255, 255))
     overlayBackground = ColorConfigItem("Overlay", "BackgroundColor", QColor(0, 0, 0))
+
+    # Keyword detection (the Keywords page, app/ui/keyword_service.py)
+    keywords = ConfigItem("Keywords", "List", [], KeywordListValidator())
+    keywordHighlight = ConfigItem("Keywords", "Highlight", True, BoolValidator())
+    keywordColor = ColorConfigItem("Keywords", "HighlightColor", QColor("#ffc83d"))
+    keywordSound = ConfigItem("Keywords", "Sound", True, BoolValidator())
+    keywordNotify = ConfigItem("Keywords", "Notify", True, BoolValidator())
+    keywordFuzzy = ConfigItem("Keywords", "Fuzzy", [], FuzzyValidator())
 
 
 def _migrate_custom_colors_switch() -> None:
