@@ -59,6 +59,6 @@ The first release.
 - Portable: settings, history, logs, models and GPU support are kept next to the exe.
 - A manual check for updates in Settings → About.
 
-[Unreleased]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...HEAD
-[1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...HEAD
+[1.2.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...HEAD
+[1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/EnderDragonEP/AppLiveCaption/releases/tag/v1.0.0
