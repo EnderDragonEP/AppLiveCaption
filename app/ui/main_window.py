@@ -575,14 +575,14 @@ class MainWindow(FluentWindow):
         own sound with it), else the alert sound."""
         background = not self.isVisible() or self.isMinimized() or not self.isActiveWindow()
         if cfg.get(cfg.keywordNotify) and background and self.tray.isVisible():
-            self.tray.showMessage(self.tr("Heard: {keywords}").format(keywords=keywords), line, app_icon(), 6000)
+            self.tray.showMessage(self.tr("Keyword detected: {keywords}").format(keywords=keywords), line, app_icon(), 6000)
         elif cfg.get(cfg.keywordSound):
             self.keywords.play_sound()
 
     def _test_keyword_notification(self) -> None:
         """The Keywords page's Show button: a sample alert, with the first keyword in the list."""
         keyword = next((k["text"] for k in cfg.get(cfg.keywords) if k.get("enabled", True)), self.tr("keyword"))
-        self.tray.showMessage(self.tr("Heard: {keywords}").format(keywords=keyword),
+        self.tray.showMessage(self.tr("Keyword detected: {keywords}").format(keywords=keyword),
                               self.tr("This is how a keyword alert looks."), app_icon(), 6000)
 
     # -- language ---------------------------------------------------------------

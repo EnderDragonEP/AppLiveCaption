@@ -1851,8 +1851,8 @@
     <message>
         <location filename="../ui/main_window.py" line="578"/>
         <location filename="../ui/main_window.py" line="585"/>
-        <source>Heard: {keywords}</source>
-        <translation>听到：{keywords}</translation>
+        <source>Keyword detected: {keywords}</source>
+        <translation>检测到关键词：{keywords}</translation>
     </message>
     <message>
         <location filename="../ui/main_window.py" line="584"/>
