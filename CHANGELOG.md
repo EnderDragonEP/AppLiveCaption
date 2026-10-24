@@ -3,6 +3,12 @@
 All notable changes to AppLiveCaption are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [Unreleased]
+
+### Added
+
+- **Translate to English.** A **Translate to English** button on the Live captions page writes the captions in English, whatever language is spoken, with Whisper's own translation. It can be switched while captioning. Whisper large-v3, large-v2 and medium translate best; Whisper large-v3-turbo (the default) and the Taiwan models weren't trained to translate and mostly keep the spoken language, so the app warns when one of them is asked to. The console's `transcribe` command has `--translate` too.
+
 ## [1.2.0] - 2026-10-24
 
 ### Added
@@ -59,6 +65,7 @@ The first release.
 - Portable: settings, history, logs, models and GPU support are kept next to the exe.
 - A manual check for updates in Settings → About.
 
+[Unreleased]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.2.0...HEAD
 [1.2.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/EnderDragonEP/AppLiveCaption/releases/tag/v1.0.0

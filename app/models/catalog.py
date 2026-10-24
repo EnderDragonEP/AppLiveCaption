@@ -45,6 +45,9 @@ class ModelInfo:
     # False when Whisper's language detection doesn't work for the model's
     # language (e.g. Taigi): the model then always uses its first language.
     auto_detect: bool = True
+    # False when the model wasn't trained to translate into English (large-v3-turbo, the fine-tunes): it's
+    # still allowed to try, with a warning, but it mostly writes the spoken language.
+    translate: bool = True
     # Added by the user (not a preset).
     custom: bool = False
     # The folder on this PC a model was added from. It's copied into the models
@@ -107,6 +110,7 @@ def _parse(m: dict, custom: bool = False) -> ModelInfo:
         files=tuple(m.get("files", ())),
         extra_files=dict(m.get("extra_files", {})),
         auto_detect=bool(m.get("auto_detect", True)),
+        translate=bool(m.get("translate", True)),
         custom=custom,
         source_folder=m.get("source_folder", ""),
     )

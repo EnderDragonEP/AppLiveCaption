@@ -1,5 +1,5 @@
 {
-  "_comment": "Model catalog. Adding a model only needs a new entry. languages: list of codes, or \"whisper\" for every language the tokenizer supports. tier drives the real-time speed warning (tiny/base/small/medium/turbo/large). files: glob patterns to download (default: everything except docs). extra_files: {file: repo} for files the repo lacks (e.g. a tokenizer.json). auto_detect: false when Whisper's language detection is unreliable for the model; it then always uses its first language.",
+  "_comment": "Model catalog. Adding a model only needs a new entry. languages: list of codes, or \"whisper\" for every language the tokenizer supports. tier drives the real-time speed warning (tiny/base/small/medium/turbo/large). files: glob patterns to download (default: everything except docs). extra_files: {file: repo} for files the repo lacks (e.g. a tokenizer.json). auto_detect: false when Whisper's language detection is unreliable for the model; it then always uses its first language. translate: false when the model wasn't trained to translate into English (the app warns when it's asked to).",
   "models": [
     {
       "id": "whisper-large-v3-turbo",
@@ -10,6 +10,7 @@
       "size_mb": 1622,
       "license": "MIT",
       "tier": "turbo",
+      "translate": false,
       "description": "Close to large-v3 accuracy and much faster. A good default for real-time captioning on a GPU. (Formerly mobiuslabsgmbh/faster-whisper-large-v3-turbo.)"
     },
     {
@@ -99,6 +100,7 @@
       "size_mb": 2949,
       "license": "Apache-2.0",
       "tier": "large",
+      "translate": false,
       "description": "Whisper large-v2 fine-tuned by MediaTek Research for Taiwanese Mandarin, English and switching between them mid-sentence. CTranslate2 conversion of MediaTek-Research/Breeze-ASR-25 by SoybeanMilk."
     },
     {
@@ -113,6 +115,7 @@
       "size_mb": 2949,
       "license": "Apache-2.0",
       "tier": "large",
+      "translate": false,
       "description": "Whisper large-v2 fine-tuned by MediaTek Research on about 10,000 hours of synthetic Taiwanese Hokkien (Taigi) speech. Writes Taigi speech as Mandarin Chinese characters, not Taigi orthography (台語正字). CTranslate2 conversion of MediaTek-Research/Breeze-ASR-26 by SoybeanMilk."
     },
     {
@@ -125,6 +128,7 @@
       "size_mb": 3090,
       "license": "TRAIL v0.1 (TWM Responsible AI License)",
       "tier": "large",
+      "translate": false,
       "initial_prompt": "繁體中文",
       "description": "Whisper large-v2 fine-tuned for Mandarin, Taiwanese Hokkien, Hakka and English (CTranslate2 inference build). The model has no separate nan/hak language tokens: Hokkien and Hakka are recognised under zh. (Formerly adi-gov-tw/Taiwan-Tongues-ASR-CE.)"
     }

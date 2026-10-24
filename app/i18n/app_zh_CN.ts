@@ -246,11 +246,21 @@
     </message>
     <message>
         <location filename="../ui/messages.py" line="86"/>
+        <source>This model may not translate</source>
+        <translation>这个模型可能无法翻译</translation>
+    </message>
+    <message>
+        <location filename="../ui/messages.py" line="87"/>
+        <source>{model} wasn&apos;t trained to translate, so captions may stay in the spoken language. Whisper large-v3, large-v2 or medium translate best.</source>
+        <translation>{model} 没有针对翻译训练，字幕可能仍是原来说的语言。Whisper large-v3、large-v2 或 medium 的翻译效果最好。</translation>
+    </message>
+    <message>
+        <location filename="../ui/messages.py" line="90"/>
         <source>Captions are falling behind</source>
         <translation>字幕跟不上了</translation>
     </message>
     <message>
-        <location filename="../ui/messages.py" line="87"/>
+        <location filename="../ui/messages.py" line="91"/>
         <source>Recognition can&apos;t keep up, so some audio was skipped. Pick a smaller model.</source>
         <translation>识别速度跟不上，已跳过部分音频。请改用较小的模型。</translation>
     </message>
@@ -1557,115 +1567,130 @@
 <context>
     <name>LivePage</name>
     <message>
-        <location filename="../ui/live_page.py" line="61"/>
+        <location filename="../ui/live_page.py" line="62"/>
         <source>Live captions</source>
         <translation>实时字幕</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="66"/>
-        <location filename="../ui/live_page.py" line="283"/>
+        <location filename="../ui/live_page.py" line="67"/>
+        <location filename="../ui/live_page.py" line="299"/>
         <source>Start</source>
         <translation>开始</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="73"/>
+        <location filename="../ui/live_page.py" line="74"/>
         <source>Audio source</source>
         <translation>音频来源</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="78"/>
+        <location filename="../ui/live_page.py" line="79"/>
         <source>Overlay</source>
         <translation>浮动字幕</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="79"/>
+        <location filename="../ui/live_page.py" line="80"/>
         <source>Show captions in a floating window on top of other apps</source>
         <translation>在其他应用上方的浮动窗口中显示字幕</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="88"/>
+        <location filename="../ui/live_page.py" line="89"/>
         <source>Model</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="91"/>
+        <location filename="../ui/live_page.py" line="92"/>
         <source>Speech recognition model</source>
         <translation>语音识别模型</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="105"/>
+        <location filename="../ui/live_page.py" line="106"/>
         <source>Language</source>
         <translation>语言</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="108"/>
+        <location filename="../ui/live_page.py" line="109"/>
         <source>Spoken language</source>
         <translation>说话的语言</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="123"/>
-        <location filename="../ui/live_page.py" line="285"/>
+        <location filename="../ui/live_page.py" line="113"/>
+        <source>Translate to English</source>
+        <translation>翻译成英文</translation>
+    </message>
+    <message>
+        <location filename="../ui/live_page.py" line="131"/>
+        <location filename="../ui/live_page.py" line="301"/>
         <source>Stopped</source>
         <translation>已停止</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="128"/>
+        <location filename="../ui/live_page.py" line="136"/>
         <source>Input level</source>
         <translation>输入音量</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="173"/>
+        <location filename="../ui/live_page.py" line="181"/>
         <source>Select a model</source>
         <translation>选择模型</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="174"/>
+        <location filename="../ui/live_page.py" line="182"/>
         <source>No models: add one on the Models page</source>
         <translation>没有模型：请在“模型”页面添加</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="206"/>
+        <location filename="../ui/live_page.py" line="214"/>
         <source>Loading {model}…</source>
         <translation>正在加载 {model}…</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="224"/>
+        <location filename="../ui/live_page.py" line="232"/>
         <source>Auto-detect</source>
         <translation>自动检测</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="278"/>
+        <location filename="../ui/live_page.py" line="249"/>
+        <source>Write the captions in English, whatever language is spoken</source>
+        <translation>无论说的是哪种语言，字幕都以英文呈现</translation>
+    </message>
+    <message>
+        <location filename="../ui/live_page.py" line="251"/>
+        <source>{model} wasn&apos;t trained to translate. Whisper large-v3, large-v2 or medium translate best.</source>
+        <translation>{model} 没有针对翻译训练。Whisper large-v3、large-v2 或 medium 的翻译效果最好。</translation>
+    </message>
+    <message>
+        <location filename="../ui/live_page.py" line="294"/>
         <source>Stop</source>
         <translation>停止</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="280"/>
+        <location filename="../ui/live_page.py" line="296"/>
         <source>Switching model…</source>
         <translation>正在切换模型…</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="280"/>
-        <location filename="../ui/live_page.py" line="299"/>
+        <location filename="../ui/live_page.py" line="296"/>
+        <location filename="../ui/live_page.py" line="315"/>
         <source>Listening</source>
         <translation>正在聆听</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="281"/>
+        <location filename="../ui/live_page.py" line="297"/>
         <source>Listening… captions will appear here.</source>
         <translation>正在聆听… 字幕会显示在这里。</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="288"/>
+        <location filename="../ui/live_page.py" line="304"/>
         <source>Press Start to caption the selected audio.</source>
         <translation>按“开始”为所选音频生成字幕。</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="291"/>
+        <location filename="../ui/live_page.py" line="307"/>
         <source>Latency {s:.1f} s</source>
         <translation>延迟 {s:.1f} 秒</translation>
     </message>
     <message>
-        <location filename="../ui/live_page.py" line="297"/>
+        <location filename="../ui/live_page.py" line="313"/>
         <source>Waiting for the selected apps to start</source>
         <translation>正在等待所选应用启动</translation>
     </message>
@@ -1673,229 +1698,229 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="90"/>
+        <location filename="../ui/main_window.py" line="91"/>
         <source>Live captions</source>
         <translation>实时字幕</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="154"/>
+        <location filename="../ui/main_window.py" line="156"/>
         <source>Models</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="156"/>
+        <location filename="../ui/main_window.py" line="158"/>
         <source>History</source>
         <translation>历史记录</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="152"/>
+        <location filename="../ui/main_window.py" line="154"/>
         <source>Keywords</source>
         <translation>关键词</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="160"/>
+        <location filename="../ui/main_window.py" line="162"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="208"/>
+        <location filename="../ui/main_window.py" line="210"/>
         <source>A download is running</source>
         <translation>正在下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="209"/>
+        <location filename="../ui/main_window.py" line="211"/>
         <source>Wait for it to finish (or cancel it) before resetting the model list.</source>
         <translation>请等下载完成（或取消下载）后，再重置模型列表。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="213"/>
+        <location filename="../ui/main_window.py" line="215"/>
         <source>The preset models come back in the list.</source>
         <translation>预置的模型会回到列表中。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="215"/>
+        <location filename="../ui/main_window.py" line="217"/>
         <source>The {n} model(s) you added are removed from it.</source>
         <translation>你添加的 {n} 个模型会从列表中移除。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="216"/>
+        <location filename="../ui/main_window.py" line="218"/>
         <source>Reset the model list?</source>
         <translation>要重置模型列表吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="216"/>
+        <location filename="../ui/main_window.py" line="218"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="217"/>
+        <location filename="../ui/main_window.py" line="219"/>
         <source>Also delete the files of the models you added ({size})</source>
         <translation>同时删除你添加的模型的文件（{size}）</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="271"/>
-        <location filename="../ui/main_window.py" line="393"/>
+        <location filename="../ui/main_window.py" line="273"/>
+        <location filename="../ui/main_window.py" line="396"/>
         <source>No model loaded</source>
         <translation>未加载模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="305"/>
+        <location filename="../ui/main_window.py" line="307"/>
         <source>GPU support</source>
         <translation>显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="317"/>
+        <location filename="../ui/main_window.py" line="319"/>
         <source>Downloading {what}</source>
         <translation>正在下载：{what}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="317"/>
+        <location filename="../ui/main_window.py" line="319"/>
         <source> and </source>
         <translation> 和 </translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="318"/>
+        <location filename="../ui/main_window.py" line="320"/>
         <source>Follow the progress here. The model loads when it&apos;s ready.</source>
         <translation>可在这里查看进度。下载完成后会加载模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="319"/>
+        <location filename="../ui/main_window.py" line="321"/>
         <source>Follow the progress here.</source>
         <translation>可在这里查看进度。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="337"/>
+        <location filename="../ui/main_window.py" line="339"/>
         <source>Download it here, and the app switches to it when it&apos;s done.</source>
         <translation>在这里下载，完成后应用会切换到这个模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="352"/>
+        <location filename="../ui/main_window.py" line="354"/>
         <source>{name} isn&apos;t downloaded</source>
         <translation>{name} 尚未下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="426"/>
+        <location filename="../ui/main_window.py" line="429"/>
         <source>GPU support installed, but the GPU can&apos;t be used</source>
         <translation>已安装显卡支持，但无法使用显卡</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="427"/>
+        <location filename="../ui/main_window.py" line="430"/>
         <source>Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU.</source>
         <translation>请更新 NVIDIA 显卡驱动程序，然后重启应用。在此之前模型会继续在 CPU 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="430"/>
+        <location filename="../ui/main_window.py" line="433"/>
         <source>GPU support installed</source>
         <translation>已安装显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="431"/>
+        <location filename="../ui/main_window.py" line="434"/>
         <source>Models now run on your {gpu}.</source>
         <translation>模型现在会在你的 {gpu} 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="442"/>
+        <location filename="../ui/main_window.py" line="445"/>
         <source>GPU</source>
         <translation>GPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="444"/>
+        <location filename="../ui/main_window.py" line="447"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="456"/>
+        <location filename="../ui/main_window.py" line="459"/>
         <source>Select a model first</source>
         <translation>请先选择模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="457"/>
+        <location filename="../ui/main_window.py" line="460"/>
         <source>Pick one in the Model dropdown, then press Start.</source>
         <translation>请从“模型”下拉列表中选择一个，再按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="464"/>
+        <location filename="../ui/main_window.py" line="467"/>
         <source>Download it here, then press Start.</source>
         <translation>请在这里下载，然后按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="548"/>
+        <location filename="../ui/main_window.py" line="565"/>
         <source>Checking…</source>
         <translation>正在检查…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="548"/>
+        <location filename="../ui/main_window.py" line="565"/>
         <source>Check for updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="553"/>
+        <location filename="../ui/main_window.py" line="570"/>
         <source>You&apos;re up to date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="554"/>
+        <location filename="../ui/main_window.py" line="571"/>
         <source>Version {version} is the latest version.</source>
         <translation>版本 {version} 是最新版本。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="556"/>
+        <location filename="../ui/main_window.py" line="573"/>
         <source>Version {version} is available</source>
         <translation>有新版本 {version}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="557"/>
+        <location filename="../ui/main_window.py" line="574"/>
         <source>You have version {version}. Open the download page on GitHub?</source>
         <translation>你当前使用的是版本 {version}。要打开 GitHub 上的下载页面吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="559"/>
+        <location filename="../ui/main_window.py" line="576"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="560"/>
+        <location filename="../ui/main_window.py" line="577"/>
         <source>Later</source>
         <translation>稍后</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="566"/>
+        <location filename="../ui/main_window.py" line="583"/>
         <source>Couldn&apos;t check for updates</source>
         <translation>无法检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="582"/>
-        <location filename="../ui/main_window.py" line="590"/>
+        <location filename="../ui/main_window.py" line="599"/>
+        <location filename="../ui/main_window.py" line="607"/>
         <source>Keyword detected: {keywords}</source>
         <translation>检测到关键词：{keywords}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="589"/>
+        <location filename="../ui/main_window.py" line="606"/>
         <source>keyword</source>
         <translation>关键词</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="591"/>
+        <location filename="../ui/main_window.py" line="608"/>
         <source>This is how a keyword alert looks.</source>
         <translation>关键词提醒看起来会是这样。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="599"/>
+        <location filename="../ui/main_window.py" line="616"/>
         <source>Restart to change the language</source>
         <translation>重启以更改语言</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="600"/>
+        <location filename="../ui/main_window.py" line="617"/>
         <source>The new language is used the next time the app starts.</source>
         <translation>下次启动应用时会使用新的语言。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="601"/>
+        <location filename="../ui/main_window.py" line="618"/>
         <source>Restart now</source>
         <translation>立即重启</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="628"/>
+        <location filename="../ui/main_window.py" line="645"/>
         <source>Minimized to tray. You can change it in Settings.</source>
         <translation>已最小化到系统托盘。可以在“设置”中更改。</translation>
     </message>

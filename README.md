@@ -17,6 +17,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
+- 🌐 **Translate to English** – Captions in English whatever language is spoken, with Whisper's own translation. Flip it on the Live captions page.
 - 🏷️ **Keyword alerts** – Get highlighted, beeped or notified when a word or name is said. Chinese keywords also catch words that sound the same, typed as 漢字, Zhuyin or Pinyin.
 
 ## Screenshots
@@ -83,6 +84,7 @@ English and other languages match whole words, in any case (`cat` doesn't match 
 | Taiwanese Hokkien (Taigi) | Breeze ASR 26 (GPU) |
 | Hakka | Taiwan Tongues ASR CE (GPU) |
 | Only a CPU | Whisper base or small |
+| Captions translated into English | Whisper large-v3, large-v2 or medium (GPU), or small on the CPU. Large-v3-turbo and the Taiwan models weren't trained to translate and mostly keep the spoken language; the app warns you when one of them is asked to |
 
 The app warns you when a model will probably be too slow for real time on your PC. If the GPU runs out of memory, the model moves to the CPU and the app suggests a smaller one. If recognition still can't keep up, the oldest audio is skipped so the captions don't fall further and further behind.
 
@@ -110,7 +112,8 @@ The app also uses the same libraries when they're already on the PC, in this ord
 - When several selected apps talk at the same time, they're transcribed as one stream, so the louder one usually wins.
 - Large models need a GPU for real time. On the CPU, use Whisper base or small.
 - Breeze ASR 26 writes Taigi as Mandarin Chinese characters, not Taigi orthography (台語正字).
-- Translation, speaker identification and cloud speech services are out of scope.
+- Translation only goes into English (Whisper's translate task), and the translated captions update less smoothly while someone is still talking.
+- Translation into other languages, speaker identification and cloud speech services are out of scope.
 
 ## To do
 
@@ -230,6 +233,7 @@ python -m app.cli levels --mode system                     # input level per sou
 python -m app.cli levels --mode apps --apps chrome.exe,ms-teams.exe --mic --record mix.wav
 python -m app.cli transcribe --mode system --model whisper-large-v3-turbo
 python -m app.cli transcribe --model breeze-asr-25 --wav speech.wav   # simulated real time
+python -m app.cli transcribe --model whisper-medium --wav speech.wav --translate   # in English
 ```
 
 ## Build the exe

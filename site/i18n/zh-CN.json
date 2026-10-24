@@ -118,7 +118,7 @@
   "Can it caption just one app, like a browser or Discord?": "可以只为一个应用生成字幕吗？比如浏览器或 Discord？",
   "Yes. Choose Apps as the source and tick the apps you want; only their audio is used, optionally mixed with your microphone.": "可以。来源选“应用”并勾选你要的应用；只会使用它们的声音，也可以混入你的麦克风。",
   "Does it translate?": "会翻译吗？",
-  "No. It writes down what is said, in the language it's said in. Translation and speaker identification are out of scope.": "不会。它只会用说话时的语言，把说出来的内容写下来。翻译和识别说话人不在本项目的范围内。",
+  "Into English, yes: turn on Translate to English on the Live captions page. Whisper large-v3, large-v2 and medium translate best; large-v3-turbo, the default, mostly keeps the spoken language. Translating into other languages and telling speakers apart are out of scope.": "可以翻译成英文：在“实时字幕”页面开启“翻译成英文”即可。Whisper large-v3、large-v2 和 medium 的翻译效果最好；默认的 large-v3-turbo 大多仍会保留原来说的语言。翻译成其他语言和区分说话人不在本项目的范围内。",
   "How much does it cost?": "要多少钱？",
   "Nothing. AppLiveCaption is free and open source under the GPL-3.0 license. The speech recognition models are made by their authors and come with their own licenses, shown on the Models page.": "完全免费。AppLiveCaption 以 GPL-3.0 许可证免费开源。语音识别模型由各自的作者制作，各有许可证，会显示在“模型”页面。",
   "Is it made with AI?": "是用 AI 做的吗？",

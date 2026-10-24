@@ -178,6 +178,8 @@ def main(argv: list[str] | None = None) -> None:
     tr.add_argument("--wav", help="transcribe a 16-bit WAV file in simulated real time instead of live audio")
     tr.add_argument("--chinese", choices=CHINESE_OUTPUTS, default=CHINESE_TRADITIONAL,
                     help="convert Chinese captions to Traditional or Simplified Chinese, or leave them (off)")
+    tr.add_argument("--translate", action="store_true",
+                    help="write the captions in English, whatever language is spoken (Whisper's translate task)")
     # The option's name before --chinese, still accepted.
     tr.add_argument("--no-opencc", dest="chinese", action="store_const", const=CHINESE_OFF, help=argparse.SUPPRESS)
     tr.set_defaults(func=cmd_transcribe)

@@ -45,14 +45,15 @@ class FasterWhisperBackend(ASRBackend):
     def supported_languages(self) -> list[str] | None:
         return self._languages
 
-    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool) -> Transcript:
+    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool,
+                   translate: bool = False) -> Transcript:
         if self.model is None:
             raise RuntimeError("model not loaded")
         if language and self._languages is not None and language not in self._languages:
             raise UnsupportedLanguage(language)
         opts = dict(
             language=language or None,
-            task="transcribe",
+            task="translate" if translate else "transcribe",  # (English-only models always transcribe)
             initial_prompt=prompt or None,
             condition_on_previous_text=False,
             without_timestamps=True,

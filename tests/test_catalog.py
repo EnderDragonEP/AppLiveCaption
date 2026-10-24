@@ -16,6 +16,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.models import catalog, storage  # noqa: E402
 from app.models.custom import (  # noqa: E402
     CustomModelError,
+    _entry,
     check_files,
     estimate_tier,
     inspect_folder,
@@ -76,6 +77,16 @@ class CatalogListTests(CatalogTestCase):
         self.assertEqual(catalog.load_catalog()[-1], info)
         catalog.load_catalog.cache_clear()  # as after a restart: read again from models.json
         self.assertEqual(catalog.get_model("my-model").repo, "someone/faster-whisper-mine")
+
+    def test_which_models_translate(self):
+        cant = {m.id for m in catalog.load_catalog() if not m.translate}
+        self.assertEqual(cant, {"whisper-large-v3-turbo", "breeze-asr-25", "breeze-asr-26", "taiwan-tongues-asr-ce"})
+        # An added model can try; a conversion of turbo is warned about, like the preset.
+        self.assertTrue(catalog.add_custom_model(self.entry()).translate)
+        turbo = _entry("large-v3-turbo-ct2", "deepdml/faster-whisper-large-v3-turbo-ct2", 1, 1, "MIT", "")
+        self.assertFalse(turbo["translate"])
+        self.assertFalse(catalog.add_custom_model(turbo).translate)
+        self.assertNotIn("translate", _entry("Mine", "someone/faster-whisper-medium", 1, 1, "MIT", ""))
 
     def test_ids_never_clash(self):
         a = catalog.add_custom_model(self.entry("Whisper tiny", "a/one"))  # same slug as a preset's id

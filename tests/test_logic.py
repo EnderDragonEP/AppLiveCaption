@@ -21,9 +21,10 @@ from app import paths  # noqa: E402
 from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
 from app.asr.hardware import GpuInfo, suggest_model  # noqa: E402
-from app.asr.streaming import PartialStabilizer, tokenize  # noqa: E402
+from app.asr.streaming import PartialStabilizer, StreamingTranscriber, _Utterance, tokenize  # noqa: E402
 from app.asr.textconv import CHINESE_OFF, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, ChineseConverter  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
+from app.audio.vad import FRAME  # noqa: E402
 from app.audio.mixer import Limiter, TimedQueue  # noqa: E402
 from app.core.history import HistoryLine, HistoryStore  # noqa: E402
 from app.i18n import windows_chinese_script  # noqa: E402
@@ -89,6 +90,49 @@ class StabilizerTests(unittest.TestCase):
         # A revision of committed words keeps the committed text.
         stable, _ = s.update("a quick brown fox")
         self.assertTrue(stable.startswith("the quick"))
+
+
+class FakeBackend:
+    """Answers every decode with the next text, and records how it was asked."""
+
+    def __init__(self, *texts):
+        self.texts = list(texts)
+        self.calls: list[dict] = []
+
+    def transcribe(self, audio, language, prompt, final, translate=False):
+        self.calls.append({"prompt": prompt, "final": final, "translate": translate})
+        return Transcript(text=self.texts.pop(0), language="zh", language_probability=0.9, avg_logprob=-0.2)
+
+
+class TranslateTests(unittest.TestCase):
+    def transcriber(self, backend, **kw):
+        with mock.patch("app.asr.streaming.StreamingVAD"):  # (no ONNX model needed: the audio is handed over)
+            return StreamingTranscriber(backend, **kw)
+
+    @staticmethod
+    def speak(st, seconds=1.0):
+        n = int(seconds * 16000 / FRAME)
+        st._utt = _Utterance(start_pos=0, frames=[np.zeros(FRAME, np.float32)] * n, probs=[0.9] * n, decoded_samples=1)
+        return st._finalize(force=True)
+
+    def test_translate_reaches_every_decode(self):
+        backend = FakeBackend("Hello there, how are you?", "I'm fine, thanks.")
+        st = self.transcriber(backend, translate=True)
+        self.assertEqual(self.speak(st)[0].text, "Hello there, how are you?")
+        self.speak(st)
+        self.assertEqual([c["translate"] for c in backend.calls], [True, True])
+        self.assertEqual(backend.calls[1]["prompt"], "Hello there, how are you?")  # English prompts English
+
+    def test_switching_drops_the_prompt_in_the_other_language(self):
+        backend = FakeBackend("今天天氣很好。", "The weather is nice today.", "Let's go out.")
+        st = self.transcriber(backend)
+        self.speak(st)
+        st.translate = True
+        self.speak(st)
+        self.assertEqual(backend.calls[1], {"prompt": None, "final": True, "translate": True})
+        st.translate = True  # (unchanged: the prompt stays)
+        self.speak(st)
+        self.assertEqual(backend.calls[2]["prompt"], "The weather is nice today.")
 
 
 class AudioTests(unittest.TestCase):
