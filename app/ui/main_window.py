@@ -621,7 +621,7 @@ class MainWindow(FluentWindow):
         self.hide()
         if not cfg.get(cfg.trayHintShown):
             cfg.set(cfg.trayHintShown, True)
-            self.tray.showMessage(APP_NAME, self.tr("Still running here. Click to open."),
+            self.tray.showMessage(APP_NAME, self.tr("Minimized to tray. You can change it in Settings."),
                                   app_icon(), 6000)
 
     def closeEvent(self, e):  # noqa: N802

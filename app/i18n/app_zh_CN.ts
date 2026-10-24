@@ -1891,8 +1891,8 @@
     </message>
     <message>
         <location filename="../ui/main_window.py" line="624"/>
-        <source>Still running here. Click to open.</source>
-        <translation>仍在这里运行，单击即可打开。</translation>
+        <source>Minimized to tray. You can change it in Settings.</source>
+        <translation>已最小化到系统托盘。可以在“设置”中更改。</translation>
     </message>
 </context>
 <context>
