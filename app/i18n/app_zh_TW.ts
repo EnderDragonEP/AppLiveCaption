@@ -633,12 +633,12 @@
 <context>
     <name>FuzzyCard</name>
     <message>
-        <location filename="../ui/keywords_page.py" line="99"/>
+        <location filename="../ui/keywords_page.py" line="124"/>
         <source>Similar sounds (模糊音)</source>
         <translation>模糊音</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="100"/>
+        <location filename="../ui/keywords_page.py" line="125"/>
         <source>Chinese keywords already match any tone. Tick the sounds that should also count as the same, for speakers or models that mix them up.</source>
         <translation>中文關鍵字本來就不分聲調。勾選也要視為相同的發音，適用於容易混淆這些音的說話者或模型。</translation>
     </message>
@@ -776,103 +776,103 @@
 <context>
     <name>HistoryPage</name>
     <message>
-        <location filename="../ui/history_page.py" line="41"/>
+        <location filename="../ui/history_page.py" line="42"/>
         <source>History</source>
         <translation>記錄</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="44"/>
+        <location filename="../ui/history_page.py" line="45"/>
         <source>Refresh</source>
         <translation>重新整理</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="45"/>
+        <location filename="../ui/history_page.py" line="46"/>
         <source>Show the latest lines (F5)</source>
         <translation>顯示最新的內容（F5）</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="50"/>
+        <location filename="../ui/history_page.py" line="51"/>
         <source>Copy</source>
         <translation>複製</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="52"/>
+        <location filename="../ui/history_page.py" line="53"/>
         <source>Export TXT</source>
         <translation>匯出 TXT</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="54"/>
+        <location filename="../ui/history_page.py" line="55"/>
         <source>Export SRT</source>
         <translation>匯出 SRT</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="56"/>
+        <location filename="../ui/history_page.py" line="57"/>
         <source>Delete</source>
         <translation>刪除</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="58"/>
-        <location filename="../ui/history_page.py" line="186"/>
+        <location filename="../ui/history_page.py" line="59"/>
+        <location filename="../ui/history_page.py" line="195"/>
         <source>Clear all</source>
         <translation>全部清除</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="82"/>
+        <location filename="../ui/history_page.py" line="83"/>
         <source>Transcripts of your captioning sessions appear here.</source>
         <translation>你每次產生字幕的文字記錄會顯示在這裡。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="94"/>
+        <location filename="../ui/history_page.py" line="95"/>
         <source>{title}  ·  {n} lines  ·  {m} min</source>
         <translation>{title}  ·  {n} 行  ·  {m} 分鐘</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="158"/>
+        <location filename="../ui/history_page.py" line="167"/>
         <source>Copied</source>
         <translation>已複製</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="158"/>
+        <location filename="../ui/history_page.py" line="167"/>
         <source>The transcript is on the clipboard.</source>
         <translation>文字記錄已複製到剪貼簿。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="165"/>
+        <location filename="../ui/history_page.py" line="174"/>
         <source>Text files (*.txt)</source>
         <translation>文字檔 (*.txt)</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="165"/>
+        <location filename="../ui/history_page.py" line="174"/>
         <source>Subtitles (*.srt)</source>
         <translation>字幕檔 (*.srt)</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="166"/>
+        <location filename="../ui/history_page.py" line="175"/>
         <source>Export transcript</source>
         <translation>匯出文字記錄</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="173"/>
+        <location filename="../ui/history_page.py" line="182"/>
         <source>Export failed</source>
         <translation>匯出失敗</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="175"/>
+        <location filename="../ui/history_page.py" line="184"/>
         <source>Exported</source>
         <translation>已匯出</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="184"/>
+        <location filename="../ui/history_page.py" line="193"/>
         <source>Clear history?</source>
         <translation>要清除記錄嗎？</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="184"/>
+        <location filename="../ui/history_page.py" line="193"/>
         <source>Delete all saved transcripts? This can&apos;t be undone.</source>
         <translation>要刪除所有已儲存的文字記錄嗎？此動作無法復原。</translation>
     </message>
     <message>
-        <location filename="../ui/history_page.py" line="187"/>
+        <location filename="../ui/history_page.py" line="196"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -880,17 +880,27 @@
 <context>
     <name>KeywordRow</name>
     <message>
-        <location filename="../ui/keywords_page.py" line="72"/>
+        <location filename="../ui/keywords_page.py" line="80"/>
+        <source>Match by sound</source>
+        <translation>比對發音</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="81"/>
+        <source>Treat it as Pinyin, so Chinese words that sound like it match too</source>
+        <translation>當作拼音，發音相同的中文字也會比對到</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="86"/>
         <source>On</source>
         <translation>開</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="73"/>
+        <location filename="../ui/keywords_page.py" line="87"/>
         <source>Off</source>
         <translation>關</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="78"/>
+        <location filename="../ui/keywords_page.py" line="92"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
@@ -898,107 +908,112 @@
 <context>
     <name>KeywordsPage</name>
     <message>
-        <location filename="../ui/keywords_page.py" line="140"/>
+        <location filename="../ui/keywords_page.py" line="165"/>
         <source>Keywords</source>
         <translation>關鍵字</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="141"/>
+        <location filename="../ui/keywords_page.py" line="166"/>
         <source>Get an alert when a word or a name is said. Chinese keywords also match words that sound the same, and can be typed as 漢字, Zhuyin or Pinyin.</source>
         <translation>有人說到某個詞或名字時提醒你。中文關鍵字也會比對發音相同的字，可以用漢字、注音或拼音輸入。</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="153"/>
+        <location filename="../ui/keywords_page.py" line="178"/>
         <source>A word or a name, e.g. Ender, 台北, ㄊㄞˊ ㄅㄟˇ or taibei</source>
         <translation>詞或名字，例如 Ender、台北、ㄊㄞˊ ㄅㄟˇ 或 taibei</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="158"/>
+        <location filename="../ui/keywords_page.py" line="183"/>
         <source>Add</source>
         <translation>新增</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="170"/>
+        <location filename="../ui/keywords_page.py" line="195"/>
         <source>No keywords yet.</source>
         <translation>還沒有關鍵字。</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="176"/>
+        <location filename="../ui/keywords_page.py" line="201"/>
         <source>When a keyword is heard</source>
         <translation>聽到關鍵字時</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="177"/>
+        <location filename="../ui/keywords_page.py" line="202"/>
         <source>Highlight it</source>
         <translation>醒目提示</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="178"/>
+        <location filename="../ui/keywords_page.py" line="203"/>
         <source>In the live captions, the overlay and History</source>
         <translation>在即時字幕、浮動字幕和記錄中</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="180"/>
+        <location filename="../ui/keywords_page.py" line="205"/>
         <source>Highlight color</source>
         <translation>醒目提示色彩</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="181"/>
+        <location filename="../ui/keywords_page.py" line="206"/>
         <source>The color keywords are marked with</source>
         <translation>標示關鍵字的顏色</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="182"/>
+        <location filename="../ui/keywords_page.py" line="207"/>
         <source>Play a sound</source>
         <translation>播放音效</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="183"/>
+        <location filename="../ui/keywords_page.py" line="208"/>
         <source>Windows&apos; notification sound, once per caption line</source>
         <translation>Windows 的通知音效，每行字幕最多一次</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="184"/>
+        <location filename="../ui/keywords_page.py" line="209"/>
         <source>Play</source>
         <translation>播放</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="189"/>
+        <location filename="../ui/keywords_page.py" line="214"/>
         <source>Show a notification</source>
         <translation>顯示通知</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="190"/>
+        <location filename="../ui/keywords_page.py" line="215"/>
         <source>A Windows notification while the app isn&apos;t the active window</source>
         <translation>應用程式不在前景時，顯示 Windows 通知</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="192"/>
+        <location filename="../ui/keywords_page.py" line="217"/>
         <source>Show</source>
         <translation>顯示</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="200"/>
+        <location filename="../ui/keywords_page.py" line="225"/>
         <source>Chinese sound matching</source>
         <translation>中文發音比對</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="206"/>
+        <location filename="../ui/keywords_page.py" line="231"/>
         <source>Recent matches</source>
         <translation>最近的比對結果</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="208"/>
+        <location filename="../ui/keywords_page.py" line="233"/>
         <source>Clear</source>
         <translation>清除</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="216"/>
+        <location filename="../ui/keywords_page.py" line="241"/>
         <source>Matches show up here while captioning.</source>
         <translation>產生字幕時，比對結果會顯示在這裡。</translation>
     </message>
     <message>
-        <location filename="../ui/keywords_page.py" line="253"/>
+        <location filename="../ui/keywords_page.py" line="272"/>
+        <source>Matches the text. To match Chinese words that sound like it, tick &quot;Match by sound&quot; after adding it.</source>
+        <translation>比對文字。若要比對發音相同的中文字，新增後請勾選「比對發音」。</translation>
+    </message>
+    <message>
+        <location filename="../ui/keywords_page.py" line="282"/>
         <source>{keyword} is in the list already.</source>
         <translation>{keyword} 已經在清單中。</translation>
     </message>
@@ -1658,239 +1673,229 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="89"/>
+        <location filename="../ui/main_window.py" line="90"/>
         <source>Live captions</source>
         <translation>即時字幕</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="153"/>
+        <location filename="../ui/main_window.py" line="154"/>
         <source>Models</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="155"/>
+        <location filename="../ui/main_window.py" line="156"/>
         <source>History</source>
         <translation>記錄</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="151"/>
+        <location filename="../ui/main_window.py" line="152"/>
         <source>Keywords</source>
         <translation>關鍵字</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="159"/>
+        <location filename="../ui/main_window.py" line="160"/>
         <source>Settings</source>
         <translation>設定</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="207"/>
+        <location filename="../ui/main_window.py" line="208"/>
         <source>A download is running</source>
         <translation>正在下載</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="208"/>
+        <location filename="../ui/main_window.py" line="209"/>
         <source>Wait for it to finish (or cancel it) before resetting the model list.</source>
         <translation>請等下載完成（或取消下載）後，再重設模型清單。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="212"/>
+        <location filename="../ui/main_window.py" line="213"/>
         <source>The preset models come back in the list.</source>
         <translation>預設的模型會回到清單中。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="214"/>
+        <location filename="../ui/main_window.py" line="215"/>
         <source>The {n} model(s) you added are removed from it.</source>
         <translation>你新增的 {n} 個模型會從清單中移除。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="215"/>
+        <location filename="../ui/main_window.py" line="216"/>
         <source>Reset the model list?</source>
         <translation>要重設模型清單嗎？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="215"/>
+        <location filename="../ui/main_window.py" line="216"/>
         <source>Reset</source>
         <translation>重設</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="216"/>
+        <location filename="../ui/main_window.py" line="217"/>
         <source>Also delete the files of the models you added ({size})</source>
         <translation>同時刪除你新增之模型的檔案（{size}）</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="270"/>
-        <location filename="../ui/main_window.py" line="392"/>
+        <location filename="../ui/main_window.py" line="271"/>
+        <location filename="../ui/main_window.py" line="393"/>
         <source>No model loaded</source>
         <translation>未載入模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="304"/>
+        <location filename="../ui/main_window.py" line="305"/>
         <source>GPU support</source>
         <translation>顯示卡支援</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="316"/>
+        <location filename="../ui/main_window.py" line="317"/>
         <source>Downloading {what}</source>
         <translation>正在下載：{what}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="316"/>
+        <location filename="../ui/main_window.py" line="317"/>
         <source> and </source>
         <translation> 與 </translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="317"/>
+        <location filename="../ui/main_window.py" line="318"/>
         <source>Follow the progress here. The model loads when it&apos;s ready.</source>
         <translation>可在這裡查看進度。下載完成後會載入模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="318"/>
+        <location filename="../ui/main_window.py" line="319"/>
         <source>Follow the progress here.</source>
         <translation>可在這裡查看進度。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="336"/>
+        <location filename="../ui/main_window.py" line="337"/>
         <source>Download it here, and the app switches to it when it&apos;s done.</source>
         <translation>在這裡下載，完成後應用程式會切換到這個模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="351"/>
+        <location filename="../ui/main_window.py" line="352"/>
         <source>{name} isn&apos;t downloaded</source>
         <translation>{name} 尚未下載</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="425"/>
+        <location filename="../ui/main_window.py" line="426"/>
         <source>GPU support installed, but the GPU can&apos;t be used</source>
         <translation>已安裝顯示卡支援，但無法使用顯示卡</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="426"/>
+        <location filename="../ui/main_window.py" line="427"/>
         <source>Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU.</source>
         <translation>請更新 NVIDIA 顯示卡驅動程式，然後重新啟動應用程式。在那之前模型會繼續在 CPU 上執行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="429"/>
+        <location filename="../ui/main_window.py" line="430"/>
         <source>GPU support installed</source>
         <translation>已安裝顯示卡支援</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="430"/>
+        <location filename="../ui/main_window.py" line="431"/>
         <source>Models now run on your {gpu}.</source>
         <translation>模型現在會在你的 {gpu} 上執行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="441"/>
+        <location filename="../ui/main_window.py" line="442"/>
         <source>GPU</source>
         <translation>GPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="443"/>
+        <location filename="../ui/main_window.py" line="444"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="455"/>
+        <location filename="../ui/main_window.py" line="456"/>
         <source>Select a model first</source>
         <translation>請先選擇模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="456"/>
+        <location filename="../ui/main_window.py" line="457"/>
         <source>Pick one in the Model dropdown, then press Start.</source>
         <translation>請從「模型」下拉選單選擇一個，再按「開始」。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="463"/>
+        <location filename="../ui/main_window.py" line="464"/>
         <source>Download it here, then press Start.</source>
         <translation>請在這裡下載，然後按「開始」。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="547"/>
+        <location filename="../ui/main_window.py" line="548"/>
         <source>Checking…</source>
         <translation>檢查中…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="547"/>
+        <location filename="../ui/main_window.py" line="548"/>
         <source>Check for updates</source>
         <translation>檢查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="552"/>
+        <location filename="../ui/main_window.py" line="553"/>
         <source>You&apos;re up to date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="553"/>
+        <location filename="../ui/main_window.py" line="554"/>
         <source>Version {version} is the latest version.</source>
         <translation>版本 {version} 是最新版本。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="555"/>
+        <location filename="../ui/main_window.py" line="556"/>
         <source>Version {version} is available</source>
         <translation>有新版本 {version}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="556"/>
+        <location filename="../ui/main_window.py" line="557"/>
         <source>You have version {version}. Open the download page on GitHub?</source>
         <translation>你目前使用的是版本 {version}。要開啟 GitHub 上的下載頁面嗎？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="558"/>
+        <location filename="../ui/main_window.py" line="559"/>
         <source>Download</source>
         <translation>下載</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="559"/>
+        <location filename="../ui/main_window.py" line="560"/>
         <source>Later</source>
         <translation>稍後</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="565"/>
+        <location filename="../ui/main_window.py" line="566"/>
         <source>Couldn&apos;t check for updates</source>
         <translation>無法檢查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="578"/>
-        <location filename="../ui/main_window.py" line="585"/>
+        <location filename="../ui/main_window.py" line="582"/>
+        <location filename="../ui/main_window.py" line="590"/>
         <source>Keyword detected: {keywords}</source>
         <translation>偵測到關鍵字：{keywords}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="584"/>
+        <location filename="../ui/main_window.py" line="589"/>
         <source>keyword</source>
         <translation>關鍵字</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="586"/>
+        <location filename="../ui/main_window.py" line="591"/>
         <source>This is how a keyword alert looks.</source>
         <translation>關鍵字提醒看起來會像這樣。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="594"/>
+        <location filename="../ui/main_window.py" line="599"/>
         <source>Restart to change the language</source>
         <translation>重新啟動以變更語言</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="595"/>
+        <location filename="../ui/main_window.py" line="600"/>
         <source>The new language is used the next time the app starts.</source>
         <translation>下次啟動應用程式時會使用新的語言。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="596"/>
+        <location filename="../ui/main_window.py" line="601"/>
         <source>Restart now</source>
         <translation>立即重新啟動</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="607"/>
-        <source>Couldn&apos;t restart</source>
-        <translation>無法重新啟動</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="607"/>
-        <source>Close the app and start it again.</source>
-        <translation>請關閉應用程式後再重新開啟。</translation>
-    </message>
-    <message>
-        <location filename="../ui/main_window.py" line="624"/>
+        <location filename="../ui/main_window.py" line="628"/>
         <source>Minimized to tray. You can change it in Settings.</source>
         <translation>已最小化到系統匣。可以在「設定」中變更。</translation>
     </message>

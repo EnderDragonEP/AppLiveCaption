@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import sys
 
-from PySide6.QtCore import QEvent, QProcess, QSize, QTimer, QUrl
+from PySide6.QtCore import QEvent, QProcess, QSize, Qt, QTimer, QUrl
 from PySide6.QtGui import QDesktopServices
 from PySide6.QtWidgets import QApplication
 from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemPosition, PushButton, SplashScreen
@@ -25,6 +25,7 @@ from .download import format_bytes
 from .icons import app_icon
 from .live_page import LivePage
 from .messages import error_text, notice_text, show_infobar
+from .notify import show_tray_message
 from .source_picker import selection_summary
 
 log = logging.getLogger(__name__)
@@ -565,25 +566,29 @@ class MainWindow(FluentWindow):
         show_infobar("warning", self.tr("Couldn't check for updates"), message, self, 5000)
 
     def show_and_raise(self) -> None:
-        self.showNormal()
+        """Bring the window back (from the tray, a notification, ...) as it was: maximized stays maximized."""
+        self.setWindowState((self.windowState() & ~Qt.WindowState.WindowMinimized) | Qt.WindowState.WindowActive)
+        self.show()
         self.raise_()
         self.activateWindow()
 
     # -- keywords ---------------------------------------------------------------
     def _on_keyword_heard(self, keywords: str, line: str) -> None:
-        """Keywords page: a Windows notification while the app is in the background (Windows plays its
-        own sound with it), else the alert sound."""
+        """Keywords page: a Windows notification while the app is in the background (at most one every
+        NOTIFY_GAP seconds; with Windows' sound only when "Play a sound" is on), else the alert sound."""
         background = not self.isVisible() or self.isMinimized() or not self.isActiveWindow()
-        if cfg.get(cfg.keywordNotify) and background and self.tray.isVisible():
-            self.tray.showMessage(self.tr("Keyword detected: {keywords}").format(keywords=keywords), line, app_icon(), 6000)
-        elif cfg.get(cfg.keywordSound):
+        sound = cfg.get(cfg.keywordSound)
+        if cfg.get(cfg.keywordNotify) and background and self.tray.isVisible() and self.keywords.may_notify():
+            show_tray_message(self.tray, self.tr("Keyword detected: {keywords}").format(keywords=keywords), line,
+                              app_icon(), silent=not sound)
+        elif sound:
             self.keywords.play_sound()
 
     def _test_keyword_notification(self) -> None:
         """The Keywords page's Show button: a sample alert, with the first keyword in the list."""
         keyword = next((k["text"] for k in cfg.get(cfg.keywords) if k.get("enabled", True)), self.tr("keyword"))
-        self.tray.showMessage(self.tr("Keyword detected: {keywords}").format(keywords=keyword),
-                              self.tr("This is how a keyword alert looks."), app_icon(), 6000)
+        show_tray_message(self.tray, self.tr("Keyword detected: {keywords}").format(keywords=keyword),
+                          self.tr("This is how a keyword alert looks."), app_icon(), silent=not cfg.get(cfg.keywordSound))
 
     # -- language ---------------------------------------------------------------
     def _offer_restart(self) -> None:
@@ -599,13 +604,12 @@ class MainWindow(FluentWindow):
         bar.closedSignal.connect(lambda: setattr(self, "_restart_bar", None))
 
     def restart(self) -> None:
-        """Start a new copy of the app (as it was started, without --start or --minimized) and quit."""
+        """Quit and start a new copy of the app (as it was started, without --start or --minimized). The new
+        copy starts only once this one has shut down (closeEvent): the model released and everything saved."""
         args = [a for a in sys.argv[1:] if a not in ("--start", "--minimized")]
         if not getattr(sys, "frozen", False):
             args = [sys.argv[0], *args]  # from source: the script (app/main.py or AppLiveCaption.pyw)
-        if not QProcess.startDetached(sys.executable, args):
-            show_infobar("error", self.tr("Couldn't restart"), self.tr("Close the app and start it again."), self)
-            return
+        self._restart_args = args
         self.close()
 
     def changeEvent(self, e):  # noqa: N802 - Qt override
@@ -631,4 +635,7 @@ class MainWindow(FluentWindow):
         self.models_page.shutdown()
         self.controller.shutdown()
         super().closeEvent(e)
+        if getattr(self, "_restart_args", None) is not None and not QProcess.startDetached(sys.executable,
+                                                                                            self._restart_args):
+            log.error("Couldn't restart: %s %s", sys.executable, self._restart_args)
         QApplication.quit()

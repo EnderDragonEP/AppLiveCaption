@@ -60,18 +60,19 @@ class DictValidator(ConfigValidator):
 
 
 class KeywordListValidator(ConfigValidator):
-    """[{"text": str, "enabled": bool}, ...]: the Keywords page's list."""
+    """[{"text": str, "enabled": bool, "sound": bool}, ...]: the Keywords page's list. "sound" is the
+    keyword's "Match by sound" (for plain Latin letters that spell Pinyin); it may be missing (off)."""
 
     def validate(self, value):
         return isinstance(value, list) and all(
             isinstance(k, dict) and isinstance(k.get("text"), str) and isinstance(k.get("enabled", True), bool)
-            for k in value)
+            and isinstance(k.get("sound", False), bool) for k in value)
 
     def correct(self, value):
         if not isinstance(value, list):
             return []
-        return [{"text": k["text"], "enabled": bool(k.get("enabled", True))} for k in value
-                if isinstance(k, dict) and isinstance(k.get("text"), str) and k["text"].strip()]
+        return [{"text": k["text"], "enabled": bool(k.get("enabled", True)), "sound": bool(k.get("sound", False))}
+                for k in value if isinstance(k, dict) and isinstance(k.get("text"), str) and k["text"].strip()]
 
 
 class FuzzyValidator(ConfigValidator):

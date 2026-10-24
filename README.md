@@ -54,7 +54,7 @@ The **Keywords** tab watches the captions for words you care about: your name, a
 
 - **highlight** it in the live captions, the overlay and History (in a color you pick);
 - **play** Windows' notification sound, at most once per caption line;
-- **show a Windows notification** while the app isn't the active window (click it to bring the app back);
+- **show a Windows notification** while the app isn't the active window, at most one every 10 seconds and silent when **Play a sound** is off (click it to bring the app back);
 - **list** it under **Recent matches**, with the time and the line.
 
 An alert comes as soon as the keyword is in the part of a line that won't change any more, so you don't have to wait for the speaker to pause.
@@ -65,9 +65,10 @@ English and other languages match whole words, in any case (`cat` doesn't match 
 | --- | --- |
 | 漢字, Traditional or Simplified | 台北 |
 | Zhuyin, with or without tones and spaces | ㄊㄞˊ ㄅㄟˇ |
-| Pinyin, with tone marks, tone numbers or none | tái běi, tai2 bei3, taibei |
+| Pinyin, with tone marks, tone numbers or apostrophes | tái běi, tai2 bei3, tai'bei |
+| Pinyin in plain letters, with **Match by sound** ticked on its row | taibei |
 
-(Plain Latin letters count as Pinyin only when they split into two or more syllables, so English words like *he* or *man* never match Chinese by sound.) The Keywords tab shows how each keyword is matched. **模糊音** switches make sounds that are often mixed up count as the same: zh = z, ch = c, sh = s, n = l, f = h, an = ang, en = eng and in = ing. Chinese readings come from [pypinyin](https://github.com/mozillazg/python-pinyin).
+(A keyword in plain letters is matched as text, since many English words also spell Pinyin: *time* is ti me, *China* is chi na. When it spells Pinyin, its row gets a **Match by sound** check box. Pinyin follows the usual spelling rule that a syllable starting with a, o or e needs an apostrophe, so *henan* is he nan and *xi'an* is xi an.) The Keywords tab shows how each keyword is matched. **模糊音** switches make sounds that are often mixed up count as the same: zh = z, ch = c, sh = s, n = l, f = h, an = ang, en = eng and in = ing. Chinese readings come from [pypinyin](https://github.com/mozillazg/python-pinyin).
 
 ## Which model should I use?
 

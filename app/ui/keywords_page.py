@@ -31,7 +31,7 @@ from qfluentwidgets import (
 )
 
 from ..config import cfg
-from ..core.keywords import FUZZY, describe
+from ..core.keywords import FUZZY, describe, latin_could_be_pinyin
 from ..i18n import tr
 from .keyword_service import KeywordService
 
@@ -40,21 +40,29 @@ _ZHUYIN = {"zh/z": "ㄓ/ㄗ", "ch/c": "ㄔ/ㄘ", "sh/s": "ㄕ/ㄙ", "n/l": "ㄋ/
            "en/eng": "ㄣ/ㄥ", "in/ing": "ㄧㄣ/ㄧㄥ"}
 
 
-def _how(keyword: str) -> str:
+def _how(keyword: str, latin_sound: bool = False) -> str:
     """How a keyword is matched, in words."""
     try:
-        sound = describe(keyword)
+        sound = describe(keyword, latin_sound)
     except Exception:  # noqa: BLE001 - pypinyin missing
         sound = ""
     return tr("Also matches what sounds like: {sound}").format(sound=sound) if sound else tr("Matches the text, in any case")
 
 
+def _plain_label(label):
+    """Show keywords as typed, never as rich text (a keyword like "<b>x" stays literal)."""
+    label.setTextFormat(Qt.TextFormat.PlainText)
+    return label
+
+
 class KeywordRow(CardWidget):
-    """One keyword: its text, how it's matched, a switch and a delete button."""
+    """One keyword: its text, how it's matched, a switch and a delete button. Plain letters that spell
+    Pinyin ("taibei", but also "China") also get a "Match by sound" check box, off by default."""
 
     def __init__(self, keyword: dict, service: KeywordService, parent=None):
         super().__init__(parent)
         self.text = keyword["text"]
+        self.sound_box = None
         lay = QHBoxLayout(self)
         lay.setContentsMargins(20, 10, 12, 10)
         lay.setSpacing(12)
@@ -63,11 +71,17 @@ class KeywordRow(CardWidget):
         lay.addWidget(icon)
         col = QVBoxLayout()
         col.setSpacing(0)
-        col.addWidget(StrongBodyLabel(self.text, self))
-        how = CaptionLabel(_how(self.text), self)
-        how.setTextColor("#707070", "#a0a0a0")
-        col.addWidget(how)
+        col.addWidget(_plain_label(StrongBodyLabel(self.text, self)))
+        self.how = _plain_label(CaptionLabel("", self))
+        self.how.setTextColor("#707070", "#a0a0a0")
+        col.addWidget(self.how)
         lay.addLayout(col, 1)
+        if latin_could_be_pinyin(self.text):
+            self.sound_box = CheckBox(self.tr("Match by sound"), self)
+            self.sound_box.setToolTip(self.tr("Treat it as Pinyin, so Chinese words that sound like it match too"))
+            self.sound_box.installEventFilter(ToolTipFilter(self.sound_box))
+            self.sound_box.toggled.connect(lambda on: service.set_sound(self.text, on))
+            lay.addWidget(self.sound_box)
         self.switch = SwitchButton(self)
         self.switch.setOnText(self.tr("On"))
         self.switch.setOffText(self.tr("Off"))
@@ -79,6 +93,17 @@ class KeywordRow(CardWidget):
         delete.installEventFilter(ToolTipFilter(delete))
         delete.clicked.connect(lambda: service.remove(self.text))
         lay.addWidget(delete)
+        self.update_from(keyword)
+
+    def update_from(self, keyword: dict) -> None:
+        """Show the keyword's current switches (the list was saved again)."""
+        sound = keyword.get("sound", False)
+        for widget, on in ((self.switch, keyword.get("enabled", True)), (self.sound_box, sound)):
+            if widget is not None:
+                widget.blockSignals(True)
+                widget.setChecked(on)
+                widget.blockSignals(False)
+        self.how.setText(_how(self.text, sound))
 
 
 class FuzzyCard(CardWidget):
@@ -159,7 +184,7 @@ class KeywordsPage(ScrollArea):
         self.add_btn.clicked.connect(self._add)
         row.addWidget(self.add_btn)
         add_lay.addLayout(row)
-        self.preview = CaptionLabel("", add)
+        self.preview = _plain_label(CaptionLabel("", add))
         self.preview.setTextColor("#707070", "#a0a0a0")
         add_lay.addWidget(self.preview)
         lay.addWidget(add)
@@ -230,9 +255,7 @@ class KeywordsPage(ScrollArea):
         keywords = self.service.keywords()
         if [r.text for r in self._rows] == [k["text"] for k in keywords]:
             for r, k in zip(self._rows, keywords):  # same list: just the switches
-                r.switch.blockSignals(True)
-                r.switch.setChecked(k.get("enabled", True))
-                r.switch.blockSignals(False)
+                r.update_from(k)
             return
         for r in self._rows:
             r.hide()
@@ -243,7 +266,13 @@ class KeywordsPage(ScrollArea):
         self.empty.setVisible(not keywords)
 
     def _preview(self, text: str) -> None:
-        self.preview.setText(_how(text) if text.strip() else "")
+        if not text.strip():
+            self.preview.setText("")
+        elif latin_could_be_pinyin(text):
+            self.preview.setText(self.tr("Matches the text. To match Chinese words that sound like it, tick "
+                                         "\"Match by sound\" after adding it."))
+        else:
+            self.preview.setText(_how(text))
 
     def _add(self) -> None:
         text = self.edit.text()

@@ -20,6 +20,7 @@ from qfluentwidgets import (
 
 from ..config import cfg
 from ..core.history import HistorySession, HistoryStore
+from ..core.keywords import utf16_spans
 from .messages import show_infobar
 
 
@@ -122,19 +123,25 @@ class HistoryPage(QWidget):
         if keep_scroll and shown and text.startswith(shown + "\n"):
             # The same transcript with new lines: appending keeps the reader's
             # place, or follows the end if they were at the bottom.
+            old_blocks = self.text.document().blockCount()
             self.text.appendPlainText(text[len(shown) + 1:])
+            self.mark_keywords(from_block=old_blocks)  # only the new lines
         elif not keep_scroll or text != shown:
             self.text.setPlainText(text)
-        self.mark_keywords()
+            self.mark_keywords()
 
-    def mark_keywords(self) -> None:
-        """Highlight the keywords in the transcript (Keywords page)."""
+    def mark_keywords(self, from_block: int = 0) -> None:
+        """Highlight the keywords in the transcript (Keywords page), from block ``from_block`` on."""
         # The text box's style sheet sets the text color, and Qt lets that win over a word's own color, so the
         # mark is the highlight color made see-through, and bold: readable with white (dark theme) or black text.
         doc = self.text.document()
         doc.setUndoRedoEnabled(False)
+        first = doc.findBlockByNumber(from_block)
+        if not first.isValid():
+            return
         cursor = QTextCursor(doc)
-        cursor.select(QTextCursor.SelectionType.Document)
+        cursor.setPosition(first.position())
+        cursor.movePosition(QTextCursor.MoveOperation.End, QTextCursor.MoveMode.KeepAnchor)
         cursor.setCharFormat(QTextCharFormat())  # earlier marks (the keywords may have changed)
         if self.keywords is None or not cfg.get(cfg.keywordHighlight):
             return
@@ -143,9 +150,11 @@ class HistoryPage(QWidget):
         fmt = QTextCharFormat()
         fmt.setBackground(color)
         fmt.setFontWeight(QFont.Weight.Bold)
-        block = doc.firstBlock()
+        block = first
         while block.isValid():
-            for start, end in self.keywords.spans(block.text()):
+            text = block.text()
+            # (A separate, uncached match: History's lines would push the live captions' out of the cache.)
+            for start, end in utf16_spans(text, self.keywords.spans_uncached(text)):
                 cursor.setPosition(block.position() + start)
                 cursor.setPosition(block.position() + end, QTextCursor.MoveMode.KeepAnchor)
                 cursor.setCharFormat(fmt)
