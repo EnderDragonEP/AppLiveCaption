@@ -88,7 +88,7 @@ LEGACY_ENGINE = Wheel(
     "ctranslate2-legacy-gpu", "4.6.2",
     "https://github.com/EnderDragonEP/AppLiveCaption/releases/download/legacy-gpu-ct2-4.6.2/"
     "ctranslate2-4.6.2-maxwell-win_amd64.zip",
-    "4d8d0c594ae85c8b42c73843b2a9a3a9bdb307b3514f2fe728e712f276ece601", 19683468,
+    "6773ffd13c98449132e0653325df6eccd857a205ad9b9ceb33c33a9171d798c8", 19683483,
     ("ctranslate2.dll", "LICENSE"),
 )
 LEGACY_REPLACES_SHA256 = "f73233e1d637c95d644d329a8a9c90c237060f0cd9dcecca88e90da5775c4355"  # ctranslate2 4.6.2
