@@ -14,8 +14,9 @@ PySide6-Fluent-Widgets[full]==1.11.3
 # Speech recognition (faster-whisper / CTranslate2, Silero VAD via onnxruntime)
 faster-whisper==1.2.1
 # CTranslate2 4.6 bundles the cuDNN 9.1 loader; app/asr/cuda_libs.py pins the
-# matching CUDA libraries.
-ctranslate2>=4.6,<4.7
+# matching CUDA libraries, and the legacy engine for Maxwell GPUs is built from
+# exactly this version (tools/build_legacy_ctranslate2.ps1).
+ctranslate2==4.6.2
 onnxruntime==1.31.0
 tokenizers>=0.22,<1
 # faster-whisper's file decoder doesn't work with PyAV 16+. The app never reads

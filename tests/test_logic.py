@@ -20,7 +20,8 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import paths  # noqa: E402
 from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
-from app.asr.hardware import GpuInfo, suggest_model  # noqa: E402
+from app.asr import hardware  # noqa: E402
+from app.asr.hardware import GpuInfo, pick_compute_type, realtime_risk, suggest_model  # noqa: E402
 from app.asr.streaming import PartialStabilizer, StreamingTranscriber, _Utterance, tokenize  # noqa: E402
 from app.asr.textconv import CHINESE_OFF, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, ChineseConverter  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
@@ -102,6 +103,49 @@ class FakeBackend:
     def transcribe(self, audio, language, prompt, final, translate=False):
         self.calls.append({"prompt": prompt, "final": final, "translate": translate})
         return Transcript(text=self.texts.pop(0), language="zh", language_probability=0.9, avg_logprob=-0.2)
+
+
+class GpuGenerationTests(unittest.TestCase):
+    """What CTranslate2 4.6 reports per GPU generation (src/types.cc: float16 needs tensor cores, int8 6.1)."""
+
+    BASE = {"float32"}
+
+    def test_compute_type(self):
+        ampere = self.BASE | {"float16", "bfloat16", "int8", "int8_float16", "int8_float32", "int8_bfloat16"}
+        self.assertEqual(pick_compute_type(ampere), "float16")  # RTX 30
+        self.assertEqual(pick_compute_type(self.BASE | {"float16", "int8", "int8_float16", "int8_float32"}),
+                         "float16")  # GTX 16 / RTX 20 (7.5)
+        self.assertEqual(pick_compute_type(self.BASE | {"int8", "int8_float32"}), "int8")  # GTX 10 (6.1)
+        self.assertEqual(pick_compute_type(self.BASE), "float32")  # Tesla P100 (6.0), Maxwell
+
+    def test_engine_and_legacy_engine(self):
+        gtx970m, gtx1060, gtx680 = (GpuInfo("GTX 970M", 3072, 600, (5, 2)), GpuInfo("GTX 1060", 6144, 5000, (6, 1)),
+                                    GpuInfo("GTX 680", 2048, 1800, (3, 0)))
+        unknown = GpuInfo("GPU", 4096, 4000)
+        with mock.patch("app.asr.cuda_libs.legacy_available", return_value=True):
+            self.assertTrue(hardware.needs_legacy_engine(gtx970m))
+            self.assertFalse(hardware.needs_legacy_engine(gtx1060))
+            self.assertFalse(hardware.too_old_for_gpu_support(gtx970m))
+            self.assertTrue(hardware.too_old_for_gpu_support(gtx680))
+            self.assertFalse(hardware.too_old_for_gpu_support(unknown))
+            with mock.patch("app.asr.cuda_setup.legacy_engine_loaded", return_value=False):
+                self.assertFalse(hardware.engine_runs_on(gtx970m))
+                self.assertTrue(hardware.engine_runs_on(gtx1060))
+                self.assertTrue(hardware.engine_runs_on(unknown))
+            with mock.patch("app.asr.cuda_setup.legacy_engine_loaded", return_value=True):
+                self.assertTrue(hardware.engine_runs_on(gtx970m))
+                self.assertFalse(hardware.engine_runs_on(gtx680))
+        with mock.patch("app.asr.cuda_libs.legacy_available", return_value=False):  # (no release pinned)
+            self.assertTrue(hardware.too_old_for_gpu_support(gtx970m))
+            self.assertFalse(hardware.wants_legacy_engine(gtx970m))
+
+    def test_vram_depends_on_the_compute_type(self):
+        gtx970m = GpuInfo("GTX 970M", 3072, 600, (5, 2))
+        self.assertEqual(realtime_risk("turbo", "cuda", gtx970m, "float32"), "vram_low")
+        self.assertIsNone(realtime_risk("small", "cuda", gtx970m, "float32"))
+        self.assertEqual(realtime_risk("medium", "cuda", gtx970m, "float32"), "vram_low")
+        self.assertIsNone(realtime_risk("medium", "cuda", gtx970m, "float16"))
+        self.assertIsNone(realtime_risk("turbo", "cuda", GpuInfo("GTX 1060", 6144, 5000, (6, 1)), "int8"))
 
 
 class TranslateTests(unittest.TestCase):
@@ -272,12 +316,12 @@ class SuggestModelTests(unittest.TestCase):
                ("whisper-base", "base"), ("whisper-small", "small"), ("whisper-medium", "medium")]
 
     def test_gpu_gets_turbo(self):
-        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("RTX 4070", 8188, 7000)), "whisper-large-v3-turbo")
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("RTX 4070", 8188, 7000, (8, 9))), "whisper-large-v3-turbo")
         self.assertEqual(suggest_model(self.PRESETS, "cuda", None), "whisper-large-v3-turbo")
 
     def test_cpu_or_small_gpu_gets_a_lighter_model(self):
         self.assertEqual(suggest_model(self.PRESETS, "cpu", None), "whisper-small")
-        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX150", 2048, 1800)), "whisper-small")
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX150", 2048, 1800, (6, 1))), "whisper-small")
 
     def test_a_trimmed_list(self):
         self.assertEqual(suggest_model([("whisper-base", "base"), ("breeze-asr-25", "large")], "cpu", None),

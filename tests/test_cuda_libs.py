@@ -35,6 +35,15 @@ class PinnedWheelTests(unittest.TestCase):
         self.assertNotIn("cudnn64_9.dll", names)
         self.assertIn("nvidia-cudnn-cu12==9.1.0.70", cuda_libs.BUNDLE_ID)
 
+    def test_legacy_engine_pin(self):
+        engine = cuda_libs.LEGACY_ENGINE
+        self.assertTrue(engine.url.startswith("https://github.com/EnderDragonEP/AppLiveCaption/releases/download/"))
+        self.assertIn(f"-{engine.version}-", engine.url)
+        self.assertRegex(cuda_libs.LEGACY_REPLACES_SHA256, r"^[0-9a-f]{64}$")
+        if engine.sha256:
+            self.assertRegex(engine.sha256, r"^[0-9a-f]{64}$")
+            self.assertGreater(engine.size, 0)
+
 
 class DownloadTests(unittest.TestCase):
     def setUp(self):
@@ -104,6 +113,58 @@ class DownloadTests(unittest.TestCase):
         self.assertEqual(cuda_libs.installed_dir(), d)
         with mock.patch.object(cuda_libs, "BUNDLE_ID", "fake==2.0"):  # the app now pins another version
             self.assertIsNone(cuda_libs.installed_dir())
+
+    def legacy_engine(self) -> cuda_libs.Wheel:
+        path = Path(self.tmp.name) / "engine.zip"
+        with zipfile.ZipFile(path, "w") as zf:
+            zf.writestr("ctranslate2.dll", b"E" * 4000)
+            zf.writestr("LICENSE", b"MIT")
+        engine = replace(cuda_libs.LEGACY_ENGINE, url=path.as_uri(), sha256=hashlib.sha256(path.read_bytes()).hexdigest(),
+                         size=path.stat().st_size)
+        patcher = mock.patch.object(cuda_libs, "LEGACY_ENGINE", engine)
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        found = mock.patch("app.asr.cuda_setup.cuda_libraries_found", return_value=False)
+        found.start()
+        self.addCleanup(found.stop)
+        return engine
+
+    def test_legacy_engine_with_the_libraries_or_on_its_own(self):
+        engine = self.legacy_engine()
+        self.assertEqual(cuda_libs.download_size(legacy=True), self.wheel.size + engine.size)
+        calls = []
+        cuda_libs.download(lambda *a: calls.append(a), threading.Event(), legacy=True)
+        self.assertEqual(calls[-1][:2], (self.wheel.size + engine.size,) * 2)
+        self.assertEqual(cuda_libs.installed_dir(), cuda_libs.lib_dir())
+        self.assertEqual(cuda_libs.legacy_dll(), cuda_libs.legacy_dir() / "ctranslate2.dll")
+        self.assertEqual(cuda_libs.to_download(legacy=True), [])
+        # Libraries downloaded before the engine existed (issue #3): only the engine is fetched.
+        cuda_libs.remove(in_use=False)
+        self.download()
+        self.assertIsNone(cuda_libs.legacy_dll())
+        self.assertEqual([w for w, _d, _b in cuda_libs.to_download(legacy=True)], [engine])
+        calls.clear()
+        cuda_libs.download(lambda *a: calls.append(a), threading.Event(), legacy=True)
+        self.assertEqual(calls[-1][:2], (engine.size, engine.size))
+        self.assertIsNotNone(cuda_libs.legacy_dll())
+        self.assertEqual(cuda_libs.installed_dir(), cuda_libs.lib_dir())
+
+    def test_damaged_or_outdated_legacy_engine_is_not_used(self):
+        engine = self.legacy_engine()
+        cuda_libs.download(lambda *a: None, threading.Event(), legacy=True)
+        with mock.patch.object(cuda_libs, "LEGACY_ID", "ctranslate2-legacy-gpu==9.9"):
+            self.assertIsNone(cuda_libs.legacy_dll())
+        (cuda_libs.legacy_dir() / "ctranslate2.dll").write_bytes(b"short")
+        self.assertIsNone(cuda_libs.legacy_dll())
+        self.assertEqual(cuda_libs.download_size(legacy=True), engine.size)
+        cuda_libs.remove(in_use=True)
+        self.assertIsNone(cuda_libs.legacy_dll())
+
+    def test_no_legacy_engine_until_its_release_is_pinned(self):
+        with mock.patch.object(cuda_libs, "LEGACY_ENGINE", replace(cuda_libs.LEGACY_ENGINE, sha256="")), \
+                mock.patch("app.asr.cuda_setup.cuda_libraries_found", return_value=False):
+            self.assertFalse(cuda_libs.legacy_available())
+            self.assertEqual([w for w, _d, _b in cuda_libs.to_download(legacy=True)], [self.wheel])
 
     def test_remove_now_or_at_next_start(self):
         self.download()

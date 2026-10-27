@@ -12,7 +12,8 @@ from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemP
 
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
-from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda
+from ..asr.cuda_setup import legacy_engine_loaded
+from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda, too_old_for_gpu_support, wants_legacy_engine
 from ..config import NO_MODEL, PREVIOUS_MODEL, cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_NONE, MODEL_READY, PAUSED, RUNNING, CaptionController
 from ..models.catalog import get_model, load_catalog
@@ -277,7 +278,8 @@ class MainWindow(FluentWindow):
         """The NVIDIA GPU that downloading GPU support would let models run on, if that's worth offering."""
         gpu = self.models_page.gpu_card
         if (gpu.gpu_name and not gpu.usable and cfg.get(cfg.device) != "cpu" and not gpu.downloading
-                and cuda_libs.installed_dir() is None and not cuda_libs.removal_scheduled()):
+                and not too_old_for_gpu_support(gpu.gpu) and not cuda_libs.removal_scheduled()
+                and cuda_libs.to_download(wants_legacy_engine(gpu.gpu))):
             return gpu.gpu_name
         return None
 
@@ -425,6 +427,14 @@ class MainWindow(FluentWindow):
         if self._load_after_gpu is not None:
             model_id, self._load_after_gpu = self._load_after_gpu, None
             self.request_model(model_id)  # downloaded while GPU support was; on the GPU now if it can be used
+        if not usable and cuda_libs.legacy_dll() is not None and not legacy_engine_loaded():
+            # The engine for an older GPU is used from the next start: CTranslate2 is already loaded.
+            bar = show_infobar("success", self.tr("GPU support installed"), self.tr(
+                "Restart the app to run models on your {gpu}.").format(gpu=name), self, duration=-1, with_buttons=True)
+            button = PushButton(self.tr("Restart now"), bar)
+            button.clicked.connect(self.restart)
+            bar.addWidget(button)
+            return
         if not usable:
             show_infobar("warning", self.tr("GPU support installed, but the GPU can't be used"), self.tr(
                 "Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU."),

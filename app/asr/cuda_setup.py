@@ -13,10 +13,17 @@ Only a complete set (cuBLAS and cuDNN) counts: with either missing, cuDNN
 aborts the whole process when a model is loaded on the GPU, so the app then
 stays on the CPU. Packages are located without importing them, so start-up
 stays fast.
+
+On a Maxwell GPU, which CTranslate2's official build has no GPU code for, the
+downloaded legacy engine (app/asr/cuda_libs.py) is loaded in place of the
+bundled ctranslate2.dll, before CTranslate2 is first imported.
 """
 
 from __future__ import annotations
 
+import ctypes
+import glob
+import hashlib
 import importlib.machinery
 import logging
 import os
@@ -27,6 +34,7 @@ log = logging.getLogger(__name__)
 _done = False
 _added: list[str] = []
 _complete = False
+_legacy_loaded = False
 
 
 def _package_dirs(name: str) -> list[str]:
@@ -91,7 +99,68 @@ def setup_cuda_dlls(refresh: bool = False) -> list[str]:
     os.environ["PATH"] = os.pathsep.join(_added) + os.pathsep + os.environ.get("PATH", "")
     _complete = True
     log.info("CUDA DLL directories: %s", _added)
+    _load_legacy_engine()
     return _added
+
+
+def _ctranslate2_dir() -> str | None:
+    """The folder of CTranslate2's DLLs (in the built app, its package's modules are in the archive)."""
+    if getattr(sys, "frozen", False):
+        d = os.path.join(getattr(sys, "_MEIPASS", ""), "ctranslate2")
+        return d if os.path.isdir(d) else None
+    dirs = _package_dirs("ctranslate2")
+    return dirs[0] if dirs else None
+
+
+def _sha256(path: str) -> str:
+    h = hashlib.sha256()
+    with open(path, "rb") as fh:
+        while chunk := fh.read(8 * 2**20):
+            h.update(chunk)
+    return h.hexdigest()
+
+
+def _load_legacy_engine() -> None:
+    """On a Maxwell GPU with the legacy engine downloaded, make CTranslate2 use it.
+
+    CTranslate2's package loads every DLL in its folder by path, then imports its extension, which links
+    ctranslate2.dll by name; Windows resolves that to the ctranslate2.dll already loaded. So the legacy one is
+    loaded first, and the package is imported without loading its own (which would then be a second copy).
+    """
+    global _legacy_loaded
+    if "ctranslate2" in sys.modules:
+        return  # (too late in this process: it's used after a restart)
+    from .cuda_libs import LEGACY_REPLACES_SHA256, legacy_dll
+    from .hardware import needs_legacy_engine, nvidia_gpu
+
+    dll = legacy_dll()
+    if dll is None or not needs_legacy_engine(nvidia_gpu()):
+        return
+    package = _ctranslate2_dir()
+    official = os.path.join(package, "ctranslate2.dll") if package else ""
+    if not os.path.isfile(official) or _sha256(official) != LEGACY_REPLACES_SHA256:
+        log.warning("The legacy GPU engine was built for another version of CTranslate2; not using it")
+        return
+    try:
+        os.add_dll_directory(package)  # (its libiomp5md.dll)
+        ctypes.CDLL(str(dll))
+        real_glob = glob.glob
+        glob.glob = lambda pattern, *a, **k: [f for f in real_glob(pattern, *a, **k)
+                                              if os.path.basename(f).lower() != "ctranslate2.dll"]
+        try:
+            import ctranslate2  # noqa: F401  (binds to the legacy engine loaded above)
+        finally:
+            glob.glob = real_glob
+    except Exception:  # noqa: BLE001
+        log.exception("Couldn't load the legacy GPU engine")
+        return
+    _legacy_loaded = True
+    log.info("Using the legacy GPU engine %s", dll)
+
+
+def legacy_engine_loaded() -> bool:
+    """CTranslate2 runs on the legacy engine in this process."""
+    return _legacy_loaded
 
 
 def active_dirs() -> list[str]:

@@ -93,6 +93,7 @@ The app warns you when a model will probably be too slow for real time on your P
 To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. First-time setup offers this too.
 
 - Only the NVIDIA display driver is needed; you don't have to install the CUDA Toolkit.
+- It works on GeForce GTX 900 series and newer GPUs. GTX 900 series GPUs (Maxwell) also get an engine built for them, about 20 MB more. GTX 900 and 10 series GPUs compute in float32 or int8 instead of float16, which takes more memory, so pick a smaller model there. Older GPUs (Kepler) can't run CUDA 12: models run on the CPU.
 - The files come from NVIDIA's own packages on PyPI and are checked against SHA-256 hashes pinned in the source before anything is unpacked.
 - The card's delete button removes them again. Windows locks DLLs that are in use, so they're deleted the next time the app starts.
 - No internet on that PC? Copy the `cuda` folder from another PC: it's next to `AppLiveCaption.exe` in the portable version, and in `%LOCALAPPDATA%\AppLiveCaption` in the installed one.
@@ -101,6 +102,8 @@ To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB
 <summary>Technical details</summary>
 
 faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9. The download ([app/asr/cuda_libs.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_libs.py)) fetches `nvidia-cublas-cu12` 12.4.5.8, `nvidia-cudnn-cu12` 9.1.0.70 and `nvidia-cuda-nvrtc-cu12` 12.4.127, resumes after an interruption, and keeps only the ten DLLs CTranslate2 loads. The versions match the cuDNN loader that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than that loader.
+
+CTranslate2's official Windows build only has GPU code for compute capability 5.3 and newer, so Maxwell GPUs (5.0 and 5.2: GTX 900 series and some GTX 700/800 models) get the **legacy engine**: the same CTranslate2 version's `ctranslate2.dll` built with Maxwell added, by [tools/build_legacy_ctranslate2.ps1](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_legacy_ctranslate2.ps1) with CTranslate2's own build steps. It's downloaded from this project's GitHub release `legacy-gpu-ct2-4.6.2` (SHA-256 pinned like the rest), kept in `cuda\legacy`, and loaded instead of the bundled DLL when the app starts. Maxwell has no fast float16 or int8, so it computes in float32; `python tools/cuda_archs.py <dll>` lists the GPU architectures a DLL has code for.
 
 The app also uses the same libraries when they're already on the PC, in this order: the downloaded `cuda` folder, NVIDIA's pip packages (handy when running from source), PyTorch's `torch\lib`, or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`) ([app/asr/cuda_setup.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_setup.py)). Only a complete set counts; otherwise models run on the CPU. `python -m app.cli cuda --download` downloads GPU support from a terminal.
 
