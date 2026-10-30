@@ -29,7 +29,7 @@ GitHub release legacy-gpu-ct2-<Version>, then put the SHA-256 and size in LEGACY
 #>
 param(
     [string]$Version = "4.6.2",
-    [string]$WorkDir = "$env:LOCALAPPDATA\AppLiveCaption-legacy-engine",  # (not inside AppLiveCaption-build: build_windows.sh mirrors the source there)
+    [string]$WorkDir = "$env:LOCALAPPDATA\AppLiveCaption-legacy-engine",
     [string]$Archs = "5.0;5.2;5.3;6.0;6.1;7.0;7.5;8.0;8.6+PTX",
     [int]$Jobs = [Environment]::ProcessorCount
 )

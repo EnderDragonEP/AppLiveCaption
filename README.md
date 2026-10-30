@@ -255,16 +255,11 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 | `-Install` | Run `pip install -r requirements.txt` for that Python before building. |
 | `-SkipTests` | Skip the unit tests. |
 | `-Installer` | Also build the installer, `dist\AppLiveCaption-<version>-Setup.exe` (about 55 MB). Needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`. |
+| `-Zip` | Also make the portable release, `dist\AppLiveCaption.zip` (about 80 MB): `AppLiveCaption.exe`, `_internal\` and `THIRD_PARTY_NOTICES.md` in an `AppLiveCaption` folder, never the data of a build you ran in `dist\`. |
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
 
-**Working in WSL?** The build has to run on Windows: PyInstaller can't cross-compile, and the app is Windows-only. [tools/build_windows.sh](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_windows.sh) does it from WSL. It copies the source to `%LOCALAPPDATA%\AppLiveCaption-build` on the Windows drive, runs `build.ps1` there with your Windows Python (and any options you pass), and copies the results back into `dist/`. `--zip` also makes the portable `dist/AppLiveCaption.zip`.
-
-```bash
-tools/build_windows.sh --zip -Installer
-```
-
-The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.2.0` so the update check finds it.
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, build both with `.\build.ps1 -Installer -Zip` and attach `dist\AppLiveCaption-<version>-Setup.exe` and `dist\AppLiveCaption.zip` (the portable version: only `AppLiveCaption.exe`, `_internal\` and the notices), and tag it like `v1.3.0` so the update check finds it.
 
 The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
 
@@ -352,7 +347,7 @@ pyside6-linguist app\i18n\app_zh_TW.ts app\i18n\app_zh_CN.ts   # translate the n
 Get-ChildItem app\i18n\*.ts | ForEach-Object { pyside6-lrelease $_.FullName -qm ($_.FullName -replace '\.ts$', '.qm') }
 ```
 
-From WSL, `tools/update_translations.sh` runs the first and last steps for every `.ts` with the Windows Python's tools; after translating, `tools/update_translations.sh --release` compiles them again. To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
+To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
 
 The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); the app overrides a few of its strings with its own wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
 
