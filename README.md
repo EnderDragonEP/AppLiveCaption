@@ -263,7 +263,7 @@ The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `d
 
 The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
 
-The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.2.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
 <details markdown="1">
 <summary>What the build leaves out, and why</summary>
