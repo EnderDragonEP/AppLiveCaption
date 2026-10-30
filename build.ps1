@@ -36,6 +36,10 @@
 .PARAMETER Installer
     Also build the Setup.exe with Inno Setup 6 (winget install JRSoftware.InnoSetup).
 
+.PARAMETER Zip
+    Also make dist\AppLiveCaption.zip, the portable release: AppLiveCaption.exe, _internal and
+    THIRD_PARTY_NOTICES.md in an AppLiveCaption folder (never the data of a build you ran in dist).
+
 .EXAMPLE
     .\build.ps1
 
@@ -46,7 +50,7 @@
     .\build.ps1 -Python C:\Python312\python.exe
 
 .EXAMPLE
-    .\build.ps1 -Installer
+    .\build.ps1 -Installer -Zip
 #>
 [CmdletBinding()]
 param(
@@ -55,7 +59,8 @@ param(
     [switch]$Clean,
     [switch]$Install,
     [switch]$SkipTests,
-    [switch]$Installer
+    [switch]$Installer,
+    [switch]$Zip
 )
 
 $ErrorActionPreference = 'Stop'
@@ -217,10 +222,34 @@ try {
         if (-not (Test-Path $setup)) { throw "Inno Setup finished but $setup is missing." }
     }
 
+    # 5. Portable zip
+    if ($Zip) {
+        $zipPath = Join-Path $root 'dist\AppLiveCaption.zip'
+        Write-Host 'Making the portable zip...'
+        Add-Type -AssemblyName System.IO.Compression, System.IO.Compression.FileSystem
+        if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+        $files = @(Get-Item $exe) + @(Get-ChildItem (Join-Path $distDir '_internal') -Recurse -File)
+        $archive = [IO.Compression.ZipFile]::Open($zipPath, 'Create')
+        try {
+            foreach ($file in $files) {
+                $name = 'AppLiveCaption/' + $file.FullName.Substring($distDir.Length + 1).Replace('\', '/')
+                [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, $file.FullName, $name, 'Optimal')
+            }
+            [void][IO.Compression.ZipFileExtensions]::CreateEntryFromFile($archive, (Join-Path $root 'THIRD_PARTY_NOTICES.md'),
+                'AppLiveCaption/THIRD_PARTY_NOTICES.md', 'Optimal')
+        }
+        finally {
+            $archive.Dispose()
+        }
+    }
+
     Write-Host ''
     Write-Host ('Done in {0:mm\:ss}. Output: {1} ({2:N0} MB)' -f $timer.Elapsed, $exe, $sizeMB) -ForegroundColor Green
     if ($Installer) {
         Write-Host ('Installer: {0} ({1:N0} MB)' -f $setup, ((Get-Item $setup).Length / 1MB)) -ForegroundColor Green
+    }
+    if ($Zip) {
+        Write-Host ('Portable zip: {0} ({1:N0} MB)' -f $zipPath, ((Get-Item $zipPath).Length / 1MB)) -ForegroundColor Green
     }
     $failed = $false
 }

@@ -7,6 +7,9 @@ consecutive hypotheses agree on it, so it doesn't flicker. When the VAD sees
 the end of speech, or the utterance gets too long, a more accurate *final*
 transcription is emitted and a new utterance starts. The previous final text is
 passed to the model as the prompt.
+
+With ``translate`` on, Whisper writes English whatever the spoken language
+(its translate task); it can be switched while running.
 """
 
 from __future__ import annotations
@@ -135,9 +138,10 @@ class _Utterance:
 
 class StreamingTranscriber:
     def __init__(self, backend: ASRBackend, language: str | None = None, chinese_output: str = CHINESE_TRADITIONAL,
-                 base_prompt: str = "", config: StreamingConfig | None = None):
+                 base_prompt: str = "", config: StreamingConfig | None = None, translate: bool = False):
         self.backend = backend
         self.language = language or None
+        self._translate = translate
         self.base_prompt = base_prompt
         self.cfg = config or StreamingConfig()
         self.vad = StreamingVAD()
@@ -153,6 +157,17 @@ class StreamingTranscriber:
         self.prompt_history = ""
         self._prompt_language: str | None = None
         self.last_latency = 0.0
+
+    @property
+    def translate(self) -> bool:
+        return self._translate
+
+    @translate.setter
+    def translate(self, on: bool) -> None:
+        if on != self._translate:
+            self._translate = on
+            # The previous line, in the other output language, would pull the next one back into it.
+            self.prompt_history = ""
 
     # ------------------------------------------------------------------
     def process(self, samples: np.ndarray, t_end: float | None) -> list[CaptionEvent]:
@@ -270,10 +285,10 @@ class StreamingTranscriber:
     def _decode(self, audio: np.ndarray, language: str | None, final: bool) -> tuple[Transcript, float]:
         t0 = time.monotonic()
         prompt = self._prompt(language)
-        tr = self.backend.transcribe(audio, language, prompt, final)
+        tr = self.backend.transcribe(audio, language, prompt, final, self._translate)
         if self._is_echo(tr.text, prompt):
             log.debug("prompt echo detected, retrying without prompt: %r", tr.text)
-            tr = self.backend.transcribe(audio, language, self.base_prompt or None, final)
+            tr = self.backend.transcribe(audio, language, self.base_prompt or None, final, self._translate)
         return tr, time.monotonic() - t0
 
     def _postprocess(self, text: str, language: str | None) -> str:

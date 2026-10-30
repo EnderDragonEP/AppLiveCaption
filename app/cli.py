@@ -114,8 +114,8 @@ def cmd_cuda(args) -> None:
     import threading
 
     from .asr import cuda_libs
-    from .asr.cuda_setup import active_dirs
-    from .asr.hardware import cuda_available, nvidia_gpu
+    from .asr.cuda_setup import active_dirs, legacy_engine_loaded
+    from .asr.hardware import cuda_available, cuda_compute_type, nvidia_gpu, wants_legacy_engine
 
     if args.download:
         cancel = threading.Event()
@@ -128,7 +128,7 @@ def cmd_cuda(args) -> None:
                 print(f"\r{name:24} {done / 2**20:7.0f} / {total / 2**20:.0f} MB", end="", flush=True)
 
         try:
-            path = cuda_libs.download(on_progress, cancel)
+            path = cuda_libs.download(on_progress, cancel, legacy=wants_legacy_engine())
         except KeyboardInterrupt:
             cancel.set()
             print("\nCancelled; run again to resume.")
@@ -138,9 +138,14 @@ def cmd_cuda(args) -> None:
             sys.exit(1)
         print(f"\nInstalled in {path}")
     gpu = nvidia_gpu()
-    print(f"NVIDIA GPU:      {gpu.name if gpu else 'none found'}")
+    cc = ".".join(map(str, gpu.compute_capability)) if gpu else ""
+    print(f"NVIDIA GPU:      {f'{gpu.name} (compute capability {cc})' if gpu else 'none found'}")
     print(f"Downloaded libs: {cuda_libs.installed_dir() or 'not installed'} ({cuda_libs.BUNDLE_ID})")
+    if wants_legacy_engine(gpu):
+        print(f"Legacy engine:   {cuda_libs.legacy_dll() or 'not installed'} (in use: {legacy_engine_loaded()})")
     print(f"CUDA usable:     {cuda_available()}  {active_dirs()}")
+    if cuda_available():
+        print(f"Compute type:    {cuda_compute_type()}")
 
 
 def main(argv: list[str] | None = None) -> None:
@@ -178,6 +183,8 @@ def main(argv: list[str] | None = None) -> None:
     tr.add_argument("--wav", help="transcribe a 16-bit WAV file in simulated real time instead of live audio")
     tr.add_argument("--chinese", choices=CHINESE_OUTPUTS, default=CHINESE_TRADITIONAL,
                     help="convert Chinese captions to Traditional or Simplified Chinese, or leave them (off)")
+    tr.add_argument("--translate", action="store_true",
+                    help="write the captions in English, whatever language is spoken (Whisper's translate task)")
     # The option's name before --chinese, still accepted.
     tr.add_argument("--no-opencc", dest="chinese", action="store_const", const=CHINESE_OFF, help=argparse.SUPPRESS)
     tr.set_defaults(func=cmd_transcribe)

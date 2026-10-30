@@ -64,6 +64,9 @@ def _entry(name: str, repo: str, size_bytes: int, model_bin: int, license: str, 
         "tier": estimate_tier(model_bin),
         "description": description,
         "files": list(CT2_FILES),
+        # large-v3-turbo wasn't trained to translate, and Distil-Whisper is English-only: their conversions are
+        # usually named after them.
+        **({"translate": False} if any(w in f"{repo} {name}".lower() for w in ("turbo", "distil")) else {}),
         **extra,
     }
 

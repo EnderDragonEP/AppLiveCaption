@@ -9,6 +9,7 @@ import numpy as np
 
 from .backend import ASRBackend, GpuFailure, ModelLoadError, OutOfMemory, Transcript, UnsupportedLanguage, is_oom_error
 from .cuda_setup import setup_cuda_dlls
+from .hardware import cuda_compute_type, cuda_device_index
 
 log = logging.getLogger(__name__)
 
@@ -23,9 +24,10 @@ class FasterWhisperBackend(ASRBackend):
         from faster_whisper import WhisperModel
 
         self.device = device
-        self.compute_type = "float16" if device == "cuda" else "int8"
+        self.compute_type = cuda_compute_type() if device == "cuda" else "int8"
         try:
             self.model = WhisperModel(model_dir, device=device, compute_type=self.compute_type,
+                                      device_index=cuda_device_index() if device == "cuda" else 0,
                                       cpu_threads=0, num_workers=1, local_files_only=True)
         except Exception as exc:  # noqa: BLE001
             self.model = None
@@ -45,14 +47,15 @@ class FasterWhisperBackend(ASRBackend):
     def supported_languages(self) -> list[str] | None:
         return self._languages
 
-    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool) -> Transcript:
+    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool,
+                   translate: bool = False) -> Transcript:
         if self.model is None:
             raise RuntimeError("model not loaded")
         if language and self._languages is not None and language not in self._languages:
             raise UnsupportedLanguage(language)
         opts = dict(
             language=language or None,
-            task="transcribe",
+            task="translate" if translate else "transcribe",  # (English-only models always transcribe)
             initial_prompt=prompt or None,
             condition_on_previous_text=False,
             without_timestamps=True,

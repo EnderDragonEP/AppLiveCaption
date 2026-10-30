@@ -29,7 +29,8 @@ from qfluentwidgets import (
 
 from .. import LICENSES_URL
 from ..asr import cuda_libs
-from ..asr.cuda_setup import active_dirs, cuda_libraries_found
+from ..asr.cuda_setup import active_dirs, cuda_libraries_found, legacy_engine_loaded
+from ..asr.hardware import GpuInfo, nvidia_gpu, too_old_for_gpu_support, wants_legacy_engine
 from ..i18n import language_label, tr
 from ..models.catalog import ModelInfo, add_custom_model, load_catalog, remove_model, reset_catalog
 from ..models.storage import (
@@ -275,6 +276,9 @@ class GpuSupportCard(_ItemCard):
         super().__init__(parent)
         self._thread: CudaDownloadThread | None = None
         self.gpu_name = ""
+        self.gpu: GpuInfo | None = None
+        self._too_old = False  # no engine has GPU code for it: models run on the CPU
+        self._legacy = False  # it needs the legacy engine (GTX 900 series)
         self.usable = False  # CTranslate2 can use the GPU
         self.link_hint = self.tr("Ctrl+click to open the license of NVIDIA's libraries")
         lay = self._build_frame()
@@ -289,14 +293,9 @@ class GpuSupportCard(_ItemCard):
         self.desc = CaptionLabel("", self)
         self.desc.setWordWrap(True)
         text.addWidget(self.desc)
-        meta = CaptionLabel(
-            self.tr("Download {download} · {installed} on disk · cuBLAS 12.4 and cuDNN 9.1 from PyPI · "
-                    "License: NVIDIA Software License").format(
-                download=format_bytes(cuda_libs.DOWNLOAD_SIZE), installed=format_bytes(cuda_libs.INSTALLED_SIZE)),
-            self,
-        )
-        meta.setWordWrap(True)
-        text.addWidget(meta)
+        self.meta = CaptionLabel("", self)
+        self.meta.setWordWrap(True)
+        text.addWidget(self.meta)
         lay.addLayout(text, 1)
 
         side = QVBoxLayout()
@@ -332,17 +331,38 @@ class GpuSupportCard(_ItemCard):
         return self._thread is not None
 
     @staticmethod
-    def _in_use() -> bool:
+    def _libraries_in_use() -> bool:
         """This process has the downloaded libraries on its DLL path (and may have loaded them)."""
         return str(cuda_libs.lib_dir()) in active_dirs()
 
+    def _in_use(self) -> bool:
+        """Deleting must wait for the next start: Windows won't delete loaded DLLs (the downloaded libraries, or
+        the legacy engine this process runs on)."""
+        return self._libraries_in_use() or legacy_engine_loaded()
+
     def set_gpu(self, name: str | None, usable: bool) -> None:
         self.gpu_name = name or ""
+        self.gpu = nvidia_gpu() if name else None
         self.usable = usable
-        self.desc.setText(
-            (self.tr("Runs models on your {gpu} with CUDA, many times faster than on the CPU.").format(gpu=name)
-             if name else self.tr("Runs models on an NVIDIA GPU with CUDA, many times faster than on the CPU."))
-            + " " + self.tr("Downloads NVIDIA's CUDA libraries once; the app doesn't include them."))
+        self._too_old = too_old_for_gpu_support(self.gpu)
+        self._legacy = self.gpu is not None and wants_legacy_engine(self.gpu)
+        if self._too_old:
+            desc = self.tr("Your {gpu} is too old for GPU support: it needs a GeForce GTX 900 series or newer NVIDIA "
+                           "GPU. Models run on the CPU.").format(gpu=name)
+        else:
+            desc = (self.tr("Runs models on your {gpu} with CUDA, many times faster than on the CPU.").format(gpu=name)
+                    if name else self.tr("Runs models on an NVIDIA GPU with CUDA, many times faster than on the CPU.")
+                    ) + " " + self.tr("Downloads NVIDIA's CUDA libraries once; the app doesn't include them.")
+            if self._legacy:
+                desc += " " + self.tr("Your GPU is an older one, so this also downloads an engine built for it.")
+        self.desc.setText(desc)
+        meta = self.tr("Download {download} · {installed} on disk · cuBLAS 12.4 and cuDNN 9.1 from PyPI · "
+                       "License: NVIDIA Software License").format(
+            download=format_bytes(cuda_libs.DOWNLOAD_SIZE), installed=format_bytes(cuda_libs.INSTALLED_SIZE))
+        if self._legacy:
+            meta += " · " + self.tr("Engine for older GPUs: {size}, CTranslate2 (MIT)").format(
+                size=format_bytes(cuda_libs.LEGACY_ENGINE.size))
+        self.meta.setText(meta)
         self.update_state()
 
     def worth_showing(self) -> bool:
@@ -354,31 +374,45 @@ class GpuSupportCard(_ItemCard):
         installed = cuda_libs.installed_dir() is not None
         scheduled = not downloading and cuda_libs.removal_scheduled()
         partial = not downloading and cuda_libs.has_partial_download()
-        elsewhere = not installed and not scheduled and not self._in_use() and cuda_libraries_found()
+        elsewhere = not installed and not scheduled and not self._libraries_in_use() and cuda_libraries_found()
+        too_old, legacy = self._too_old, self._legacy
+        engine = cuda_libs.legacy_dll() is not None  # (the engine is downloaded)
+        # The CUDA libraries are there, but the engine for this older GPU isn't (yet), or it is but runs after a restart.
+        engine_missing = legacy and (installed or elsewhere) and not scheduled and not engine
+        restart = legacy and not scheduled and engine and not legacy_engine_loaded()
         self.progress.setVisible(downloading)
         self.reserve_progress_width(downloading)
         self.cancel_btn.setVisible(downloading)
-        self.download_btn.setVisible(not (downloading or installed or scheduled or elsewhere))
+        self.download_btn.setVisible(not (downloading or scheduled or too_old)
+                                     and (engine_missing or not (installed or elsewhere)))
         self.download_btn.setText(self.tr("Resume") if partial else self.tr("Download"))
         self.keep_btn.setVisible(scheduled)
-        self.remove_btn.setVisible(not downloading and (installed or partial))
+        self.remove_btn.setVisible(not downloading and (installed or partial or engine))
         if downloading:
             self.status.setText(self.tr("Downloading…"))
         elif scheduled:
             self.status.setText(self.tr("Deleted when the app restarts"))
-        elif installed:
-            self.status.setText(self.tr("Installed") if self.usable or not self.gpu_name
+        elif engine_missing:
+            self.status.setText(self.tr("Needs the engine for older GPUs"))
+        elif installed or (elsewhere and restart):
+            self.status.setText(self.tr("Installed") if self.usable or restart or not self.gpu_name or too_old
                                 else self.tr("Installed, but the GPU can't be used"))
         elif elsewhere:
             self.status.setText(self.tr("Found on this PC"))
         elif partial:
             self.status.setText(self.tr("Partly downloaded"))
+        elif too_old:
+            self.status.setText(self.tr("Not supported on this GPU"))
         else:
             self.status.setText(self.tr("Not installed"))
         if not downloading:
-            if elsewhere:
+            if restart:
+                self.detail.setText(self.tr("Restart the app to use the GPU"))
+            elif engine_missing:
+                self.detail.setText(self.tr("Download {size}").format(size=format_bytes(cuda_libs.LEGACY_ENGINE.size)))
+            elif elsewhere:
                 self.detail.setText(active_dirs()[0])
-            elif installed and self.gpu_name and not self.usable:
+            elif installed and self.gpu_name and not self.usable and not too_old:
                 self.detail.setText(self.tr("Update the NVIDIA driver, then restart the app"))
             else:
                 used = cuda_libs.disk_usage()

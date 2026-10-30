@@ -45,6 +45,7 @@ class LivePage(QWidget):
     languageChanged = Signal(str)
     selectionChanged = Signal(object)
     overlayToggled = Signal(bool)
+    translateToggled = Signal(bool)
 
     def __init__(self, captions: CaptionModel, parent=None):
         super().__init__(parent)
@@ -108,6 +109,13 @@ class LivePage(QWidget):
         self.lang_combo.setToolTip(self.tr("Spoken language"))
         self.lang_combo.installEventFilter(ToolTipFilter(self.lang_combo))
         bar2.addWidget(self.lang_combo)
+        bar2.addSpacing(12)
+        self.translate_btn = TogglePushButton(FluentIcon.LANGUAGE, self.tr("Translate to English"), self)
+        self.translate_btn.setChecked(cfg.get(cfg.translate))
+        self.translate_btn.installEventFilter(ToolTipFilter(self.translate_btn))
+        self.translate_btn.toggled.connect(self.translateToggled)
+        self._update_translate_tip(None)  # (and again with the model's name in it, see set_languages)
+        bar2.addWidget(self.translate_btn)
         bar2.addStretch(1)
         root.addLayout(bar2)
 
@@ -233,8 +241,16 @@ class LivePage(QWidget):
         self.lang_combo.blockSignals(False)
         if detect and cfg.get(cfg.language) != current:
             cfg.set(cfg.language, current)
+        self._update_translate_tip(info)
         # Tell the worker what the dropdown now shows, so the two never disagree.
         self.languageChanged.emit(current)
+
+    def _update_translate_tip(self, info: ModelInfo | None) -> None:
+        tip = self.tr("Write the captions in English, whatever language is spoken")
+        if info is not None and not info.translate:
+            tip += "\n" + self.tr("{model} wasn't trained to translate. Whisper large-v3, large-v2 or medium "
+                                   "translate best.").format(model=info.name)
+        self.translate_btn.setToolTip(tip)
 
     def selected_language(self) -> str:
         """The language code shown in the dropdown, or "auto"."""

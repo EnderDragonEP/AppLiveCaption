@@ -54,10 +54,12 @@ class CudaDownloadThread(QThread):
         self.cancel_event = threading.Event()
 
     def run(self) -> None:
+        from ..asr.hardware import wants_legacy_engine
+
         speed = TransferSpeed()
         try:
             cuda_libs.download(lambda done, total, name: self.progress.emit(Progress(done, total, speed.add(done), name)),
-                               self.cancel_event)
+                               self.cancel_event, legacy=wants_legacy_engine())
         except cuda_libs.DownloadCancelled:
             self.done.emit("cancelled", "")
         except cuda_libs.DownloadError as exc:

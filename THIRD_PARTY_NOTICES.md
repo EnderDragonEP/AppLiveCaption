@@ -105,6 +105,8 @@ The rest of NVIDIA's libraries for the GPU are not part of the app. When you cli
 
 These libraries are provided by NVIDIA under the [NVIDIA CUDA Toolkit End User License Agreement](https://docs.nvidia.com/cuda/eula/) and the [cuDNN Software License Agreement](https://docs.nvidia.com/deeplearning/cudnn/latest/reference/eula.html). They are not open source.
 
+On a GeForce GTX 900 series (Maxwell) GPU, the download also includes the engine for older GPUs (`cuda\legacy\ctranslate2.dll`, from this project's GitHub release `legacy-gpu-ct2-4.6.2`): [CTranslate2](https://github.com/OpenNMT/CTranslate2) 4.6.2 (MIT, license included in the download) built by this project with [tools/build_legacy_ctranslate2.ps1](tools/build_legacy_ctranslate2.ps1), with the same build steps and components as CTranslate2's own `ctranslate2.dll` and GPU code for Maxwell added.
+
 ## Python (PSF License Agreement)
 
 The exe contains the Python runtime and parts of its standard library, used under the

@@ -102,6 +102,8 @@ class Config(QConfig):
     modelId = ConfigItem("Live", "Model", DEFAULT_MODEL)
     language = ConfigItem("Live", "Language", "auto")
     captureSelection = ConfigItem("Live", "CaptureSelection", {}, DictValidator())
+    # Write the captions in English, whatever language is spoken (Whisper's translate task).
+    translate = ConfigItem("Live", "Translate", False, BoolValidator())
 
     # Speech recognition
     # The model loaded at start-up: NO_MODEL, PREVIOUS_MODEL or any model id (the list of models can

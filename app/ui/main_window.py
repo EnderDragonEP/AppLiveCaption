@@ -12,7 +12,8 @@ from qfluentwidgets import FluentIcon, FluentWindow, MessageBox, NavigationItemP
 
 from .. import APP_NAME, __version__
 from ..asr import cuda_libs
-from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda
+from ..asr.cuda_setup import legacy_engine_loaded
+from ..asr.hardware import cuda_available, nvidia_gpu, refresh_cuda, too_old_for_gpu_support, wants_legacy_engine
 from ..config import NO_MODEL, PREVIOUS_MODEL, cfg
 from ..core.controller import IDLE, MODEL_FAILED, MODEL_LOADING, MODEL_NONE, MODEL_READY, PAUSED, RUNNING, CaptionController
 from ..models.catalog import get_model, load_catalog
@@ -84,6 +85,7 @@ class MainWindow(FluentWindow):
         self._launched_with_start = auto_start
         self._setup_checked = False  # first-time setup was considered (it's offered at the first GPU probe)
         self._setup_open = False
+        self._translate_warned: set[str] = set()  # models already warned that they may not translate
 
         # Pages
         self.live = LivePage(self.captions, self)
@@ -98,6 +100,7 @@ class MainWindow(FluentWindow):
         self.live.languageChanged.connect(lambda c: self.controller.set_language(None if c == "auto" else c))
         self.live.selectionChanged.connect(self._on_selection_changed)
         self.live.overlayToggled.connect(self.set_overlay_visible)
+        self.live.translateToggled.connect(self._on_translate_toggled)
         cfg.chineseOutput.valueChanged.connect(self.controller.set_chinese_output)
 
         # Controller -> UI
@@ -275,7 +278,8 @@ class MainWindow(FluentWindow):
         """The NVIDIA GPU that downloading GPU support would let models run on, if that's worth offering."""
         gpu = self.models_page.gpu_card
         if (gpu.gpu_name and not gpu.usable and cfg.get(cfg.device) != "cpu" and not gpu.downloading
-                and cuda_libs.installed_dir() is None and not cuda_libs.removal_scheduled()):
+                and not too_old_for_gpu_support(gpu.gpu) and not cuda_libs.removal_scheduled()
+                and cuda_libs.to_download(wants_legacy_engine(gpu.gpu))):
             return gpu.gpu_name
         return None
 
@@ -385,6 +389,7 @@ class MainWindow(FluentWindow):
             self.live.select_model(model_id)
             self.models_page.set_current_model(model_id)
             self._update_device_label()
+            self._warn_if_cant_translate()
             if self._auto_start and not self.controller.is_running:
                 self._auto_start = False
                 self.start_captioning()
@@ -422,6 +427,14 @@ class MainWindow(FluentWindow):
         if self._load_after_gpu is not None:
             model_id, self._load_after_gpu = self._load_after_gpu, None
             self.request_model(model_id)  # downloaded while GPU support was; on the GPU now if it can be used
+        if not usable and cuda_libs.legacy_dll() is not None and not legacy_engine_loaded():
+            # The engine for an older GPU is used from the next start: CTranslate2 is already loaded.
+            bar = show_infobar("success", self.tr("GPU support installed"), self.tr(
+                "Restart the app to run models on your {gpu}.").format(gpu=name), self, duration=-1, with_buttons=True)
+            button = PushButton(self.tr("Restart now"), bar)
+            button.clicked.connect(self.restart)
+            bar.addWidget(button)
+            return
         if not usable:
             show_infobar("warning", self.tr("GPU support installed, but the GPU can't be used"), self.tr(
                 "Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU."),
@@ -470,7 +483,21 @@ class MainWindow(FluentWindow):
         sel = self.live.selection
         lang = self.live.selected_language()
         self.captions.clear()
-        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.chineseOutput), selection_summary(sel))
+        self.controller.start(sel, None if lang == "auto" else lang, cfg.get(cfg.chineseOutput), selection_summary(sel),
+                              translate=cfg.get(cfg.translate))
+
+    def _on_translate_toggled(self, on: bool) -> None:
+        cfg.set(cfg.translate, on)
+        self.controller.set_translate(on)
+        self._warn_if_cant_translate()
+
+    def _warn_if_cant_translate(self) -> None:
+        """Translation is on with a model that wasn't trained for it: say so, once per model."""
+        c = self.controller
+        info = get_model(c.model_id or "") if c.model_state == MODEL_READY else None
+        if cfg.get(cfg.translate) and info is not None and not info.translate and info.id not in self._translate_warned:
+            self._translate_warned.add(info.id)
+            self._on_notice("translate_unsupported", {"model": info.name})
 
     def _on_selection_changed(self, sel) -> None:
         if self.controller.is_running:

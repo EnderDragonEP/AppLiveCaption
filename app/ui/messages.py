@@ -82,6 +82,10 @@ def notice_text(kind: str, payload: dict) -> tuple[str, str, str] | None:
         return "warning", tr("GPU error"), tr(
             "The GPU reported an error, so {model} runs on the CPU now. Restart the app to use the GPU again."
         ).format(model=payload.get("model", ""))
+    if kind == "translate_unsupported":
+        return "warning", tr("This model may not translate"), tr(
+            "{model} wasn't trained to translate, so captions may stay in the spoken language. "
+            "Whisper large-v3, large-v2 or medium translate best.").format(model=payload.get("model", ""))
     if kind == "falling_behind":
         return "warning", tr("Captions are falling behind"), tr(
             "Recognition can't keep up, so some audio was skipped. Pick a smaller model.")

@@ -61,6 +61,7 @@ class AsrWorker(QThread):
         self.selection = CaptureSelection()
         self.language: str | None = None
         self.chinese_output = CHINESE_TRADITIONAL
+        self.translate = False  # write English (Whisper's translate task)
         self.running = False
         self._last_levels = 0.0
         self._last_drop_notice = 0.0
@@ -263,10 +264,12 @@ class AsrWorker(QThread):
         self._cmd_load(info.id, "cpu")
 
     # -- capture --------------------------------------------------------------
-    def _cmd_start(self, selection: CaptureSelection, language: str | None, chinese_output: str) -> None:
+    def _cmd_start(self, selection: CaptureSelection, language: str | None, chinese_output: str,
+                   translate: bool = False) -> None:
         self.selection = selection
         self.language = language
         self.chinese_output = chinese_output
+        self.translate = translate
         if self.backend is None:
             self.error.emit("no_model", "")
             return
@@ -275,7 +278,8 @@ class AsrWorker(QThread):
     def _start(self) -> None:
         assert self.backend is not None and self.model is not None
         self.transcriber = StreamingTranscriber(self.backend, language=self._effective_language(),
-                                                chinese_output=self.chinese_output, base_prompt=self.model.initial_prompt)
+                                                chinese_output=self.chinese_output, base_prompt=self.model.initial_prompt,
+                                                translate=self.translate)
         try:
             self.capture.start(self.selection)
         except Exception as exc:  # noqa: BLE001
@@ -320,6 +324,12 @@ class AsrWorker(QThread):
         if self.transcriber is not None:
             self._flush()
             self.transcriber.language = self._effective_language()
+
+    def _cmd_set_translate(self, translate: bool) -> None:
+        self.translate = translate
+        if self.transcriber is not None:
+            self._flush()  # (so a line isn't half in one language and half in the other)
+            self.transcriber.translate = translate
 
     def _cmd_set_chinese_output(self, output: str) -> None:
         self.chinese_output = output
@@ -383,10 +393,12 @@ class CaptionController(QObject):
         self.model_id = None
         self.worker.post("unload")
 
-    def start(self, selection: CaptureSelection, language: str | None, chinese_output: str, source_label: str) -> None:
+    def start(self, selection: CaptureSelection, language: str | None, chinese_output: str, source_label: str,
+              translate: bool = False) -> None:
         self.selection = selection
         self.source_label = source_label
-        self.worker.post("start", selection=selection, language=language, chinese_output=chinese_output)
+        self.worker.post("start", selection=selection, language=language, chinese_output=chinese_output,
+                         translate=translate)
 
     def stop(self) -> None:
         self.worker.post("stop")
@@ -400,6 +412,9 @@ class CaptionController(QObject):
 
     def set_language(self, language: str | None) -> None:
         self.worker.post("set_language", language=language)
+
+    def set_translate(self, translate: bool) -> None:
+        self.worker.post("set_translate", translate=translate)
 
     def set_chinese_output(self, output: str) -> None:
         self.worker.post("set_chinese_output", output=output)

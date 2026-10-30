@@ -55,11 +55,13 @@ class ASRBackend(abc.ABC):
         """Release the model and free GPU memory."""
 
     @abc.abstractmethod
-    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool) -> Transcript:
+    def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool,
+                   translate: bool = False) -> Transcript:
         """Transcribe one utterance.
 
         ``final`` asks for the more accurate (slower) settings; partial
-        updates use greedy decoding. Raises OutOfMemory.
+        updates use greedy decoding. ``translate`` writes English instead of the
+        spoken language (``language`` is still the spoken one). Raises OutOfMemory.
         """
 
     def supported_languages(self) -> list[str] | None:

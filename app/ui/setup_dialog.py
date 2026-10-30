@@ -22,7 +22,7 @@ from qfluentwidgets import (
 )
 
 from ..asr import cuda_libs
-from ..asr.hardware import GpuInfo, suggest_model
+from ..asr.hardware import GpuInfo, suggest_model, wants_legacy_engine
 from ..config import NO_MODEL, PREVIOUS_MODEL
 from ..models.catalog import load_catalog
 from ..models.storage import is_downloaded
@@ -57,8 +57,9 @@ class FirstRunDialog(MessageBoxBase):
         self.viewLayout.addWidget(self.pages)
 
         # GPU support
+        legacy = gpu_offer is not None and wants_legacy_engine(gpu)
         self.gpu_box = CheckBox(self.tr("Download GPU support ({size})").format(
-            size=format_bytes(cuda_libs.DOWNLOAD_SIZE)), self)
+            size=format_bytes(cuda_libs.download_size(legacy) or cuda_libs.DOWNLOAD_SIZE)), self)
         self.gpu_box.setChecked(True)
         self.gpu_box.toggled.connect(self._suggest)
         self.gpu_page = self._page(

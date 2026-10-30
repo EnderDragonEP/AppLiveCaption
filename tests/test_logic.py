@@ -20,10 +20,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app import paths  # noqa: E402
 from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
-from app.asr.hardware import GpuInfo, suggest_model  # noqa: E402
-from app.asr.streaming import PartialStabilizer, tokenize  # noqa: E402
+from app.asr import hardware  # noqa: E402
+from app.asr.hardware import GpuInfo, pick_compute_type, realtime_risk, suggest_model  # noqa: E402
+from app.asr.streaming import PartialStabilizer, StreamingTranscriber, _Utterance, tokenize  # noqa: E402
 from app.asr.textconv import CHINESE_OFF, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, ChineseConverter  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
+from app.audio.vad import FRAME  # noqa: E402
 from app.audio.mixer import Limiter, TimedQueue  # noqa: E402
 from app.core.history import HistoryLine, HistoryStore  # noqa: E402
 from app.i18n import windows_chinese_script  # noqa: E402
@@ -89,6 +91,120 @@ class StabilizerTests(unittest.TestCase):
         # A revision of committed words keeps the committed text.
         stable, _ = s.update("a quick brown fox")
         self.assertTrue(stable.startswith("the quick"))
+
+
+class FakeBackend:
+    """Answers every decode with the next text, and records how it was asked."""
+
+    def __init__(self, *texts):
+        self.texts = list(texts)
+        self.calls: list[dict] = []
+
+    def transcribe(self, audio, language, prompt, final, translate=False):
+        self.calls.append({"prompt": prompt, "final": final, "translate": translate})
+        return Transcript(text=self.texts.pop(0), language="zh", language_probability=0.9, avg_logprob=-0.2)
+
+
+class GpuGenerationTests(unittest.TestCase):
+    """What CTranslate2 4.6 reports per GPU generation (src/types.cc: float16 needs tensor cores, int8 6.1)."""
+
+    BASE = {"float32"}
+
+    def test_compute_type(self):
+        ampere = self.BASE | {"float16", "bfloat16", "int8", "int8_float16", "int8_float32", "int8_bfloat16"}
+        self.assertEqual(pick_compute_type(ampere), "float16")  # RTX 30
+        self.assertEqual(pick_compute_type(self.BASE | {"float16", "int8", "int8_float16", "int8_float32"}),
+                         "float16")  # GTX 16 / RTX 20 (7.5)
+        self.assertEqual(pick_compute_type(self.BASE | {"int8", "int8_float32"}), "int8")  # GTX 10 (6.1)
+        self.assertEqual(pick_compute_type(self.BASE), "float32")  # Tesla P100 (6.0), Maxwell
+
+    def test_engine_and_legacy_engine(self):
+        gtx970m, gtx1060, gtx680 = (GpuInfo("GTX 970M", 3072, 600, (5, 2)), GpuInfo("GTX 1060", 6144, 5000, (6, 1)),
+                                    GpuInfo("GTX 680", 2048, 1800, (3, 0)))
+        unknown = GpuInfo("GPU", 4096, 4000)
+        with mock.patch("app.asr.cuda_libs.legacy_available", return_value=True):
+            self.assertTrue(hardware.needs_legacy_engine(gtx970m))
+            self.assertFalse(hardware.needs_legacy_engine(gtx1060))
+            self.assertFalse(hardware.too_old_for_gpu_support(gtx970m))
+            self.assertTrue(hardware.too_old_for_gpu_support(gtx680))
+            self.assertFalse(hardware.too_old_for_gpu_support(unknown))
+            with mock.patch("app.asr.cuda_setup.legacy_engine_loaded", return_value=False):
+                self.assertFalse(hardware.engine_runs_on(gtx970m))
+                self.assertTrue(hardware.engine_runs_on(gtx1060))
+                self.assertTrue(hardware.engine_runs_on(unknown))
+            with mock.patch("app.asr.cuda_setup.legacy_engine_loaded", return_value=True):
+                self.assertTrue(hardware.engine_runs_on(gtx970m))
+                self.assertFalse(hardware.engine_runs_on(gtx680))
+        with mock.patch("app.asr.cuda_libs.legacy_available", return_value=False):  # (no release pinned)
+            self.assertTrue(hardware.too_old_for_gpu_support(gtx970m))
+            self.assertFalse(hardware.wants_legacy_engine(gtx970m))
+
+    def test_expected_compute_type_without_cuda(self):
+        expected = {(8, 6): "float16", (7, 5): "float16", (6, 1): "int8", (6, 0): "float32", (5, 2): "float32",
+                    (0, 0): "float16"}
+        for cc, compute_type in expected.items():
+            self.assertEqual(hardware.expected_compute_type(GpuInfo("GPU", 4096, 4000, cc)), compute_type, cc)
+        # The VRAM estimate doesn't ask CTranslate2 (before GPU support is downloaded, it can't).
+        with mock.patch.object(hardware, "cuda_compute_type", side_effect=AssertionError("CUDA touched")), \
+                mock.patch.object(hardware, "_supported_compute_types", side_effect=AssertionError("CUDA touched")):
+            self.assertIsNone(realtime_risk("turbo", "cuda", GpuInfo("RTX 3050", 4096, 3900, (8, 6))))
+            self.assertEqual(realtime_risk("turbo", "cuda", GpuInfo("GTX 970M", 3072, 600, (5, 2))), "vram_low")
+
+    def test_the_gpu_models_run_on(self):
+        gtx960, rtx3060 = GpuInfo("GTX 960", 2048, 2000, (5, 2)), GpuInfo("RTX 3060", 12288, 12000, (8, 6))
+        # NVML may list them in any order; CUDA counts them in PCI order (cuda_setup sets CUDA_DEVICE_ORDER).
+        found = [(rtx3060, (0, 2, 0)), (gtx960, (0, 1, 0))]
+        chosen = hardware.choose_gpu(found, pci_order=True)
+        self.assertEqual((chosen.name, chosen.cuda_index), ("RTX 3060", 1))
+        self.assertEqual(hardware.choose_gpu([(gtx960, (0, 1, 0))], pci_order=True).cuda_index, 0)
+        self.assertIsNone(hardware.choose_gpu([], pci_order=True))
+        # The user chose CUDA's numbering (CUDA_VISIBLE_DEVICES or another CUDA_DEVICE_ORDER): CUDA's first GPU.
+        self.assertEqual(hardware.choose_gpu(found, pci_order=False), rtx3060)
+        self.assertEqual(hardware.choose_gpu(found, pci_order=False).cuda_index, 0)
+        with mock.patch.dict(os.environ, {"CUDA_VISIBLE_DEVICES": "1"}):
+            self.assertFalse(hardware._pci_order())
+        with mock.patch.dict(os.environ, {"CUDA_DEVICE_ORDER": "PCI_BUS_ID"}, clear=False):
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            self.assertTrue(hardware._pci_order())
+
+    def test_vram_depends_on_the_compute_type(self):
+        gtx970m = GpuInfo("GTX 970M", 3072, 600, (5, 2))
+        self.assertEqual(realtime_risk("turbo", "cuda", gtx970m, "float32"), "vram_low")
+        self.assertIsNone(realtime_risk("small", "cuda", gtx970m, "float32"))
+        self.assertEqual(realtime_risk("medium", "cuda", gtx970m, "float32"), "vram_low")
+        self.assertIsNone(realtime_risk("medium", "cuda", gtx970m, "float16"))
+        self.assertIsNone(realtime_risk("turbo", "cuda", GpuInfo("GTX 1060", 6144, 5000, (6, 1)), "int8"))
+
+
+class TranslateTests(unittest.TestCase):
+    def transcriber(self, backend, **kw):
+        with mock.patch("app.asr.streaming.StreamingVAD"):  # (no ONNX model needed: the audio is handed over)
+            return StreamingTranscriber(backend, **kw)
+
+    @staticmethod
+    def speak(st, seconds=1.0):
+        n = int(seconds * 16000 / FRAME)
+        st._utt = _Utterance(start_pos=0, frames=[np.zeros(FRAME, np.float32)] * n, probs=[0.9] * n, decoded_samples=1)
+        return st._finalize(force=True)
+
+    def test_translate_reaches_every_decode(self):
+        backend = FakeBackend("Hello there, how are you?", "I'm fine, thanks.")
+        st = self.transcriber(backend, translate=True)
+        self.assertEqual(self.speak(st)[0].text, "Hello there, how are you?")
+        self.speak(st)
+        self.assertEqual([c["translate"] for c in backend.calls], [True, True])
+        self.assertEqual(backend.calls[1]["prompt"], "Hello there, how are you?")  # English prompts English
+
+    def test_switching_drops_the_prompt_in_the_other_language(self):
+        backend = FakeBackend("今天天氣很好。", "The weather is nice today.", "Let's go out.")
+        st = self.transcriber(backend)
+        self.speak(st)
+        st.translate = True
+        self.speak(st)
+        self.assertEqual(backend.calls[1], {"prompt": None, "final": True, "translate": True})
+        st.translate = True  # (unchanged: the prompt stays)
+        self.speak(st)
+        self.assertEqual(backend.calls[2]["prompt"], "The weather is nice today.")
 
 
 class AudioTests(unittest.TestCase):
@@ -228,12 +344,13 @@ class SuggestModelTests(unittest.TestCase):
                ("whisper-base", "base"), ("whisper-small", "small"), ("whisper-medium", "medium")]
 
     def test_gpu_gets_turbo(self):
-        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("RTX 4070", 8188, 7000)), "whisper-large-v3-turbo")
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("RTX 4070", 8188, 7000, (8, 9))), "whisper-large-v3-turbo")
         self.assertEqual(suggest_model(self.PRESETS, "cuda", None), "whisper-large-v3-turbo")
 
     def test_cpu_or_small_gpu_gets_a_lighter_model(self):
         self.assertEqual(suggest_model(self.PRESETS, "cpu", None), "whisper-small")
-        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX150", 2048, 1800)), "whisper-small")
+        # 2 GB is too little for turbo in float16.
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX450", 2048, 1800, (7, 5))), "whisper-small")
 
     def test_a_trimmed_list(self):
         self.assertEqual(suggest_model([("whisper-base", "base"), ("breeze-asr-25", "large")], "cpu", None),

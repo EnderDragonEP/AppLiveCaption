@@ -17,6 +17,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
 - 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
 - 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
+- 🌐 **Translate to English** – Captions in English whatever language is spoken, with Whisper's own translation. Flip it on the Live captions page.
 - 🏷️ **Keyword alerts** – Get highlighted, beeped or notified when a word or name is said. Chinese keywords also catch words that sound the same, typed as 漢字, Zhuyin or Pinyin.
 
 ## Screenshots
@@ -83,6 +84,7 @@ English and other languages match whole words, in any case (`cat` doesn't match 
 | Taiwanese Hokkien (Taigi) | Breeze ASR 26 (GPU) |
 | Hakka | Taiwan Tongues ASR CE (GPU) |
 | Only a CPU | Whisper base or small |
+| Captions translated into English | Whisper large-v3, large-v2 or medium (GPU), or small on the CPU. Large-v3-turbo and the Taiwan models weren't trained to translate and mostly keep the spoken language; the app warns you when one of them is asked to |
 
 The app warns you when a model will probably be too slow for real time on your PC. If the GPU runs out of memory, the model moves to the CPU and the app suggests a smaller one. If recognition still can't keep up, the oldest audio is skipped so the captions don't fall further and further behind.
 
@@ -91,6 +93,7 @@ The app warns you when a model will probably be too slow for real time on your P
 To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB), so they aren't in the download. Instead, on a PC with an NVIDIA GPU, the **Models** page has an **NVIDIA GPU support** card: click **Download** once (about 1 GB) and a model that's already loaded moves to the GPU as soon as it finishes. First-time setup offers this too.
 
 - Only the NVIDIA display driver is needed; you don't have to install the CUDA Toolkit.
+- It works on GeForce GTX 900 series and newer GPUs. GTX 900 series GPUs (Maxwell) also get an engine built for them, about 20 MB more. GTX 900 and 10 series GPUs compute in float32 or int8 instead of float16, which takes more memory, so pick a smaller model there. Older GPUs (Kepler) can't run CUDA 12: models run on the CPU.
 - The files come from NVIDIA's own packages on PyPI and are checked against SHA-256 hashes pinned in the source before anything is unpacked.
 - The card's delete button removes them again. Windows locks DLLs that are in use, so they're deleted the next time the app starts.
 - No internet on that PC? Copy the `cuda` folder from another PC: it's next to `AppLiveCaption.exe` in the portable version, and in `%LOCALAPPDATA%\AppLiveCaption` in the installed one.
@@ -99,6 +102,8 @@ To use an NVIDIA GPU, the app needs NVIDIA's CUDA libraries. They're big (1.3 GB
 <summary>Technical details</summary>
 
 faster-whisper (CTranslate2) needs cuBLAS 12 and cuDNN 9. The download ([app/asr/cuda_libs.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_libs.py)) fetches `nvidia-cublas-cu12` 12.4.5.8, `nvidia-cudnn-cu12` 9.1.0.70 and `nvidia-cuda-nvrtc-cu12` 12.4.127, resumes after an interruption, and keeps only the ten DLLs CTranslate2 loads. The versions match the cuDNN loader that CTranslate2 4.6 bundles (`cudnn64_9.dll`); cuDNN must not be older than that loader.
+
+CTranslate2's official Windows build only has GPU code for compute capability 5.3 and newer, so Maxwell GPUs (5.0 and 5.2: GTX 900 series and some GTX 700/800 models) get the **legacy engine**: the same CTranslate2 version's `ctranslate2.dll` built with Maxwell added, by [tools/build_legacy_ctranslate2.ps1](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_legacy_ctranslate2.ps1) with CTranslate2's own build steps. It's downloaded from this project's GitHub release `legacy-gpu-ct2-4.6.2` (SHA-256 pinned like the rest), kept in `cuda\legacy`, and loaded instead of the bundled DLL when the app starts. Maxwell has no fast float16 or int8, so it computes in float32; `python tools/cuda_archs.py <dll>` lists the GPU architectures a DLL has code for.
 
 The app also uses the same libraries when they're already on the PC, in this order: the downloaded `cuda` folder, NVIDIA's pip packages (handy when running from source), PyTorch's `torch\lib`, or a CUDA 12.x Toolkit (`CUDA_PATH_V12_*`) ([app/asr/cuda_setup.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/asr/cuda_setup.py)). Only a complete set counts; otherwise models run on the CPU. `python -m app.cli cuda --download` downloads GPU support from a terminal.
 
@@ -110,7 +115,8 @@ The app also uses the same libraries when they're already on the PC, in this ord
 - When several selected apps talk at the same time, they're transcribed as one stream, so the louder one usually wins.
 - Large models need a GPU for real time. On the CPU, use Whisper base or small.
 - Breeze ASR 26 writes Taigi as Mandarin Chinese characters, not Taigi orthography (台語正字).
-- Translation, speaker identification and cloud speech services are out of scope.
+- Translation only goes into English (Whisper's translate task), and the translated captions update less smoothly while someone is still talking.
+- Translation into other languages, speaker identification and cloud speech services are out of scope.
 
 ## To do
 
@@ -230,6 +236,7 @@ python -m app.cli levels --mode system                     # input level per sou
 python -m app.cli levels --mode apps --apps chrome.exe,ms-teams.exe --mic --record mix.wav
 python -m app.cli transcribe --mode system --model whisper-large-v3-turbo
 python -m app.cli transcribe --model breeze-asr-25 --wav speech.wav   # simulated real time
+python -m app.cli transcribe --model whisper-medium --wav speech.wav --translate   # in English
 ```
 
 ## Build the exe
@@ -248,20 +255,15 @@ The script uses your installed Python 3.12 or 3.11 (what `py -3.12` or `py -3.11
 | `-Install` | Run `pip install -r requirements.txt` for that Python before building. |
 | `-SkipTests` | Skip the unit tests. |
 | `-Installer` | Also build the installer, `dist\AppLiveCaption-<version>-Setup.exe` (about 55 MB). Needs [Inno Setup 6](https://jrsoftware.org/isinfo.php): `winget install JRSoftware.InnoSetup`. |
+| `-Zip` | Also make the portable release, `dist\AppLiveCaption.zip` (about 80 MB): `AppLiveCaption.exe`, `_internal\` and `THIRD_PARTY_NOTICES.md` in an `AppLiveCaption` folder, never the data of a build you ran in `dist\`. |
 
 If PowerShell refuses to run the script because of the execution policy, run `powershell -ExecutionPolicy Bypass -File .\build.ps1` instead. `Get-Help .\build.ps1 -Detailed` lists the options.
 
-**Working in WSL?** The build has to run on Windows: PyInstaller can't cross-compile, and the app is Windows-only. [tools/build_windows.sh](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/tools/build_windows.sh) does it from WSL. It copies the source to `%LOCALAPPDATA%\AppLiveCaption-build` on the Windows drive, runs `build.ps1` there with your Windows Python (and any options you pass), and copies the results back into `dist/`. `--zip` also makes the portable `dist/AppLiveCaption.zip`.
-
-```bash
-tools/build_windows.sh --zip -Installer
-```
-
-The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, attach both the Setup (`.\build.ps1 -Installer`) and a zip of only `AppLiveCaption.exe` and `_internal\` (the portable version), and tag it like `v1.2.0` so the update check finds it.
+The build output is `AppLiveCaption.exe` and `_internal\`. Everything else in `dist\AppLiveCaption\` (the settings, history, models and GPU support of a built app you ran there, or your own files) survives a rebuild, even with `-Clean`. For a release, build both with `.\build.ps1 -Installer -Zip` and attach `dist\AppLiveCaption-<version>-Setup.exe` and `dist\AppLiveCaption.zip` (the portable version: only `AppLiveCaption.exe`, `_internal\` and the notices), and tag it like `v1.3.0` so the update check finds it.
 
 The installer is made from [installer/AppLiveCaption.iss](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/installer/AppLiveCaption.iss). It packs only `AppLiveCaption.exe`, `_internal\` and the `AppLiveCaption.installed` marker, never the data of a build you ran in `dist\`. An update deletes the old `_internal\` before copying the new one, and the running app holds a named mutex so Setup and the uninstaller ask to close it first.
 
-The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`, currently 1.2.0). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
+The app's name and version live in [app/\_\_init\_\_.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/__init__.py) (`__version__`). Settings → About shows them, and the build writes them into the exe's file properties (Properties → Details).
 
 <details markdown="1">
 <summary>What the build leaves out, and why</summary>
@@ -345,7 +347,7 @@ pyside6-linguist app\i18n\app_zh_TW.ts app\i18n\app_zh_CN.ts   # translate the n
 Get-ChildItem app\i18n\*.ts | ForEach-Object { pyside6-lrelease $_.FullName -qm ($_.FullName -replace '\.ts$', '.qm') }
 ```
 
-From WSL, `tools/update_translations.sh` runs the first and last steps for every `.ts` with the Windows Python's tools; after translating, `tools/update_translations.sh --release` compiles them again. To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
+To add a language, create its `.ts` with the first command (for example `-ts app\i18n\app_ja.ts`); once its `.qm` exists, Settings → Language lists it.
 
 The model descriptions come from the model list ([catalog.json](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/models/catalog.json)) and stay in English. The widget library translates its own parts (dialog buttons, the color picker); the app overrides a few of its strings with its own wording (`LIBRARY_STRINGS` in [app/ui/settings_page.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/ui/settings_page.py)).
 

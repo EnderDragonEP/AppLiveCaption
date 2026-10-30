@@ -8,6 +8,12 @@ the DLLs CTranslate2 loads are kept, in the ``cuda`` folder next to the exe.
 
 The versions must match the cuDNN loader that CTranslate2 bundles (9.1 for
 CTranslate2 4.6) and requirements.txt.
+
+Maxwell GPUs (GTX 900 series and older GTX 700/800 models) also need the
+"legacy engine": a build of the app's CTranslate2 version with GPU code for
+them (tools/build_legacy_ctranslate2.ps1), from this project's GitHub release,
+kept in ``cuda/legacy`` (app/asr/cuda_setup.py loads it instead of the bundled
+ctranslate2.dll).
 """
 
 from __future__ import annotations
@@ -75,6 +81,21 @@ BUNDLE_ID = "+".join(f"{w.name}=={w.version}" for w in WHEELS)
 DOWNLOAD_SIZE = sum(w.size for w in WHEELS)
 INSTALLED_SIZE = 1_420_480_240  # the kept DLLs, unpacked
 
+# The legacy engine: CTranslate2 4.6.2's ctranslate2.dll built with GPU code for compute capability 5.0 and 5.2
+# added. It stands in for exactly one official ctranslate2.dll (the one bundled with the app, by its SHA-256);
+# with another CTranslate2 version it isn't used.
+LEGACY_ENGINE = Wheel(
+    "ctranslate2-legacy-gpu", "4.6.2",
+    "https://github.com/EnderDragonEP/AppLiveCaption/releases/download/legacy-gpu-ct2-4.6.2/"
+    "ctranslate2-4.6.2-maxwell-win_amd64.zip",
+    "6773ffd13c98449132e0653325df6eccd857a205ad9b9ceb33c33a9171d798c8", 19683483,
+    ("ctranslate2.dll", "LICENSE"),
+)
+LEGACY_REPLACES_SHA256 = "f73233e1d637c95d644d329a8a9c90c237060f0cd9dcecca88e90da5775c4355"  # ctranslate2 4.6.2
+LEGACY_REPLACES_SIZE = 58_389_504
+LEGACY_INSTALLED_SIZE = 61_761_649  # ctranslate2.dll and its license, unpacked
+LEGACY_ID = f"{LEGACY_ENGINE.name}=={LEGACY_ENGINE.version}"
+
 
 def lib_dir() -> Path:
     from ..paths import local_data_dir
@@ -82,21 +103,37 @@ def lib_dir() -> Path:
     return local_data_dir() / "cuda"
 
 
-def installed_dir() -> Path | None:
-    """The folder with a complete, current set of libraries, or None."""
-    d = lib_dir()
+def legacy_dir() -> Path:
+    return lib_dir() / "legacy"
+
+
+def legacy_available() -> bool:
+    """The legacy engine can be downloaded (its release is pinned)."""
+    return bool(LEGACY_ENGINE.sha256)
+
+
+def _complete(d: Path, bundle: str) -> bool:
+    """``d`` holds every file its marker lists, at the listed size, for ``bundle``."""
     try:
         meta = json.loads((d / MARKER).read_text(encoding="utf-8"))
     except (OSError, ValueError):
-        return None
-    if meta.get("bundle") != BUNDLE_ID or (d / REMOVE_FLAG).exists():
-        return None
+        return False
+    if meta.get("bundle") != bundle or (lib_dir() / REMOVE_FLAG).exists():
+        return False
     files = meta.get("files", {})
-    for name, size in files.items():
-        p = d / name
-        if not p.is_file() or p.stat().st_size != size:
-            return None
-    return d if files else None
+    return bool(files) and all((d / n).is_file() and (d / n).stat().st_size == size for n, size in files.items())
+
+
+def installed_dir() -> Path | None:
+    """The folder with a complete, current set of libraries, or None."""
+    d = lib_dir()
+    return d if _complete(d, BUNDLE_ID) else None
+
+
+def legacy_dll() -> Path | None:
+    """The downloaded legacy engine's ctranslate2.dll, when it's complete and current."""
+    d = legacy_dir()
+    return d / "ctranslate2.dll" if _complete(d, LEGACY_ID) else None
 
 
 def disk_usage() -> int:
@@ -105,9 +142,14 @@ def disk_usage() -> int:
 
 
 def has_partial_download() -> bool:
-    """Files from an interrupted download are there, but not a complete set."""
-    d = lib_dir()
-    return d.is_dir() and installed_dir() is None and not removal_scheduled() and any(d.iterdir())
+    """Files from an interrupted download are there: an incomplete set of libraries, or of the legacy engine.
+    (A complete legacy engine on its own, with the libraries found elsewhere on the PC, isn't partial.)"""
+    d, legacy = lib_dir(), legacy_dir()
+    if not d.is_dir() or removal_scheduled():
+        return False
+    libraries = installed_dir() is None and any(p.name != legacy.name for p in d.iterdir())
+    engine = legacy.is_dir() and legacy_dll() is None and any(legacy.iterdir())
+    return libraries or engine
 
 
 def removal_scheduled() -> bool:
@@ -150,7 +192,8 @@ class DownloadError(Exception):
 ProgressCallback = Callable[[int, int, str], None]  # bytes done, total, current file
 
 
-def _fetch(wheel: Wheel, dest: Path, done_before: int, on_progress: ProgressCallback, cancel: threading.Event) -> None:
+def _fetch(wheel: Wheel, dest: Path, done_before: int, total: int, on_progress: ProgressCallback,
+           cancel: threading.Event) -> None:
     """Download one wheel to ``dest``, resuming a partial file; retries on network errors."""
     attempts = 0
     while True:
@@ -173,7 +216,7 @@ def _fetch(wheel: Wheel, dest: Path, done_before: int, on_progress: ProgressCall
                             raise DownloadCancelled()
                         fh.write(chunk)
                         written += len(chunk)
-                        on_progress(done_before + written, DOWNLOAD_SIZE, wheel.name)
+                        on_progress(done_before + written, total, wheel.name)
             return
         except DownloadCancelled:
             raise
@@ -188,11 +231,11 @@ def _fetch(wheel: Wheel, dest: Path, done_before: int, on_progress: ProgressCall
                 raise DownloadCancelled() from None
 
 
-def _sha256(path: Path, cancel: threading.Event) -> str:
+def file_sha256(path: str | Path, cancel: threading.Event | None = None) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         while chunk := fh.read(8 * CHUNK):
-            if cancel.is_set():
+            if cancel is not None and cancel.is_set():
                 raise DownloadCancelled()
             h.update(chunk)
     return h.hexdigest()
@@ -213,40 +256,66 @@ def _extract(wheel: Wheel, path: Path, target: Path) -> dict[str, int]:
     return sizes
 
 
-def download(on_progress: ProgressCallback, cancel: threading.Event) -> Path:
-    """Download, verify and unpack every wheel. Resumable; returns the library folder.
+def to_download(legacy: bool) -> list[tuple[Wheel, Path, str]]:
+    """What a download still has to fetch: (wheel, folder it's unpacked to, bundle id) for each wheel.
+    ``legacy``: the GPU needs the legacy engine too (then CUDA libraries found elsewhere on the PC do)."""
+    from .cuda_setup import cuda_libraries_found
+
+    have_cuda = installed_dir() is not None or (legacy and cuda_libraries_found())
+    parts = [] if have_cuda else [(w, lib_dir(), BUNDLE_ID) for w in WHEELS]
+    if legacy and legacy_available() and legacy_dll() is None:
+        parts.append((LEGACY_ENGINE, legacy_dir(), LEGACY_ID))
+    return parts
+
+
+def download_size(legacy: bool) -> int:
+    return sum(w.size for w, _d, _b in to_download(legacy))
+
+
+def download(on_progress: ProgressCallback, cancel: threading.Event, legacy: bool = False) -> Path:
+    """Download, verify and unpack every wheel (and, with ``legacy``, the legacy engine) that isn't installed
+    yet. Resumable; returns the library folder.
 
     Raises DownloadCancelled or DownloadError.
     """
     target = lib_dir()
     target.mkdir(parents=True, exist_ok=True)
     (target / REMOVE_FLAG).unlink(missing_ok=True)
-    (target / MARKER).unlink(missing_ok=True)
+    parts = to_download(legacy)
     cache = target / "downloads"
     cache.mkdir(exist_ok=True)
     # Room for the unpacked DLLs plus the largest wheel (each is deleted after unpacking).
-    need = INSTALLED_SIZE + max(w.size for w in WHEELS) + DISK_MARGIN
+    libraries = any(w is not LEGACY_ENGINE for w, _d, _b in parts)
+    engine = any(w is LEGACY_ENGINE for w, _d, _b in parts)
+    unpacked = (INSTALLED_SIZE if libraries else 0) + (LEGACY_INSTALLED_SIZE if engine else 0)
+    need = unpacked + max((w.size for w, _d, _b in parts), default=0) + DISK_MARGIN
     free = shutil.disk_usage(target).free
-    if free < need:
+    if parts and free < need:
         raise DownloadError("disk_space", f"need {need / 2**30:.1f} GB, {free / 2**30:.1f} GB free")
 
-    files: dict[str, int] = {}
+    total = sum(w.size for w, _d, _b in parts)
+    files: dict[Path, dict[str, int]] = {}
     done = 0
-    for wheel in WHEELS:
+    for i, (wheel, folder, bundle) in enumerate(parts):
+        folder.mkdir(parents=True, exist_ok=True)
+        (folder / MARKER).unlink(missing_ok=True)
         path = cache / os.path.basename(wheel.url)
-        _fetch(wheel, path, done, on_progress, cancel)
-        if path.stat().st_size != wheel.size or _sha256(path, cancel) != wheel.sha256:
+        _fetch(wheel, path, done, total, on_progress, cancel)
+        if path.stat().st_size != wheel.size or file_sha256(path, cancel) != wheel.sha256:
             path.unlink(missing_ok=True)  # don't resume from a bad file next time
             raise DownloadError("corrupt", f"{wheel.name} {wheel.version} failed its checksum")
         try:
-            files.update(_extract(wheel, path, target))
+            files.setdefault(folder, {}).update(_extract(wheel, path, folder))
         except (OSError, zipfile.BadZipFile, KeyError) as exc:
             kind = "io" if isinstance(exc, OSError) else "corrupt"
             raise DownloadError(kind, f"{wheel.name}: {exc}") from exc
         path.unlink(missing_ok=True)
         done += wheel.size
-        on_progress(done, DOWNLOAD_SIZE, wheel.name)
+        on_progress(done, total, wheel.name)
+        if i + 1 == len(parts) or parts[i + 1][1] != folder:
+            # This folder is complete: mark it now, so a later part failing (the engine's download) keeps it.
+            (folder / MARKER).write_text(json.dumps({"bundle": bundle, "files": files[folder]}, indent=1),
+                                         encoding="utf-8")
     shutil.rmtree(cache, ignore_errors=True)
-    (target / MARKER).write_text(json.dumps({"bundle": BUNDLE_ID, "files": files}, indent=1), encoding="utf-8")
     log.info("CUDA libraries installed in %s", target)
     return target
