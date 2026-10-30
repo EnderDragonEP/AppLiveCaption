@@ -139,6 +139,34 @@ class GpuGenerationTests(unittest.TestCase):
             self.assertTrue(hardware.too_old_for_gpu_support(gtx970m))
             self.assertFalse(hardware.wants_legacy_engine(gtx970m))
 
+    def test_expected_compute_type_without_cuda(self):
+        expected = {(8, 6): "float16", (7, 5): "float16", (6, 1): "int8", (6, 0): "float32", (5, 2): "float32",
+                    (0, 0): "float16"}
+        for cc, compute_type in expected.items():
+            self.assertEqual(hardware.expected_compute_type(GpuInfo("GPU", 4096, 4000, cc)), compute_type, cc)
+        # The VRAM estimate doesn't ask CTranslate2 (before GPU support is downloaded, it can't).
+        with mock.patch.object(hardware, "cuda_compute_type", side_effect=AssertionError("CUDA touched")), \
+                mock.patch.object(hardware, "_supported_compute_types", side_effect=AssertionError("CUDA touched")):
+            self.assertIsNone(realtime_risk("turbo", "cuda", GpuInfo("RTX 3050", 4096, 3900, (8, 6))))
+            self.assertEqual(realtime_risk("turbo", "cuda", GpuInfo("GTX 970M", 3072, 600, (5, 2))), "vram_low")
+
+    def test_the_gpu_models_run_on(self):
+        gtx960, rtx3060 = GpuInfo("GTX 960", 2048, 2000, (5, 2)), GpuInfo("RTX 3060", 12288, 12000, (8, 6))
+        # NVML may list them in any order; CUDA counts them in PCI order (cuda_setup sets CUDA_DEVICE_ORDER).
+        found = [(rtx3060, (0, 2, 0)), (gtx960, (0, 1, 0))]
+        chosen = hardware.choose_gpu(found, pci_order=True)
+        self.assertEqual((chosen.name, chosen.cuda_index), ("RTX 3060", 1))
+        self.assertEqual(hardware.choose_gpu([(gtx960, (0, 1, 0))], pci_order=True).cuda_index, 0)
+        self.assertIsNone(hardware.choose_gpu([], pci_order=True))
+        # The user chose CUDA's numbering (CUDA_VISIBLE_DEVICES or another CUDA_DEVICE_ORDER): CUDA's first GPU.
+        self.assertEqual(hardware.choose_gpu(found, pci_order=False), rtx3060)
+        self.assertEqual(hardware.choose_gpu(found, pci_order=False).cuda_index, 0)
+        with mock.patch.dict(os.environ, {"CUDA_VISIBLE_DEVICES": "1"}):
+            self.assertFalse(hardware._pci_order())
+        with mock.patch.dict(os.environ, {"CUDA_DEVICE_ORDER": "PCI_BUS_ID"}, clear=False):
+            os.environ.pop("CUDA_VISIBLE_DEVICES", None)
+            self.assertTrue(hardware._pci_order())
+
     def test_vram_depends_on_the_compute_type(self):
         gtx970m = GpuInfo("GTX 970M", 3072, 600, (5, 2))
         self.assertEqual(realtime_risk("turbo", "cuda", gtx970m, "float32"), "vram_low")
@@ -321,7 +349,8 @@ class SuggestModelTests(unittest.TestCase):
 
     def test_cpu_or_small_gpu_gets_a_lighter_model(self):
         self.assertEqual(suggest_model(self.PRESETS, "cpu", None), "whisper-small")
-        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX150", 2048, 1800, (6, 1))), "whisper-small")
+        # 2 GB is too little for turbo in float16.
+        self.assertEqual(suggest_model(self.PRESETS, "cuda", GpuInfo("MX450", 2048, 1800, (7, 5))), "whisper-small")
 
     def test_a_trimmed_list(self):
         self.assertEqual(suggest_model([("whisper-base", "base"), ("breeze-asr-25", "large")], "cpu", None),

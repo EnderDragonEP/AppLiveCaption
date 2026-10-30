@@ -87,6 +87,7 @@ class CatalogListTests(CatalogTestCase):
         self.assertFalse(turbo["translate"])
         self.assertFalse(catalog.add_custom_model(turbo).translate)
         self.assertNotIn("translate", _entry("Mine", "someone/faster-whisper-medium", 1, 1, "MIT", ""))
+        self.assertFalse(_entry("distil", "Systran/faster-distil-whisper-large-v3", 1, 1, "MIT", "")["translate"])
 
     def test_ids_never_clash(self):
         a = catalog.add_custom_model(self.entry("Whisper tiny", "a/one"))  # same slug as a preset's id

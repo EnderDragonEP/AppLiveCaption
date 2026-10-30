@@ -149,6 +149,48 @@ class DownloadTests(unittest.TestCase):
         self.assertIsNotNone(cuda_libs.legacy_dll())
         self.assertEqual(cuda_libs.installed_dir(), cuda_libs.lib_dir())
 
+    def test_disk_space_counts_the_unpacked_set_once(self):
+        second = Path(self.tmp.name) / "fake2-1.0-py3-none-win_amd64.whl"
+        with zipfile.ZipFile(second, "w") as zf:
+            zf.writestr("nvidia/fake2/bin/c64_1.dll", b"C" * 2000)
+        wheel2 = cuda_libs.Wheel("fake2", "1.0", second.as_uri(), hashlib.sha256(second.read_bytes()).hexdigest(),
+                                 second.stat().st_size, ("nvidia/fake2/bin/c64_1.dll",))
+        Usage = type("Usage", (), {})
+        with mock.patch.object(cuda_libs, "WHEELS", (self.wheel, wheel2)), \
+                mock.patch.object(cuda_libs, "INSTALLED_SIZE", 10**9):
+            need = cuda_libs.INSTALLED_SIZE + max(self.wheel.size, wheel2.size) + cuda_libs.DISK_MARGIN
+            for free, ok in ((need - 1, False), (need, True)):
+                usage = Usage()
+                usage.free = free
+                with mock.patch.object(cuda_libs.shutil, "disk_usage", return_value=usage):
+                    if ok:
+                        self.download()
+                        self.assertEqual(cuda_libs.installed_dir(), cuda_libs.lib_dir())
+                    else:
+                        with self.assertRaises(cuda_libs.DownloadError):
+                            self.download()
+
+    def test_libraries_stay_installed_when_the_engine_download_fails(self):
+        engine = self.legacy_engine()
+        with mock.patch.object(cuda_libs, "LEGACY_ENGINE", replace(engine, sha256="0" * 64)):
+            with self.assertRaises(cuda_libs.DownloadError) as ctx:
+                cuda_libs.download(lambda *a: None, threading.Event(), legacy=True)
+            self.assertEqual(ctx.exception.kind, "corrupt")
+            self.assertEqual(cuda_libs.installed_dir(), cuda_libs.lib_dir())  # (marked before the engine)
+            self.assertEqual([w.name for w, _d, _b in cuda_libs.to_download(legacy=True)], [engine.name])
+        cuda_libs.download(lambda *a: None, threading.Event(), legacy=True)  # Resume: only the engine
+        self.assertIsNotNone(cuda_libs.legacy_dll())
+
+    def test_a_complete_engine_alone_is_not_a_partial_download(self):
+        self.legacy_engine()
+        with mock.patch("app.asr.cuda_setup.cuda_libraries_found", return_value=True):  # (libraries elsewhere)
+            cuda_libs.download(lambda *a: None, threading.Event(), legacy=True)
+        self.assertIsNone(cuda_libs.installed_dir())
+        self.assertIsNotNone(cuda_libs.legacy_dll())
+        self.assertFalse(cuda_libs.has_partial_download())
+        (cuda_libs.legacy_dir() / cuda_libs.MARKER).unlink()  # an engine download that didn't finish
+        self.assertTrue(cuda_libs.has_partial_download())
+
     def test_damaged_or_outdated_legacy_engine_is_not_used(self):
         engine = self.legacy_engine()
         cuda_libs.download(lambda *a: None, threading.Event(), legacy=True)
@@ -182,6 +224,64 @@ class DownloadTests(unittest.TestCase):
         cuda_libs.remove(in_use=False)
         self.assertFalse(d.exists())
         self.assertEqual(cuda_libs.disk_usage(), 0)
+
+
+class LegacyEngineLoadingTests(unittest.TestCase):
+    """app/asr/cuda_setup.py's checks around loading the legacy engine (the load itself needs a GPU)."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self.tmp.cleanup)
+        env = mock.patch.dict(os.environ, {"ALC_DATA_DIR": str(Path(self.tmp.name) / "data")})
+        env.start()
+        self.addCleanup(env.stop)
+
+    def test_only_ctranslate2s_own_dll_is_hidden(self):
+        from app.asr.cuda_setup import _without_dll
+
+        root = Path(self.tmp.name)
+        for folder in ("ctranslate2", "other"):
+            (root / folder).mkdir()
+            for name in ("ctranslate2.dll", "libiomp5md.dll"):
+                (root / folder / name).write_bytes(b"")
+        import glob as glob_module
+        wrapped = _without_dll(str(root / "ctranslate2"), glob_module.glob)
+        names = lambda folder: sorted(os.path.basename(f) for f in wrapped(os.path.join(root, folder, "*.dll")))
+        self.assertEqual(names("ctranslate2"), ["libiomp5md.dll"])
+        self.assertEqual(names("other"), ["ctranslate2.dll", "libiomp5md.dll"])
+
+    def test_ctranslate2_still_loads_its_dlls_with_glob(self):
+        # The legacy engine relies on this (cuda_setup._load_legacy_engine): a CTranslate2 update that loads its
+        # DLLs another way must fail here, not in the app.
+        from app.asr.cuda_setup import _ctranslate2_dir
+
+        package = _ctranslate2_dir()
+        if package is None:
+            self.skipTest("CTranslate2 isn't installed")
+        source = (Path(package) / "__init__.py").read_text(encoding="utf-8")
+        self.assertIn('glob.glob(os.path.join(package_dir, "*.dll"))', source)
+
+    def test_the_official_dll_is_hashed_once(self):
+        from app.asr import cuda_setup
+
+        dll = Path(self.tmp.name) / "ctranslate2.dll"
+        dll.write_bytes(b"x" * 100)
+        cuda_libs.legacy_dir().mkdir(parents=True)
+        digest = hashlib.sha256(dll.read_bytes()).hexdigest()
+        with mock.patch.object(cuda_libs, "LEGACY_REPLACES_SIZE", 100), \
+                mock.patch.object(cuda_libs, "LEGACY_REPLACES_SHA256", digest), \
+                mock.patch.object(cuda_libs, "file_sha256", wraps=cuda_libs.file_sha256) as hashed:
+            self.assertTrue(cuda_setup._is_official_dll(str(dll)))
+            self.assertTrue(cuda_setup._is_official_dll(str(dll)))
+            self.assertEqual(hashed.call_count, 1)  # the second start uses the remembered result
+            os.utime(dll, ns=(1, 1))  # (replaced by another file of the same size)
+            self.assertTrue(cuda_setup._is_official_dll(str(dll)))
+            self.assertEqual(hashed.call_count, 2)
+            dll.write_bytes(b"y" * 100)
+            self.assertFalse(cuda_setup._is_official_dll(str(dll)))
+            dll.write_bytes(b"x" * 99)
+            self.assertFalse(cuda_setup._is_official_dll(str(dll)))
+            self.assertEqual(hashed.call_count, 3)  # (a different size isn't hashed)
 
 
 if __name__ == "__main__":

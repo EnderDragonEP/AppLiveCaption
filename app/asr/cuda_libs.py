@@ -92,6 +92,7 @@ LEGACY_ENGINE = Wheel(
     ("ctranslate2.dll", "LICENSE"),
 )
 LEGACY_REPLACES_SHA256 = "f73233e1d637c95d644d329a8a9c90c237060f0cd9dcecca88e90da5775c4355"  # ctranslate2 4.6.2
+LEGACY_REPLACES_SIZE = 58_389_504
 LEGACY_INSTALLED_SIZE = 61_761_649  # ctranslate2.dll and its license, unpacked
 LEGACY_ID = f"{LEGACY_ENGINE.name}=={LEGACY_ENGINE.version}"
 
@@ -141,9 +142,14 @@ def disk_usage() -> int:
 
 
 def has_partial_download() -> bool:
-    """Files from an interrupted download are there, but not a complete set."""
-    d = lib_dir()
-    return d.is_dir() and installed_dir() is None and not removal_scheduled() and any(d.iterdir())
+    """Files from an interrupted download are there: an incomplete set of libraries, or of the legacy engine.
+    (A complete legacy engine on its own, with the libraries found elsewhere on the PC, isn't partial.)"""
+    d, legacy = lib_dir(), legacy_dir()
+    if not d.is_dir() or removal_scheduled():
+        return False
+    libraries = installed_dir() is None and any(p.name != legacy.name for p in d.iterdir())
+    engine = legacy.is_dir() and legacy_dll() is None and any(legacy.iterdir())
+    return libraries or engine
 
 
 def removal_scheduled() -> bool:
@@ -225,11 +231,11 @@ def _fetch(wheel: Wheel, dest: Path, done_before: int, total: int, on_progress: 
                 raise DownloadCancelled() from None
 
 
-def _sha256(path: Path, cancel: threading.Event) -> str:
+def file_sha256(path: str | Path, cancel: threading.Event | None = None) -> str:
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         while chunk := fh.read(8 * CHUNK):
-            if cancel.is_set():
+            if cancel is not None and cancel.is_set():
                 raise DownloadCancelled()
             h.update(chunk)
     return h.hexdigest()
@@ -279,7 +285,9 @@ def download(on_progress: ProgressCallback, cancel: threading.Event, legacy: boo
     cache = target / "downloads"
     cache.mkdir(exist_ok=True)
     # Room for the unpacked DLLs plus the largest wheel (each is deleted after unpacking).
-    unpacked = sum(INSTALLED_SIZE if w is not LEGACY_ENGINE else LEGACY_INSTALLED_SIZE for w, _d, _b in parts)
+    libraries = any(w is not LEGACY_ENGINE for w, _d, _b in parts)
+    engine = any(w is LEGACY_ENGINE for w, _d, _b in parts)
+    unpacked = (INSTALLED_SIZE if libraries else 0) + (LEGACY_INSTALLED_SIZE if engine else 0)
     need = unpacked + max((w.size for w, _d, _b in parts), default=0) + DISK_MARGIN
     free = shutil.disk_usage(target).free
     if parts and free < need:
@@ -288,12 +296,12 @@ def download(on_progress: ProgressCallback, cancel: threading.Event, legacy: boo
     total = sum(w.size for w, _d, _b in parts)
     files: dict[Path, dict[str, int]] = {}
     done = 0
-    for wheel, folder, _bundle in parts:
+    for i, (wheel, folder, bundle) in enumerate(parts):
         folder.mkdir(parents=True, exist_ok=True)
         (folder / MARKER).unlink(missing_ok=True)
         path = cache / os.path.basename(wheel.url)
         _fetch(wheel, path, done, total, on_progress, cancel)
-        if path.stat().st_size != wheel.size or _sha256(path, cancel) != wheel.sha256:
+        if path.stat().st_size != wheel.size or file_sha256(path, cancel) != wheel.sha256:
             path.unlink(missing_ok=True)  # don't resume from a bad file next time
             raise DownloadError("corrupt", f"{wheel.name} {wheel.version} failed its checksum")
         try:
@@ -304,8 +312,10 @@ def download(on_progress: ProgressCallback, cancel: threading.Event, legacy: boo
         path.unlink(missing_ok=True)
         done += wheel.size
         on_progress(done, total, wheel.name)
+        if i + 1 == len(parts) or parts[i + 1][1] != folder:
+            # This folder is complete: mark it now, so a later part failing (the engine's download) keeps it.
+            (folder / MARKER).write_text(json.dumps({"bundle": bundle, "files": files[folder]}, indent=1),
+                                         encoding="utf-8")
     shutil.rmtree(cache, ignore_errors=True)
-    for folder, bundle in {(f, b) for _w, f, b in parts}:
-        (folder / MARKER).write_text(json.dumps({"bundle": bundle, "files": files[folder]}, indent=1), encoding="utf-8")
     log.info("CUDA libraries installed in %s", target)
     return target

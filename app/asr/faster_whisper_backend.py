@@ -9,7 +9,7 @@ import numpy as np
 
 from .backend import ASRBackend, GpuFailure, ModelLoadError, OutOfMemory, Transcript, UnsupportedLanguage, is_oom_error
 from .cuda_setup import setup_cuda_dlls
-from .hardware import cuda_compute_type
+from .hardware import cuda_compute_type, cuda_device_index
 
 log = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class FasterWhisperBackend(ASRBackend):
         self.compute_type = cuda_compute_type() if device == "cuda" else "int8"
         try:
             self.model = WhisperModel(model_dir, device=device, compute_type=self.compute_type,
+                                      device_index=cuda_device_index() if device == "cuda" else 0,
                                       cpu_threads=0, num_workers=1, local_files_only=True)
         except Exception as exc:  # noqa: BLE001
             self.model = None
