@@ -3,7 +3,7 @@
 All notable changes to AppLiveCaption are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers follow [Semantic Versioning](https://semver.org/).
 
-## [Unreleased]
+## [1.3.0] - 2026-10-30
 
 ### Added
 
@@ -71,7 +71,7 @@ The first release.
 - Portable: settings, history, logs, models and GPU support are kept next to the exe.
 - A manual check for updates in Settings → About.
 
-[Unreleased]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.2.0...HEAD
+[1.3.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...v1.1.0
 [1.0.0]: https://github.com/EnderDragonEP/AppLiveCaption/releases/tag/v1.0.0
