@@ -8,7 +8,7 @@ The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and
 ### Added
 
 - **Translate to English.** A **Translate to English** button on the Live captions page writes the captions in English, whatever language is spoken, with Whisper's own translation. It can be switched while captioning. Whisper large-v3, large-v2 and medium translate best; Whisper large-v3-turbo (the default) and the Taiwan models weren't trained to translate and mostly keep the spoken language, so the app warns when one of them is asked to. The console's `transcribe` command has `--translate` too.
-- **GPU support for older NVIDIA GPUs.** GeForce GTX 900 series GPUs (Maxwell) can now run models on the GPU: GPU support also downloads an engine built for them (about 20 MB), and the app uses it from the next start. If GPU support is already installed, only the engine is downloaded.
+- **GPU support for older NVIDIA GPUs.** GeForce GTX 900 series GPUs (Maxwell) can now run models on the GPU: GPU support also downloads an engine built for them (about 20 MB), and the app uses it from the next start. If GPU support is already installed, only the engine is downloaded. Thanks to the reporter of [#3](https://github.com/EnderDragonEP/AppLiveCaption/issues/3) for testing it on a GTX 970M.
 
 ### Fixed
 
