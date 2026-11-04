@@ -14,11 +14,11 @@ No cloud and no account: once a model is downloaded, it works without internet.
 - 🪟 **Floating overlay** — Always-on-top, draggable, resizable, and click-through.
 - 🔒 **Private by design** — Speech recognition runs locally on your PC and never uploaded.
 - 🧠 **Choose your model** — Whisper, Breeze ASR 25/26, and Taiwan Tongues or setup your own models.
-- ➕ **Manage models** — Add faster-whisper model from Hugging Face or from your PC; remove models or restore presets.
+- ➕ **Manage models** — Add faster-whisper model from Hugging Face or from your PC.
 - 🚀 **GPU acceleration** — One click downloads GPU support and captions get many times faster. CPU works too.
 - 📜 **Session history** — Every session is saved. Copy it, or export it as TXT or SRT subtitles.
 - 🌐 **English translation** — Captions in English whatever language is spoken, with Whisper's own translation.
-- 🏷️ **Keyword alerts** — Highlight, beep, or notify; Chinese matches support homophones, Hanzi, Zhuyin, and Pinyin.
+- 🏷️ **Keyword alerts** — Get highlighted, beeped or notified when a word or name is said.
 
 ## Screenshots
 
