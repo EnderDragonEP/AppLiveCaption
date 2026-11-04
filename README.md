@@ -9,16 +9,16 @@ No cloud and no account: once a model is downloaded, it works without internet.
 
 ## Features
 
-- 🎧 **Caption anything** – Your microphone, everything playing on the PC, or only the apps you tick (Chrome, Teams, VLC, …), mixed together.
-- ⚡ **Live as people talk** – Captions update while someone speaks and settle into a final line when they pause.
-- 🪟 **Floating overlay** – An always-on-top caption bar for videos, games and calls. Drag it anywhere, resize it, or let clicks pass through it.
-- 🔒 **Private by design** – Speech is recognized on your PC and never uploaded.
-- 🧠 **Pick your model** – Whisper from tiny to large-v3 and turbo, plus models made for Taiwan: Breeze ASR 25 (Mandarin + English), Breeze ASR 26 (Taigi) and Taiwan Tongues (Hokkien and Hakka).
-- ➕ **Make the list yours** – Add any faster-whisper model from Hugging Face or from a folder on your PC, and remove the ones you don't need. One click restores the presets.
-- 🚀 **GPU boost** – Got an NVIDIA GPU? One click downloads GPU support and captions get many times faster. No GPU? It runs on the CPU too.
-- 📜 **History** – Every session is saved. Copy it, or export it as TXT or SRT subtitles.
-- 🌐 **Translate to English** – Captions in English whatever language is spoken, with Whisper's own translation. Flip it on the Live captions page.
-- 🏷️ **Keyword alerts** – Get highlighted, beeped or notified when a word or name is said. Chinese keywords also catch words that sound the same, typed as 漢字, Zhuyin or Pinyin.
+- 🎧 **Caption any audio** —  Your microphone, everything playing on the PC, or selected apps, mixed together.
+- ⚡ **Live captions** — Captions update while someone speaks and settle into a final line when they pause.
+- 🪟 **Floating overlay** — Always-on-top, draggable, resizable, and click-through.
+- 🔒 **Private by design** — Speech recognition runs locally on your PC and never uploaded.
+- 🧠 **Choose your model** — Whisper, Breeze ASR 25/26, and Taiwan Tongues or setup your own models.
+- ➕ **Manage models** — Add faster-whisper model from Hugging Face or from your PC; remove models or restore presets.
+- 🚀 **GPU acceleration** — One click downloads GPU support and captions get many times faster. CPU works too.
+- 📜 **Session history** — Every session is saved. Copy it, or export it as TXT or SRT subtitles.
+- 🌐 **English translation** — Captions in English whatever language is spoken, with Whisper's own translation.
+- 🏷️ **Keyword alerts** — Highlight, beep, or notify; Chinese matches support homophones, Hanzi, Zhuyin, and Pinyin.
 
 ## Screenshots
 
