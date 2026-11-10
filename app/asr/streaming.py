@@ -8,6 +8,13 @@ the end of speech, or the utterance gets too long, a more accurate *final*
 transcription is emitted and a new utterance starts. The previous final text is
 passed to the model as the prompt.
 
+Someone who talks without pausing would only get a final caption every
+``max_utterance`` seconds. So the partial's segments (Whisper splits them at
+sentence and phrase ends) are watched: once a sentence is settled, the next one
+is under way and the speaker paused between them, the audio is cut in that
+pause, the first part becomes a final caption and the rest carries on as the
+next utterance.
+
 With ``translate`` on, Whisper writes English whatever the spoken language
 (its translate task); it can be switched while running.
 """
@@ -46,6 +53,18 @@ class StreamingConfig:
     min_speech: float = 0.25  # shorter blips are ignored
     max_lag: float = 4.0  # drop audio when inference falls this far behind
     prompt_chars: int = 200
+    # Cutting a long utterance after its first sentence (sentence_cuts):
+    min_sentence: float = 2.5  # the least that's cut off (shorter segments are joined)
+    min_rest: float = 1.0  # audio that must follow the cut, so the sentence's end is certain
+    # The pause to cut in is looked for this long before and after the time Whisper gives for the sentence's
+    # end (which is usually a little early).
+    pause_before: float = 0.2
+    pause_after: float = 0.5
+    min_pause: float = 0.09  # a pause is this long below silence_threshold (one quiet frame is just a consonant)
+    # A cut decodes a final while the speaker goes on, on top of the partials; it's skipped when decoding is
+    # this slow (a partial took longer, or the captions already lag this much), so the audio isn't dropped.
+    max_cut_partial_cost: float = 1.0
+    max_cut_latency: float = 2.5
 
 
 @dataclass
@@ -136,6 +155,30 @@ class _Utterance:
         return np.concatenate(frames) if frames else np.zeros(0, np.float32)
 
 
+# Sentence-ending punctuation, and the quotes and brackets that may close a sentence after it.
+_PROMPT_END = "。！？.!?…\"'”’」』）) "
+
+
+def sentence_cuts(segments: list[tuple[float, float, str]], stable: str, audio_seconds: float,
+                  cfg: StreamingConfig | None = None) -> list[float]:
+    """Where (in seconds) an utterance could be cut after a sentence, earliest first; empty to leave it whole.
+
+    ``segments``: the partial's (start, end, text); Whisper ends a segment where a sentence or phrase ends
+    (often without writing the full stop). ``stable``: the part of the same text that won't change any more.
+    A cut can be after the segments that together last ``min_sentence`` seconds, when their text is settled
+    (inside ``stable``) and another segment with ``min_rest`` seconds of audio follows.
+    """
+    cfg = cfg or StreamingConfig()
+    settled, text, cuts = normalize(stable), "", []
+    for (_start, end, part), _next in zip(segments, segments[1:]):
+        text += normalize(part)
+        if not text or not settled.startswith(text) or audio_seconds - end < cfg.min_rest:
+            break
+        if end - segments[0][0] >= cfg.min_sentence:
+            cuts.append(end)
+    return cuts
+
+
 class StreamingTranscriber:
     def __init__(self, backend: ASRBackend, language: str | None = None, chinese_output: str = CHINESE_TRADITIONAL,
                  base_prompt: str = "", config: StreamingConfig | None = None, translate: bool = False):
@@ -148,6 +191,9 @@ class StreamingTranscriber:
         self.filter = HallucinationFilter()
         self.converter = ChineseConverter(chinese_output)  # (its .output can change while running)
         self.stabilizer = PartialStabilizer()
+        # The same for the text as Whisper wrote it (before the Chinese conversion, which can change a phrase
+        # across two segments): what the sentence cut compares the segments with.
+        self.raw_stabilizer = PartialStabilizer()
         self.pos = 0  # samples consumed since the session started (incl. dropped)
         self._pre_roll: list[np.ndarray] = []
         self._utt: _Utterance | None = None
@@ -201,9 +247,7 @@ class StreamingTranscriber:
             now = time.monotonic()
             interval = max(self.cfg.partial_interval, self._partial_cost * 1.5)
             if now - self._last_partial_at >= interval and utt.samples - utt.decoded_samples >= 0.25 * SR:
-                ev = self._partial()
-                if ev:
-                    events.append(ev)
+                events += self._partial()
         return events
 
     def flush(self) -> list[CaptionEvent]:
@@ -224,7 +268,7 @@ class StreamingTranscriber:
                 self._utt = _Utterance(start_pos=start, frames=list(self._pre_roll),
                                        probs=[0.0] * (len(self._pre_roll) - 1) + [p])
                 self._pre_roll.clear()
-                self.stabilizer.reset()
+                self._reset_stabilizers()
             return []
 
         utt.frames.append(frame)
@@ -247,22 +291,65 @@ class StreamingTranscriber:
         window = int(3 * SR / FRAME)
         lo = max(1, n - window)
         hi = max(lo + 1, n - int(0.3 * SR / FRAME))
-        cut = lo + int(np.argmin(utt.probs[lo:hi]))
-        rest_frames, rest_probs = utt.frames[cut:], utt.probs[cut:]
-        utt.frames, utt.probs = utt.frames[:cut], utt.probs[:cut]
+        return self._split_at(lo + int(np.argmin(utt.probs[lo:hi])))
+
+    def _split_at(self, cut: int) -> list[CaptionEvent]:
+        """Finish the utterance's first ``cut`` frames as a final caption; the rest is the next utterance."""
+        utt = self._utt
+        assert utt is not None
+        rest = _Utterance(start_pos=utt.start_pos + cut * FRAME, frames=utt.frames[cut:], probs=utt.probs[cut:],
+                          silence_samples=min(utt.silence_samples, (len(utt.frames) - cut) * FRAME),
+                          language=utt.language)
+        utt.frames, utt.probs, utt.silence_samples = utt.frames[:cut], utt.probs[:cut], 0
         events = self._finalize(force=True)
-        self._utt = _Utterance(start_pos=utt.start_pos + cut * FRAME, frames=rest_frames, probs=rest_probs,
-                               language=utt.language)
-        self.stabilizer.reset()
+        self._utt = rest
+        self._reset_stabilizers()
+        # The next partial waits as usual (from now, after the final's decode), so a cut doesn't add a burst.
+        self._last_partial_at = time.monotonic()
         return events
 
+    def _can_afford_cut(self) -> bool:
+        """Decoding keeps up comfortably, so a final in the middle of speech won't make the audio pile up."""
+        return (self._partial_cost <= self.cfg.max_cut_partial_cost
+                and self.last_latency <= self.cfg.max_cut_latency)
+
+    def _reset_stabilizers(self) -> None:
+        self.stabilizer.reset()
+        self.raw_stabilizer.reset()
+
+    def _pause_near(self, utt: _Utterance, seconds: float) -> int | None:
+        """The middle of a pause around ``seconds`` (a sentence end, by Whisper's clock): at least ``min_pause``
+        of frames below ``silence_threshold`` in a row. None when the speaker didn't pause there: a cut would go
+        through a word, which both parts would then get wrong."""
+        cfg = self.cfg
+        center = int(seconds * SR / FRAME)
+        lo = max(1, center - int(cfg.pause_before * SR / FRAME))
+        hi = min(len(utt.frames) - 1, center + int(cfg.pause_after * SR / FRAME) + 1)
+        need = max(2, round(cfg.min_pause * SR / FRAME))
+        best, start = None, None
+        for i in range(lo, hi + 1):
+            quiet = i < hi and utt.probs[i] < cfg.silence_threshold
+            if quiet and start is None:
+                start = i
+            elif not quiet and start is not None:
+                if i - start >= need and (best is None or i - start > best[1] - best[0]):
+                    best = (start, i)
+                start = None
+        return (best[0] + best[1]) // 2 if best else None
+
     # ------------------------------------------------------------------
-    def _prompt(self, language: str | None) -> str | None:
+    def _prompt(self, language: str | None, open_ended: bool = False) -> str | None:
+        """``open_ended``: for a partial whose segments may be cut at a sentence end. After a prompt that ends a
+        sentence, Whisper writes everything as one long segment (and tends to invent an ending for a partial),
+        so there the prompt's final punctuation is left out. Finals and short partials keep it, so a caption
+        still starts like a new sentence."""
         hist = self.prompt_history[-self.cfg.prompt_chars:]
         # A prompt in another language pushes Whisper to transcribe (or just
         # repeat) it in that language.
         if language and self._prompt_language and language != self._prompt_language:
             hist = ""
+        if open_ended:
+            hist = hist.rstrip(_PROMPT_END)
         prompt = (self.base_prompt + " " + hist).strip() if self.base_prompt else hist
         return prompt or None
 
@@ -282,13 +369,15 @@ class StreamingTranscriber:
         captured = t_end - (pos_end - end_pos) / SR
         return max(0.0, time.monotonic() - captured)
 
-    def _decode(self, audio: np.ndarray, language: str | None, final: bool) -> tuple[Transcript, float]:
+    def _decode(self, audio: np.ndarray, language: str | None, final: bool,
+                timestamps: bool = False) -> tuple[Transcript, float]:
         t0 = time.monotonic()
-        prompt = self._prompt(language)
-        tr = self.backend.transcribe(audio, language, prompt, final, self._translate)
+        prompt = self._prompt(language, open_ended=timestamps)
+        tr = self.backend.transcribe(audio, language, prompt, final, self._translate, timestamps=timestamps)
         if self._is_echo(tr.text, prompt):
             log.debug("prompt echo detected, retrying without prompt: %r", tr.text)
-            tr = self.backend.transcribe(audio, language, self.base_prompt or None, final, self._translate)
+            tr = self.backend.transcribe(audio, language, self.base_prompt or None, final, self._translate,
+                                         timestamps=timestamps)
         return tr, time.monotonic() - t0
 
     def _postprocess(self, text: str, language: str | None) -> str:
@@ -296,12 +385,14 @@ class StreamingTranscriber:
             text = self.converter.convert(text)
         return text
 
-    def _partial(self) -> CaptionEvent | None:
+    def _partial(self) -> list[CaptionEvent]:
         utt = self._utt
         assert utt is not None
         audio = utt.audio()
         lang = self.language or utt.language
-        tr, cost = self._decode(audio, lang, final=False)
+        # Segment times cost some speed, so only once the utterance is long enough to be cut.
+        timestamps = audio.size / SR >= self.cfg.min_sentence + self.cfg.min_rest
+        tr, cost = self._decode(audio, lang, final=False, timestamps=timestamps)
         self._partial_cost = cost
         self._last_partial_at = time.monotonic()
         utt.decoded_samples = audio.size
@@ -309,21 +400,27 @@ class StreamingTranscriber:
             utt.language = tr.language  # keep partials of this utterance in one language
         text = self.filter.clean(tr, audio.size / SR, final=False)
         if not text:
-            return None
+            return []
         text = self._postprocess(text, self.language or tr.language)
         stable, unstable = self.stabilizer.update(text)
+        raw_stable, _ = self.raw_stabilizer.update(tr.text)
+        if timestamps and self._can_afford_cut():
+            for cut in sentence_cuts(tr.segments, raw_stable, audio.size / SR, self.cfg):
+                frame = self._pause_near(utt, cut)
+                if frame is not None:
+                    return self._split_at(frame)
         end_pos = utt.start_pos + audio.size
         self.last_latency = self._latency_for(end_pos)
         full = (stable + unstable) if stable else unstable
-        return CaptionEvent("partial", text=full.strip(), stable=stable, start=utt.start_pos / SR, end=end_pos / SR,
-                            latency=self.last_latency, language=self.language or tr.language, decode_time=cost)
+        return [CaptionEvent("partial", text=full.strip(), stable=stable, start=utt.start_pos / SR, end=end_pos / SR,
+                             latency=self.last_latency, language=self.language or tr.language, decode_time=cost)]
 
     def _finalize(self, force: bool = False) -> list[CaptionEvent]:
         utt = self._utt
         if utt is None:
             return []
         self._utt = None
-        self.stabilizer.reset()
+        self._reset_stabilizers()
         # Trim trailing silence, keeping a little.
         n = len(utt.frames)
         if not force:

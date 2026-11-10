@@ -48,7 +48,7 @@ class FasterWhisperBackend(ASRBackend):
         return self._languages
 
     def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool,
-                   translate: bool = False) -> Transcript:
+                   translate: bool = False, timestamps: bool = False) -> Transcript:
         if self.model is None:
             raise RuntimeError("model not loaded")
         if language and self._languages is not None and language not in self._languages:
@@ -57,8 +57,10 @@ class FasterWhisperBackend(ASRBackend):
             language=language or None,
             task="translate" if translate else "transcribe",  # (English-only models always transcribe)
             initial_prompt=prompt or None,
-            condition_on_previous_text=False,
-            without_timestamps=True,
+            # With timestamps, Whisper can end a window early and decode the rest in another one; that one
+            # then keeps the prompt and the first one's text, so it doesn't drift in script or wording.
+            condition_on_previous_text=timestamps,
+            without_timestamps=not timestamps,
             vad_filter=False,
             word_timestamps=False,
             suppress_blank=True,
@@ -81,7 +83,10 @@ class FasterWhisperBackend(ASRBackend):
             raise
         text = "".join(s.text for s in segments).strip()
         if segments:
-            no_speech = max(s.no_speech_prob for s in segments)
+            # Whisper rates "no speech" per 30 s window, and all of a window's segments share it. With timestamps a
+            # partial can take two windows; it's speech when any window is, so one quiet window doesn't make the
+            # hallucination filter drop it all.
+            no_speech = min(s.no_speech_prob for s in segments)
             avg_lp = float(np.mean([s.avg_logprob for s in segments]))
             comp = max(s.compression_ratio for s in segments)
         else:

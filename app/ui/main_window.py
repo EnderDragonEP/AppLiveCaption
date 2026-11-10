@@ -77,6 +77,8 @@ class MainWindow(FluentWindow):
         warm_up_native_libraries()
 
         self.captions = CaptionModel(parent=self)
+        self.captions.show_partial = not cfg.get(cfg.finishedOnly)
+        cfg.finishedOnly.valueChanged.connect(lambda on: self.captions.set_show_partial(not on))
         self.controller = CaptionController(self)
         self._gpu_name = ""
         self._pending_model: str | None = None  # model to switch to once its download finishes
@@ -85,6 +87,14 @@ class MainWindow(FluentWindow):
         self._launched_with_start = auto_start
         self._setup_checked = False  # first-time setup was considered (it's offered at the first GPU probe)
         self._setup_open = False
+        self._update_checking = False
+        self._update_quiet = False  # the running check is the start-up one: only a newer version is reported
+        self._pending_update = None  # a newer release found while its prompt couldn't be shown
+        self._update_prompt_open = False
+        self._update_retry = QTimer(self)  # tries the pending prompt again while another dialog is open
+        self._update_retry.setSingleShot(True)
+        self._update_retry.setInterval(2000)
+        self._update_retry.timeout.connect(self._show_pending_update)
         self._translate_warned: set[str] = set()  # models already warned that they may not translate
 
         # Pages
@@ -120,6 +130,12 @@ class MainWindow(FluentWindow):
         run_async(probe_gpu, self._on_gpu_probe, self)
         self.splash.finish()
         QTimer.singleShot(0, self._load_initial_model)
+        if cfg.get(cfg.checkUpdatesOnStart):
+            # Settings → Check for updates on start-up: once, after the window is up and the model is loading.
+            QTimer.singleShot(self.STARTUP_UPDATE_DELAY, lambda: self.check_for_updates(quiet=True))
+
+    STARTUP_UPDATE_DELAY = 3000  # ms after start-up before the automatic update check
+    _pending_update = None  # (class default: the window is shown, for the splash, before __init__ sets it)
 
     # -- pages that depend on later milestones ----------------------------------
     NAV_EXPANDED_WIDTH = 200  # wide enough for "Live captions" with its icon
@@ -299,6 +315,7 @@ class MainWindow(FluentWindow):
                 self._apply_setup(dialog.choices())
         finally:
             self._setup_open = False
+            self._show_pending_update()
 
     def _apply_setup(self, choices) -> None:
         cfg.set(cfg.defaultModel, choices.default_model)
@@ -554,15 +571,27 @@ class MainWindow(FluentWindow):
         self.tray.set_overlay_checked(on)
 
     # -- updates -------------------------------------------------------------------
-    def check_for_updates(self) -> None:
-        button = self.settings_page.about_card.button
-        if not button.isEnabled():
-            return  # a check is already running
+    def check_for_updates(self, quiet: bool = False) -> None:
+        """Ask GitHub for the latest release. ``quiet``: the check at start-up, which only speaks up when there
+        is a newer version (being up to date, or a failed check, is just logged)."""
+        if not quiet and self._pending_update is not None:
+            # The start-up check already found a newer version and waits to say so: say it now (or, if another
+            # dialog is open, as soon as it's closed), once.
+            self._show_pending_update()
+            return
+        if self._update_checking:
+            if not quiet and self._update_quiet:
+                # The user asked while the start-up check is running: its result is shown as theirs.
+                self._update_quiet = False
+                self._set_checking(True)
+            return
         if not hasattr(self, "updates"):
             self.updates = UpdateChecker(self)
             self.updates.finished.connect(self._on_update_checked)
             self.updates.failed.connect(self._on_update_failed)
-        self._set_checking(True)
+        self._update_checking, self._update_quiet = True, quiet
+        if not quiet:
+            self._set_checking(True)
         self.updates.check()
 
     def _check_updates_from_tray(self) -> None:
@@ -575,11 +604,51 @@ class MainWindow(FluentWindow):
         button.setText(self.tr("Checking…") if checking else self.tr("Check for updates"))
 
     def _on_update_checked(self, release) -> None:
+        quiet, self._update_checking = self._update_quiet, False
         self._set_checking(False)
         if release is None or not is_newer(release.version):  # None: nothing published yet
+            if quiet:
+                log.info("Update check at start-up: %s is the latest version", __version__)
+                return
             show_infobar("success", self.tr("You're up to date"),
                          self.tr("Version {version} is the latest version.").format(version=__version__), self, 3000)
             return
+        if quiet and release.version == cfg.get(cfg.declinedUpdate):
+            log.info("Update check at start-up: version %s is available (not asked again: Later)", release.version)
+            return
+        if quiet:
+            log.info("Update check at start-up: version %s is available", release.version)
+        self._offer_update(release)
+
+    def _show_pending_update(self) -> None:
+        """Show the start-up check's "update available" prompt, once the window can show it."""
+        if self._pending_update is None or not self.isVisible() or self.isMinimized():
+            return  # (hidden in the tray: showEvent or changeEvent calls this again)
+        if (self._setup_open or not self._setup_checked or self._update_prompt_open
+                or QApplication.activeModalWidget() is not None):
+            # Never on top of another dialog (first-time setup, which may be about to open, a download
+            # prompt, ...): once it's gone.
+            self._update_retry.start()
+            return
+        release, self._pending_update = self._pending_update, None
+        self._prompt_update(release)
+
+    def _offer_update(self, release) -> None:
+        """Ask whether to download ``release``: now, or (over first-time setup or another dialog, or from a window
+        hidden in the tray) as soon as it can be shown."""
+        self._pending_update = release
+        self._show_pending_update()
+
+    def _prompt_update(self, release) -> None:
+        if self._update_prompt_open:
+            return
+        self._update_prompt_open = True
+        try:
+            self._ask_to_download(release)
+        finally:
+            self._update_prompt_open = False
+
+    def _ask_to_download(self, release) -> None:
         box = MessageBox(self.tr("Version {version} is available").format(version=release.version),
                          self.tr("You have version {version}. Open the download page on GitHub?").format(version=__version__),
                          self)
@@ -587,9 +656,15 @@ class MainWindow(FluentWindow):
         box.cancelButton.setText(self.tr("Later"))
         if box.exec():
             QDesktopServices.openUrl(QUrl(release.url))
+        else:
+            cfg.set(cfg.declinedUpdate, release.version)  # (the start-up check won't ask about it again)
 
     def _on_update_failed(self, message: str) -> None:
+        quiet, self._update_checking = self._update_quiet, False
         self._set_checking(False)
+        if quiet:
+            log.info("Update check at start-up failed: %s", message)
+            return
         show_infobar("warning", self.tr("Couldn't check for updates"), message, self, 5000)
 
     def show_and_raise(self) -> None:
@@ -639,8 +714,16 @@ class MainWindow(FluentWindow):
         self._restart_args = args
         self.close()
 
+    def showEvent(self, e):  # noqa: N802 - Qt override
+        super().showEvent(e)
+        if self._pending_update is not None:
+            QTimer.singleShot(0, self._show_pending_update)  # (back from the tray)
+
     def changeEvent(self, e):  # noqa: N802 - Qt override
         super().changeEvent(e)
+        if (e.type() == QEvent.Type.WindowStateChange and not self.isMinimized()
+                and self._pending_update is not None):
+            QTimer.singleShot(0, self._show_pending_update)  # (restored from the taskbar)
         # Settings → Minimize to tray: a minimized window leaves the taskbar; the tray icon brings it back.
         if (e.type() == QEvent.Type.WindowStateChange and self.isMinimized() and cfg.get(cfg.minimizeToTray)
                 and hasattr(self, "tray") and self.tray.isVisible()):

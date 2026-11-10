@@ -29,7 +29,7 @@ from qfluentwidgets import (
 )
 
 from .. import APP_NAME, LICENSES_URL, REPO_URL, __version__
-from ..config import NO_MODEL, PREVIOUS_MODEL, cfg, is_win11
+from ..config import NO_MODEL, OVERLAY_HIDE_AFTER, PREVIOUS_MODEL, cfg, is_win11
 from ..i18n import AUTO_LANGUAGE, available_languages
 from ..models.catalog import is_default_catalog, load_catalog
 from ..models.storage import models_dir
@@ -197,6 +197,9 @@ class SettingsPage(ScrollArea):
                                                 self.tr("Finished lines"), g))
         g.addSettingCard(CustomColorSettingCard(cfg.partialColor, FluentIcon.PALETTE, self.tr("Partial caption color"),
                                                 self.tr("The line that is still being recognized"), g))
+        g.addSettingCard(SwitchSettingCard(FluentIcon.ACCEPT, self.tr("Show finished lines only"),
+                                           self.tr("Hide the line that keeps changing while someone is speaking"),
+                                           cfg.finishedOnly, g))
         self.layout_.addWidget(g)
 
         # Overlay
@@ -214,6 +217,12 @@ class SettingsPage(ScrollArea):
         g.addSettingCard(SwitchSettingCard(FluentIcon.PIN, self.tr("Click-through"),
                                            self.tr("Mouse clicks pass through the overlay to the window below"),
                                            cfg.overlayClickThrough, g))
+        # (Same order as OVERLAY_HIDE_AFTER.)
+        g.addSettingCard(ComboBoxSettingCard(
+            cfg.overlayHideAfter, FluentIcon.HIDE, self.tr("Hide when no one is speaking"),
+            self.tr("The overlay disappears after the last caption and comes back with the next one"),
+            texts=[self.tr("Never")] + [self.tr("After {n} seconds").format(n=n) for n in OVERLAY_HIDE_AFTER[1:]],
+            parent=g))
         self.layout_.addWidget(g)
 
         # Speech recognition
@@ -259,6 +268,10 @@ class SettingsPage(ScrollArea):
         g = SettingCardGroup(self.tr("About"), container)
         self.about_card = AppInfoCard(g)
         g.addSettingCard(self.about_card)
+        g.addSettingCard(SwitchSettingCard(
+            FluentIcon.UPDATE, self.tr("Check for updates on start-up"),
+            self.tr("Asks GitHub for the latest version when the app starts. Nothing is downloaded."),
+            cfg.checkUpdatesOnStart, g))
         self.layout_.addWidget(g)
 
         self.setWidget(body)

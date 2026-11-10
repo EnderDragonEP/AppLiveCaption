@@ -449,12 +449,12 @@
 <context>
     <name>CaptionOverlay</name>
     <message>
-        <location filename="../ui/overlay.py" line="36"/>
+        <location filename="../ui/overlay.py" line="47"/>
         <source>Click-through (turn off from the tray icon)</source>
         <translation>鼠标穿透（可从系统托盘图标关闭）</translation>
     </message>
     <message>
-        <location filename="../ui/overlay.py" line="40"/>
+        <location filename="../ui/overlay.py" line="51"/>
         <source>Hide overlay</source>
         <translation>隐藏浮动字幕</translation>
     </message>
@@ -656,164 +656,164 @@
 <context>
     <name>GpuSupportCard</name>
     <message>
-        <location filename="../ui/models_page.py" line="281"/>
+        <location filename="../ui/models_page.py" line="283"/>
         <source>Ctrl+click to open the license of NVIDIA&apos;s libraries</source>
         <translation>按住 Ctrl 单击，打开 NVIDIA 库的许可证</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="290"/>
+        <location filename="../ui/models_page.py" line="292"/>
         <source>NVIDIA GPU support</source>
         <translation>NVIDIA 显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="351"/>
+        <location filename="../ui/models_page.py" line="359"/>
         <source>Download {download} · {installed} on disk · cuBLAS 12.4 and cuDNN 9.1 from PyPI · License: NVIDIA Software License</source>
         <translation>下载 {download} · 占用磁盘 {installed} · 来自 PyPI 的 cuBLAS 12.4 和 cuDNN 9.1 · 许可证：NVIDIA Software License</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="309"/>
-        <location filename="../ui/models_page.py" line="380"/>
+        <location filename="../ui/models_page.py" line="311"/>
+        <location filename="../ui/models_page.py" line="388"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="311"/>
-        <location filename="../ui/models_page.py" line="454"/>
+        <location filename="../ui/models_page.py" line="313"/>
+        <location filename="../ui/models_page.py" line="462"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="313"/>
+        <location filename="../ui/models_page.py" line="315"/>
         <source>Keep</source>
         <translation>保留</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="316"/>
+        <location filename="../ui/models_page.py" line="318"/>
         <source>Delete from disk</source>
         <translation>从磁盘删除</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="342"/>
+        <location filename="../ui/models_page.py" line="350"/>
         <source>Your {gpu} is too old for GPU support: it needs a GeForce GTX 900 series or newer NVIDIA GPU. Models run on the CPU.</source>
         <translation>你的 {gpu} 太旧，无法使用显卡支持：需要 GeForce GTX 900 系列或更新的 NVIDIA 显卡。模型会在 CPU 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="345"/>
+        <location filename="../ui/models_page.py" line="353"/>
         <source>Runs models on your {gpu} with CUDA, many times faster than on the CPU.</source>
         <translation>通过 CUDA 在你的 {gpu} 上运行模型，比在 CPU 上快很多倍。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="346"/>
+        <location filename="../ui/models_page.py" line="354"/>
         <source>Runs models on an NVIDIA GPU with CUDA, many times faster than on the CPU.</source>
         <translation>通过 CUDA 在 NVIDIA 显卡上运行模型，比在 CPU 上快很多倍。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="347"/>
+        <location filename="../ui/models_page.py" line="355"/>
         <source>Downloads NVIDIA&apos;s CUDA libraries once; the app doesn&apos;t include them.</source>
         <translation>只需下载一次 NVIDIA 的 CUDA 库；应用本身不包含这些文件。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="349"/>
+        <location filename="../ui/models_page.py" line="357"/>
         <source>Your GPU is an older one, so this also downloads an engine built for it.</source>
         <translation>你的显卡较旧，因此也会下载为它构建的引擎。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="355"/>
+        <location filename="../ui/models_page.py" line="363"/>
         <source>Engine for older GPUs: {size}, CTranslate2 (MIT)</source>
         <translation>旧款显卡引擎：{size}，CTranslate2（MIT）</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="380"/>
+        <location filename="../ui/models_page.py" line="388"/>
         <source>Resume</source>
         <translation>继续下载</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="384"/>
+        <location filename="../ui/models_page.py" line="392"/>
         <source>Downloading…</source>
         <translation>正在下载…</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="386"/>
+        <location filename="../ui/models_page.py" line="394"/>
         <source>Deleted when the app restarts</source>
         <translation>应用重启时删除</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="388"/>
+        <location filename="../ui/models_page.py" line="396"/>
         <source>Needs the engine for older GPUs</source>
         <translation>需要旧款显卡引擎</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="390"/>
+        <location filename="../ui/models_page.py" line="398"/>
         <source>Installed</source>
         <translation>已安装</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="391"/>
+        <location filename="../ui/models_page.py" line="399"/>
         <source>Installed, but the GPU can&apos;t be used</source>
         <translation>已安装，但无法使用显卡</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="393"/>
+        <location filename="../ui/models_page.py" line="401"/>
         <source>Found on this PC</source>
         <translation>已在此电脑上找到</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="395"/>
+        <location filename="../ui/models_page.py" line="403"/>
         <source>Partly downloaded</source>
         <translation>部分已下载</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="397"/>
+        <location filename="../ui/models_page.py" line="405"/>
         <source>Not supported on this GPU</source>
         <translation>这张显卡不支持</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="399"/>
+        <location filename="../ui/models_page.py" line="407"/>
         <source>Not installed</source>
         <translation>未安装</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="402"/>
+        <location filename="../ui/models_page.py" line="410"/>
         <source>Restart the app to use the GPU</source>
         <translation>重启应用即可使用显卡</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="404"/>
+        <location filename="../ui/models_page.py" line="412"/>
         <source>Download {size}</source>
         <translation>下载 {size}</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="408"/>
+        <location filename="../ui/models_page.py" line="416"/>
         <source>Update the NVIDIA driver, then restart the app</source>
         <translation>请更新 NVIDIA 驱动程序，然后重启应用</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="411"/>
+        <location filename="../ui/models_page.py" line="419"/>
         <source>On disk: {size}</source>
         <translation>占用磁盘：{size}</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="443"/>
+        <location filename="../ui/models_page.py" line="451"/>
         <source>Download failed: NVIDIA GPU support</source>
         <translation>下载失败：NVIDIA 显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="448"/>
+        <location filename="../ui/models_page.py" line="456"/>
         <source>Delete NVIDIA&apos;s CUDA libraries ({size}) from disk? Models then run on the CPU. You can download them again later.</source>
         <translation>要从磁盘删除 NVIDIA 的 CUDA 库（{size}）吗？之后模型会在 CPU 上运行。你以后可以重新下载。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="451"/>
+        <location filename="../ui/models_page.py" line="459"/>
         <source>They&apos;re in use, so they&apos;re deleted the next time the app starts.</source>
         <translation>这些文件正在使用中，会在下次启动应用时删除。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="452"/>
+        <location filename="../ui/models_page.py" line="460"/>
         <source>Remove GPU support?</source>
         <translation>要移除显卡支持吗？</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="453"/>
+        <location filename="../ui/models_page.py" line="461"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
@@ -1733,236 +1733,236 @@
 <context>
     <name>MainWindow</name>
     <message>
-        <location filename="../ui/main_window.py" line="92"/>
+        <location filename="../ui/main_window.py" line="102"/>
         <source>Live captions</source>
         <translation>实时字幕</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="157"/>
+        <location filename="../ui/main_window.py" line="173"/>
         <source>Models</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="159"/>
+        <location filename="../ui/main_window.py" line="175"/>
         <source>History</source>
         <translation>历史记录</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="155"/>
+        <location filename="../ui/main_window.py" line="171"/>
         <source>Keywords</source>
         <translation>关键词</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="163"/>
+        <location filename="../ui/main_window.py" line="179"/>
         <source>Settings</source>
         <translation>设置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="211"/>
+        <location filename="../ui/main_window.py" line="227"/>
         <source>A download is running</source>
         <translation>正在下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="212"/>
+        <location filename="../ui/main_window.py" line="228"/>
         <source>Wait for it to finish (or cancel it) before resetting the model list.</source>
         <translation>请等下载完成（或取消下载）后，再重置模型列表。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="216"/>
+        <location filename="../ui/main_window.py" line="232"/>
         <source>The preset models come back in the list.</source>
         <translation>预置的模型会回到列表中。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="218"/>
+        <location filename="../ui/main_window.py" line="234"/>
         <source>The {n} model(s) you added are removed from it.</source>
         <translation>你添加的 {n} 个模型会从列表中移除。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="219"/>
+        <location filename="../ui/main_window.py" line="235"/>
         <source>Reset the model list?</source>
         <translation>要重置模型列表吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="219"/>
+        <location filename="../ui/main_window.py" line="235"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="220"/>
+        <location filename="../ui/main_window.py" line="236"/>
         <source>Also delete the files of the models you added ({size})</source>
         <translation>同时删除你添加的模型的文件（{size}）</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="274"/>
-        <location filename="../ui/main_window.py" line="398"/>
+        <location filename="../ui/main_window.py" line="290"/>
+        <location filename="../ui/main_window.py" line="415"/>
         <source>No model loaded</source>
         <translation>未加载模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="309"/>
+        <location filename="../ui/main_window.py" line="326"/>
         <source>GPU support</source>
         <translation>显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="321"/>
+        <location filename="../ui/main_window.py" line="338"/>
         <source>Downloading {what}</source>
         <translation>正在下载：{what}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="321"/>
+        <location filename="../ui/main_window.py" line="338"/>
         <source> and </source>
         <translation> 和 </translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="322"/>
+        <location filename="../ui/main_window.py" line="339"/>
         <source>Follow the progress here. The model loads when it&apos;s ready.</source>
         <translation>可在这里查看进度。下载完成后会加载模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="323"/>
+        <location filename="../ui/main_window.py" line="340"/>
         <source>Follow the progress here.</source>
         <translation>可在这里查看进度。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="341"/>
+        <location filename="../ui/main_window.py" line="358"/>
         <source>Download it here, and the app switches to it when it&apos;s done.</source>
         <translation>在这里下载，完成后应用会切换到这个模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="356"/>
+        <location filename="../ui/main_window.py" line="373"/>
         <source>{name} isn&apos;t downloaded</source>
         <translation>{name} 尚未下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="439"/>
+        <location filename="../ui/main_window.py" line="456"/>
         <source>GPU support installed, but the GPU can&apos;t be used</source>
         <translation>已安装显卡支持，但无法使用显卡</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="440"/>
+        <location filename="../ui/main_window.py" line="457"/>
         <source>Update the NVIDIA graphics driver, then restart the app. Models keep running on the CPU.</source>
         <translation>请更新 NVIDIA 显卡驱动程序，然后重启应用。在此之前模型会继续在 CPU 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="432"/>
-        <location filename="../ui/main_window.py" line="443"/>
+        <location filename="../ui/main_window.py" line="449"/>
+        <location filename="../ui/main_window.py" line="460"/>
         <source>GPU support installed</source>
         <translation>已安装显卡支持</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="433"/>
+        <location filename="../ui/main_window.py" line="450"/>
         <source>Restart the app to run models on your {gpu}.</source>
         <translation>重启应用，即可在你的 {gpu} 上运行模型。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="444"/>
+        <location filename="../ui/main_window.py" line="461"/>
         <source>Models now run on your {gpu}.</source>
         <translation>模型现在会在你的 {gpu} 上运行。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="455"/>
+        <location filename="../ui/main_window.py" line="472"/>
         <source>GPU</source>
         <translation>GPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="457"/>
+        <location filename="../ui/main_window.py" line="474"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="469"/>
+        <location filename="../ui/main_window.py" line="486"/>
         <source>Select a model first</source>
         <translation>请先选择模型</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="470"/>
+        <location filename="../ui/main_window.py" line="487"/>
         <source>Pick one in the Model dropdown, then press Start.</source>
         <translation>请从“模型”下拉列表中选择一个，再按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="477"/>
+        <location filename="../ui/main_window.py" line="494"/>
         <source>Download it here, then press Start.</source>
         <translation>请在这里下载，然后按“开始”。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="575"/>
+        <location filename="../ui/main_window.py" line="604"/>
         <source>Checking…</source>
         <translation>正在检查…</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="575"/>
+        <location filename="../ui/main_window.py" line="604"/>
         <source>Check for updates</source>
         <translation>检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="580"/>
+        <location filename="../ui/main_window.py" line="613"/>
         <source>You&apos;re up to date</source>
         <translation>已是最新版本</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="581"/>
+        <location filename="../ui/main_window.py" line="614"/>
         <source>Version {version} is the latest version.</source>
         <translation>版本 {version} 是最新版本。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="583"/>
+        <location filename="../ui/main_window.py" line="652"/>
         <source>Version {version} is available</source>
         <translation>有新版本 {version}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="584"/>
+        <location filename="../ui/main_window.py" line="653"/>
         <source>You have version {version}. Open the download page on GitHub?</source>
         <translation>你当前使用的是版本 {version}。要打开 GitHub 上的下载页面吗？</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="586"/>
+        <location filename="../ui/main_window.py" line="655"/>
         <source>Download</source>
         <translation>下载</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="587"/>
+        <location filename="../ui/main_window.py" line="656"/>
         <source>Later</source>
         <translation>稍后</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="593"/>
+        <location filename="../ui/main_window.py" line="668"/>
         <source>Couldn&apos;t check for updates</source>
         <translation>无法检查更新</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="609"/>
-        <location filename="../ui/main_window.py" line="617"/>
+        <location filename="../ui/main_window.py" line="684"/>
+        <location filename="../ui/main_window.py" line="692"/>
         <source>Keyword detected: {keywords}</source>
         <translation>检测到关键词：{keywords}</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="616"/>
+        <location filename="../ui/main_window.py" line="691"/>
         <source>keyword</source>
         <translation>关键词</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="618"/>
+        <location filename="../ui/main_window.py" line="693"/>
         <source>This is how a keyword alert looks.</source>
         <translation>关键词提醒看起来会是这样。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="626"/>
+        <location filename="../ui/main_window.py" line="701"/>
         <source>Restart to change the language</source>
         <translation>重启以更改语言</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="627"/>
+        <location filename="../ui/main_window.py" line="702"/>
         <source>The new language is used the next time the app starts.</source>
         <translation>下次启动应用时会使用新的语言。</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="434"/>
-        <location filename="../ui/main_window.py" line="628"/>
+        <location filename="../ui/main_window.py" line="451"/>
+        <location filename="../ui/main_window.py" line="703"/>
         <source>Restart now</source>
         <translation>立即重启</translation>
     </message>
     <message>
-        <location filename="../ui/main_window.py" line="655"/>
+        <location filename="../ui/main_window.py" line="738"/>
         <source>Minimized to tray. You can change it in Settings.</source>
         <translation>已最小化到系统托盘。可以在“设置”中更改。</translation>
     </message>
@@ -2064,128 +2064,128 @@
 <context>
     <name>ModelsPage</name>
     <message>
-        <location filename="../ui/models_page.py" line="494"/>
+        <location filename="../ui/models_page.py" line="502"/>
         <source>Models</source>
         <translation>模型</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="496"/>
+        <location filename="../ui/models_page.py" line="504"/>
         <source>Add model</source>
         <translation>添加模型</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="519"/>
+        <location filename="../ui/models_page.py" line="527"/>
         <source>No models in the list</source>
         <translation>列表中没有模型</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="520"/>
+        <location filename="../ui/models_page.py" line="528"/>
         <source>Bring back the preset models, or add your own.</source>
         <translation>恢复预置的模型，或添加你自己的模型。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="522"/>
+        <location filename="../ui/models_page.py" line="530"/>
         <source>Restore default models</source>
         <translation>恢复默认模型</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="586"/>
+        <location filename="../ui/models_page.py" line="594"/>
         <source>Already in the list</source>
         <translation>已在列表中</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="587"/>
+        <location filename="../ui/models_page.py" line="595"/>
         <source>{name} is in the list already.</source>
         <translation>{name} 已在列表中。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="595"/>
-        <location filename="../ui/models_page.py" line="599"/>
+        <location filename="../ui/models_page.py" line="603"/>
+        <location filename="../ui/models_page.py" line="607"/>
         <source>Model added</source>
         <translation>已添加模型</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="596"/>
+        <location filename="../ui/models_page.py" line="604"/>
         <source>{name} is in the list, and downloaded already.</source>
         <translation>{name} 已加入列表，并且已经下载。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="600"/>
+        <location filename="../ui/models_page.py" line="608"/>
         <source>{name} is in the list. Download it when you want to use it.</source>
         <translation>{name} 已加入列表。需要使用时再下载即可。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="609"/>
+        <location filename="../ui/models_page.py" line="617"/>
         <source>{name} is removed from the list. You can add it again later.</source>
         <translation>{name} 会从列表中移除。你以后可以重新添加。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="611"/>
+        <location filename="../ui/models_page.py" line="619"/>
         <source>{name} is removed from the list. Reset the model list in Settings (or press Restore default models when the list is empty) to bring it back.</source>
         <translation>{name} 会从列表中移除。要找回它，请在“设置”中重置模型列表（或在列表为空时按“恢复默认模型”）。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="613"/>
+        <location filename="../ui/models_page.py" line="621"/>
         <source>Remove from the list?</source>
         <translation>要从列表中移除吗？</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="613"/>
+        <location filename="../ui/models_page.py" line="621"/>
         <source>Remove</source>
         <translation>移除</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="614"/>
+        <location filename="../ui/models_page.py" line="622"/>
         <source>Also delete the downloaded files ({size})</source>
         <translation>同时删除已下载的文件（{size}）</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="645"/>
+        <location filename="../ui/models_page.py" line="653"/>
         <source>Models are stored in {path}</source>
         <translation>模型保存在 {path}</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="673"/>
+        <location filename="../ui/models_page.py" line="681"/>
         <source>Download complete</source>
         <translation>下载完成</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="673"/>
+        <location filename="../ui/models_page.py" line="681"/>
         <source>{name} is ready.</source>
         <translation>{name} 已可使用。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="676"/>
+        <location filename="../ui/models_page.py" line="684"/>
         <source>Download failed: {name}</source>
         <translation>下载失败：{name}</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="684"/>
+        <location filename="../ui/models_page.py" line="692"/>
         <source>Delete {name} from disk? You can download it again later.</source>
         <translation>要从磁盘删除 {name} 吗？你以后可以重新下载。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="686"/>
+        <location filename="../ui/models_page.py" line="694"/>
         <source>Delete {name} from disk? It can be copied again from {folder} later, as long as that folder is there.</source>
         <translation>要从磁盘删除 {name} 吗？只要 {folder} 文件夹还在，以后就能再从那里复制。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="689"/>
+        <location filename="../ui/models_page.py" line="697"/>
         <source>Delete {name} from disk? The folder it was added from ({folder}) is gone, so it can&apos;t be copied again: add the model again from wherever it is now.</source>
         <translation>要从磁盘删除 {name} 吗？当初添加它的文件夹（{folder}）已不存在，因此无法再复制：请从模型现在所在的位置重新添加。</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="691"/>
+        <location filename="../ui/models_page.py" line="699"/>
         <source>Delete model?</source>
         <translation>要删除模型吗？</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="693"/>
+        <location filename="../ui/models_page.py" line="701"/>
         <source>Delete</source>
         <translation>删除</translation>
     </message>
     <message>
-        <location filename="../ui/models_page.py" line="694"/>
+        <location filename="../ui/models_page.py" line="702"/>
         <source>Cancel</source>
         <translation>取消</translation>
     </message>
@@ -2283,177 +2283,217 @@
         <translation>仍在识别中的那一行</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="203"/>
+        <location filename="../ui/settings_page.py" line="200"/>
+        <source>Show finished lines only</source>
+        <translation>只显示完成的字幕</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="201"/>
+        <source>Hide the line that keeps changing while someone is speaking</source>
+        <translation>隐藏说话时还在不断变化的那一行</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="206"/>
         <source>Floating overlay</source>
         <translation>浮动字幕</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="204"/>
+        <location filename="../ui/settings_page.py" line="207"/>
         <source>Overlay text size</source>
         <translation>浮动字幕字号</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="205"/>
+        <location filename="../ui/settings_page.py" line="208"/>
         <source>Font size in the floating overlay</source>
         <translation>浮动字幕的字号</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="206"/>
+        <location filename="../ui/settings_page.py" line="209"/>
         <source>Background opacity</source>
         <translation>背景不透明度</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="207"/>
+        <location filename="../ui/settings_page.py" line="210"/>
         <source>0% is fully see-through, 100% is solid</source>
         <translation>0% 为完全透明，100% 为完全不透明</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="208"/>
+        <location filename="../ui/settings_page.py" line="211"/>
         <source>Overlay text color</source>
         <translation>浮动字幕文字颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="209"/>
+        <location filename="../ui/settings_page.py" line="212"/>
         <source>The line still being recognized is shown in a softer shade</source>
         <translation>仍在识别中的那一行会以较淡的颜色显示</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="212"/>
+        <location filename="../ui/settings_page.py" line="215"/>
         <source>Overlay background color</source>
         <translation>浮动字幕背景颜色</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="213"/>
+        <location filename="../ui/settings_page.py" line="216"/>
         <source>Its transparency is set by Background opacity</source>
         <translation>透明度由“背景不透明度”设置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="214"/>
+        <location filename="../ui/settings_page.py" line="217"/>
         <source>Click-through</source>
         <translation>鼠标穿透</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="215"/>
+        <location filename="../ui/settings_page.py" line="218"/>
         <source>Mouse clicks pass through the overlay to the window below</source>
         <translation>鼠标点击会穿过浮动字幕，传到下方的窗口</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="220"/>
+        <location filename="../ui/settings_page.py" line="222"/>
+        <source>Hide when no one is speaking</source>
+        <translation>没有人说话时隐藏</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="223"/>
+        <source>The overlay disappears after the last caption and comes back with the next one</source>
+        <translation>浮动字幕会在最后一句字幕之后消失，下一句出现时再回来</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="224"/>
+        <source>Never</source>
+        <translation>从不</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="224"/>
+        <source>After {n} seconds</source>
+        <translation>{n} 秒后</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="229"/>
         <source>Speech recognition</source>
         <translation>语音识别</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="224"/>
+        <location filename="../ui/settings_page.py" line="233"/>
         <source>Device</source>
         <translation>运算设备</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="225"/>
+        <location filename="../ui/settings_page.py" line="234"/>
         <source>NVIDIA GPU (CUDA, float16) is much faster; the CPU uses int8</source>
         <translation>NVIDIA 显卡（CUDA、float16）快得多；CPU 使用 int8</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="226"/>
+        <location filename="../ui/settings_page.py" line="235"/>
         <source>Automatic (GPU if available)</source>
         <translation>自动（有显卡时使用 GPU）</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="226"/>
+        <location filename="../ui/settings_page.py" line="235"/>
         <source>NVIDIA GPU</source>
         <translation>NVIDIA 显卡</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="226"/>
+        <location filename="../ui/settings_page.py" line="235"/>
         <source>CPU</source>
         <translation>CPU</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="231"/>
+        <location filename="../ui/settings_page.py" line="240"/>
         <source>Chinese output</source>
         <translation>中文输出</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="232"/>
+        <location filename="../ui/settings_page.py" line="241"/>
         <source>Write Chinese captions in Traditional or Simplified characters, with OpenCC</source>
         <translation>用 OpenCC 将中文字幕转为繁体或简体字</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="242"/>
         <source>As recognized</source>
         <translation>保持识别结果</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="242"/>
         <source>Simplified Chinese</source>
         <translation>简体中文</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="233"/>
+        <location filename="../ui/settings_page.py" line="242"/>
         <source>Traditional Chinese</source>
         <translation>繁体中文</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="236"/>
+        <location filename="../ui/settings_page.py" line="245"/>
         <source>Choose folder</source>
         <translation>选择文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="236"/>
+        <location filename="../ui/settings_page.py" line="245"/>
         <source>Model folder</source>
         <translation>模型文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="240"/>
+        <location filename="../ui/settings_page.py" line="249"/>
         <source>Reset</source>
         <translation>重置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="240"/>
+        <location filename="../ui/settings_page.py" line="249"/>
         <source>Reset model list</source>
         <translation>重置模型列表</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="241"/>
+        <location filename="../ui/settings_page.py" line="250"/>
         <source>Bring back the preset models and remove the ones you added</source>
         <translation>恢复预置的模型，并移除你添加的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="248"/>
+        <location filename="../ui/settings_page.py" line="257"/>
         <source>Advanced</source>
         <translation>高级</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="249"/>
+        <location filename="../ui/settings_page.py" line="258"/>
         <source>Open</source>
         <translation>打开</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="249"/>
+        <location filename="../ui/settings_page.py" line="258"/>
         <source>First-time setup</source>
         <translation>首次设置</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="250"/>
+        <location filename="../ui/settings_page.py" line="259"/>
         <source>Choose GPU support, a model and the model loaded at start-up again</source>
         <translation>重新选择显卡支持、模型以及启动时加载的模型</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="253"/>
+        <location filename="../ui/settings_page.py" line="262"/>
         <source>Open folder</source>
         <translation>打开文件夹</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="253"/>
+        <location filename="../ui/settings_page.py" line="262"/>
         <source>Logs</source>
         <translation>日志</translation>
     </message>
     <message>
-        <location filename="../ui/settings_page.py" line="259"/>
+        <location filename="../ui/settings_page.py" line="268"/>
         <source>About</source>
         <translation>关于</translation>
     </message>
     <message>
+        <location filename="../ui/settings_page.py" line="272"/>
+        <source>Check for updates on start-up</source>
+        <translation>启动时检查更新</translation>
+    </message>
+    <message>
         <location filename="../ui/settings_page.py" line="273"/>
+        <source>Asks GitHub for the latest version when the app starts. Nothing is downloaded.</source>
+        <translation>应用启动时向 GitHub 查询最新版本，不会下载任何内容。</translation>
+    </message>
+    <message>
+        <location filename="../ui/settings_page.py" line="286"/>
         <source>Choose the model folder</source>
         <translation>选择模型文件夹</translation>
     </message>

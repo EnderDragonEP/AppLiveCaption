@@ -28,6 +28,7 @@ from .paths import config_file
 TRADITIONAL_FONT, SIMPLIFIED_FONT = "Microsoft JhengHei UI", "Microsoft YaHei UI"
 
 DEFAULT_MODEL = "whisper-large-v3-turbo"
+OVERLAY_HIDE_AFTER = (0, 3, 5, 10, 30)  # Settings: Hide when no one is speaking (seconds; 0: never)
 # Settings → Default model choices besides a model id (model ids never contain ":").
 NO_MODEL = ":none"  # load nothing at start-up
 PREVIOUS_MODEL = ":previous"  # load the model used last time
@@ -97,6 +98,12 @@ class Config(QConfig):
     # Minimizing hides the window; the tray icon brings it back. The first time, a tray message says so.
     minimizeToTray = ConfigItem("General", "MinimizeToTray", True, BoolValidator())
     trayHintShown = ConfigItem("General", "TrayHintShown", False, BoolValidator())
+    # Ask GitHub for the latest release once, shortly after start-up (app/updates.py). The only network
+    # request the app makes without being asked.
+    checkUpdatesOnStart = ConfigItem("General", "CheckUpdatesOnStart", True, BoolValidator())
+    # The version whose prompt the user answered with "Later": the start-up check doesn't ask about it again
+    # (a newer one, or Check for updates, does).
+    declinedUpdate = ConfigItem("General", "DeclinedUpdate", "")
 
     # Live captions
     modelId = ConfigItem("Live", "Model", DEFAULT_MODEL)
@@ -121,6 +128,8 @@ class Config(QConfig):
     # A caption color left at its default follows the light/dark theme instead.
     finalColor = ColorConfigItem("Captions", "FinalColor", QColor(32, 32, 32))
     partialColor = ColorConfigItem("Captions", "PartialColor", QColor(128, 128, 128))
+    # Show finished lines only: the line still being recognized (which keeps changing) stays hidden.
+    finishedOnly = ConfigItem("Captions", "FinishedOnly", False, BoolValidator())
 
     # Floating overlay
     overlayVisible = ConfigItem("Overlay", "Visible", False, BoolValidator())
@@ -130,6 +139,8 @@ class Config(QConfig):
     overlayOpacity = RangeConfigItem("Overlay", "BackgroundOpacity", 70, RangeValidator(0, 100))
     overlayTextColor = ColorConfigItem("Overlay", "TextColor", QColor(255, 255, 255))
     overlayBackground = ColorConfigItem("Overlay", "BackgroundColor", QColor(0, 0, 0))
+    # Hide the overlay (text and box) this many seconds after the last caption; 0: never.
+    overlayHideAfter = OptionsConfigItem("Overlay", "HideAfter", 0, OptionsValidator(list(OVERLAY_HIDE_AFTER)))
 
     # Keyword detection (the Keywords page, app/ui/keyword_service.py)
     keywords = ConfigItem("Keywords", "List", [], KeywordListValidator())

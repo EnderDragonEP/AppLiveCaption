@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import time
+
 from PySide6.QtCore import QPoint, QRect, QRectF, QSize, Qt, QTimer, Signal
 from PySide6.QtGui import QColor, QCursor, QFont, QGuiApplication, QPainter, QPainterPath
 from PySide6.QtWidgets import QWidget
@@ -31,6 +33,15 @@ class CaptionOverlay(QWidget):
         self._press_geom = QRect()
         self._press_pos = QPoint()
         self._hover = False
+        # Settings: Hide when no one is speaking. Nobody spoke for that long, so nothing is drawn, until the
+        # mouse is over it (then the box shows, so it can be moved).
+        self._idle = False
+        self._active = model.last_activity
+        self._since = 0.0  # time.monotonic() the silence is counted from (0: nothing to count: stays up)
+        self._reshowing = False  # the window flags change (Click-through): a re-show, not the user's
+        self._idle_timer = QTimer(self)
+        self._idle_timer.setSingleShot(True)
+        self._idle_timer.timeout.connect(self._go_idle)
 
         self.lock_btn = TransparentToolButton(FluentIcon.PIN, self)
         self.lock_btn.setToolTip(self.tr("Click-through (turn off from the tray icon)"))
@@ -51,7 +62,8 @@ class CaptionOverlay(QWidget):
         self._save_timer.setInterval(500)
         self._save_timer.timeout.connect(self.save_geometry)
 
-        model.changed.connect(self.update)
+        model.changed.connect(self._on_captions)
+        cfg.overlayHideAfter.valueChanged.connect(lambda _v: self._apply_hide_after())
         for item in (cfg.overlayFontSize, cfg.overlayOpacity, cfg.overlayTextColor,
                      cfg.overlayBackground, cfg.captionFont):
             item.valueChanged.connect(lambda _v: self.update())
@@ -70,7 +82,11 @@ class CaptionOverlay(QWidget):
         self._apply_flags()  # changing flags hides the window
         self._set_buttons_visible(False)
         if visible:
-            self.show()
+            self._reshowing = True  # (keeps hidden-for-silence and its countdown as they are)
+            try:
+                self.show()
+            finally:
+                self._reshowing = False
 
     # -- geometry --------------------------------------------------------------
     def _restore_geometry(self) -> None:
@@ -99,12 +115,60 @@ class CaptionOverlay(QWidget):
         self._save_timer.start()
         super().resizeEvent(e)
 
+    # -- hiding when no one is speaking -------------------------------------------
+    def _on_captions(self) -> None:
+        active = self.model.last_activity
+        if active and active != self._active:  # someone is speaking (clearing the captions isn't that)
+            self._wake(count=True)
+        self._active = active
+        self.update()
+
+    def _wake(self, count: bool) -> None:
+        """Show the overlay again. ``count``: speech was heard (or the mouse pointed at it), so it hides once
+        the silence has lasted long enough. Without (it was just switched on, nothing is being captioned) it
+        stays up."""
+        self._idle = False
+        self._since = time.monotonic() if count else 0.0
+        self._apply_hide_after()
+
+    def _apply_hide_after(self) -> None:
+        """(Re)start the countdown for the current setting, from when the silence began."""
+        seconds = cfg.get(cfg.overlayHideAfter)
+        if not seconds or not self._since:
+            if not seconds:
+                self._idle = False  # Never
+            self._idle_timer.stop()
+            self.update()
+            return
+        left = seconds - (time.monotonic() - self._since)
+        if left <= 0:
+            self._go_idle()
+        else:
+            self._idle = False  # (a longer setting can bring it back: the silence hasn't lasted that long yet)
+            self._idle_timer.start(int(left * 1000))
+            self.update()
+
+    def _go_idle(self) -> None:
+        if self._hover:
+            return  # not while the mouse is over it: leaveEvent counts again from there
+        self._idle = True
+        self._idle_timer.stop()
+        self.update()
+
+    def showEvent(self, e):  # noqa: N802
+        if not self._reshowing:
+            self._wake(count=False)  # switched on: it stays up until something is captioned
+        super().showEvent(e)
+
     # -- painting --------------------------------------------------------------
     def paintEvent(self, _e):  # noqa: N802
         p = QPainter(self)
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         bg = QColor(cfg.get(cfg.overlayBackground))
         alpha = int(cfg.get(cfg.overlayOpacity) * 2.55)
+        if self._idle:
+            # Hidden for silence: invisible, but still there for the mouse: pointing at it brings it back.
+            alpha = 1
         if self._hover:
             alpha = max(alpha, 90)
         bg.setAlpha(alpha)
@@ -115,6 +179,8 @@ class CaptionOverlay(QWidget):
             p.setPen(QColor(255, 255, 255, 70))
             p.drawPath(path)
 
+        if self._idle:
+            return  # (no text)
         margin = 16
         rect = self.rect().adjusted(margin, 10, -margin, -10)
         text_color = QColor(cfg.get(cfg.overlayTextColor))
@@ -198,12 +264,16 @@ class CaptionOverlay(QWidget):
 
     def enterEvent(self, e):  # noqa: N802
         self._hover = True
+        if self._idle:
+            self._wake(count=True)  # back, captions and all, as if someone had spoken
         self._set_buttons_visible(True)
         self.update()
         super().enterEvent(e)
 
     def leaveEvent(self, e):  # noqa: N802
         self._hover = False
+        if self._since:
+            self._wake(count=True)  # the silence counts again from when the mouse left
         self._set_buttons_visible(False)
         self.update()
         super().leaveEvent(e)

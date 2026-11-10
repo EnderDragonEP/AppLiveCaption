@@ -56,8 +56,11 @@ class ASRBackend(abc.ABC):
 
     @abc.abstractmethod
     def transcribe(self, audio: np.ndarray, language: str | None, prompt: str | None, final: bool,
-                   translate: bool = False) -> Transcript:
+                   translate: bool = False, timestamps: bool = False) -> Transcript:
         """Transcribe one utterance.
+
+        ``timestamps`` asks for the segments' times (``Transcript.segments``), which costs some speed;
+        without it there may be just one segment for the whole text.
 
         ``final`` asks for the more accurate (slower) settings; partial
         updates use greedy decoding. ``translate`` writes English instead of the

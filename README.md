@@ -11,7 +11,7 @@ No cloud and no account: once a model is downloaded, it works without internet.
 
 - 🎧 **Caption any audio** —  Your microphone, everything playing on the PC, or selected apps, mixed together.
 - ⚡ **Live captions** — Captions update while someone speaks and settle into a final line when they pause.
-- 🪟 **Floating overlay** — Always-on-top, draggable, resizable, and click-through.
+- 🪟 **Floating overlay** — Always-on-top, draggable, resizable, and click-through. It can hide itself while no one is speaking.
 - 🔒 **Private by design** — Speech recognition runs locally on your PC and never uploaded.
 - 🧠 **Choose your model** — Whisper, Breeze ASR 25/26, and Taiwan Tongues or setup your own models.
 - ➕ **Manage models** — Add faster-whisper model from Hugging Face or from your PC.
@@ -127,7 +127,7 @@ The app also uses the same libraries when they're already on the PC, in this ord
 - [x] Allow deleting preset model entries
 - [ ] Add more languages
 - [ ] Add AMD or Intel GPU support (mabey)
-- [ ] Split long sentences into shorter ones
+- [x] Split long sentences into shorter ones
 
 ## Where your stuff lives
 
@@ -151,7 +151,7 @@ The installer puts a small `AppLiveCaption.installed` file next to the exe; that
 
 Your settings, history, models and GPU support stay where they are, so nothing needs downloading again. 🔄
 
-**Check for a new version** with **Settings → About → Check for updates** (or **Check for updates** in the tray icon's menu). If there is one, **Download** opens its page on GitHub. You can also look on the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page and compare with the version shown in Settings → About.
+**The app tells you when there's a new version:** a few seconds after it starts, it checks GitHub once, and if a newer version exists it asks whether to open the download page (answer **Later** and it won't ask about that version again). It says nothing when you're up to date or offline, and never downloads or installs anything itself. **Settings → About → Check for updates on start-up** turns that off. You can also check yourself with **Settings → About → Check for updates** (or **Check for updates** in the tray icon's menu). If there is a new version, **Download** opens its page on GitHub. You can also look on the [Releases](https://github.com/EnderDragonEP/AppLiveCaption/releases) page and compare with the version shown in Settings → About.
 
 ### Installed version
 
@@ -181,11 +181,13 @@ To go back to an older version, do the same with that version's zip (or, install
 
 ## Offline and privacy
 
-Audio never leaves your PC. The app goes online only when you ask it to:
+Audio never leaves your PC. The app goes online when you ask it to:
 
 - **Downloading a model** from Hugging Face (Models page or first-time setup).
 - **Downloading GPU support** from PyPI (Models page or first-time setup).
 - **Check for updates**, which asks the GitHub API for the latest release.
+
+One request is made without asking: a few seconds after it starts, the app asks the GitHub API once whether a newer version exists. It sends only the app's name and version, downloads nothing, and stays silent unless there is an update (or it's offline). Turn it off with **Settings → About → Check for updates on start-up**; then the app never goes online on its own.
 
 Everything else runs offline: the app sets `HF_HUB_OFFLINE=1` at start-up and loads models from their local folders only.
 
@@ -377,7 +379,7 @@ tools/                 build and website helpers
 
 - **Per-app capture** uses the Windows process loopback API (`ActivateAudioInterfaceAsync` with `AUDIOCLIENT_ACTIVATION_TYPE_PROCESS_LOOPBACK` and `PROCESS_LOOPBACK_MODE_INCLUDE_TARGET_PROCESS_TREE`), implemented in pure Python with comtypes ([app/audio/process_loopback.py](https://github.com/EnderDragonEP/AppLiveCaption/blob/main/app/audio/process_loopback.py)). Each app is captured from its root process, so child renderer processes are included.
 - **Mixing:** every source is converted to 16 kHz mono, then a wall-clock mixer sums them and a peak limiter prevents clipping. Silence is inserted for sources that deliver nothing (loopback endpoints send no data while nothing plays), so the end of an utterance is still detected.
-- **Streaming:** Silero VAD (the ONNX model bundled with faster-whisper) gates the audio. The current utterance is re-transcribed every ~0.6 s for the partial caption; LocalAgreement fixes the start of the partial once two hypotheses agree. After 0.6 s of silence, or at 18 s, a final caption is decoded with beam search, and the next utterance starts, prompted with the previous final caption.
+- **Streaming:** Silero VAD (the ONNX model bundled with faster-whisper) gates the audio. The current utterance is re-transcribed every ~0.6 s for the partial caption; LocalAgreement fixes the start of the partial once two hypotheses agree. After 0.6 s of silence, or at 18 s, a final caption is decoded with beam search, and the next utterance starts, prompted with the previous final caption. Someone who talks without pausing doesn't have to wait that long: partials are decoded with Whisper's segment times, and once a sentence (at least 2.5 s) is settled, a second of the next one has been heard and the speaker paused between them, the audio is cut in that pause (one of at least 90 ms; only when recognition keeps up comfortably, since the cut adds a final decode while the speaker goes on). The first part becomes a final caption and the rest carries on. Without a pause there's no cut, so no word is split.
 - **Hallucination filter:** drops stock phrases such as "Thank you for watching", 謝謝觀看 and 字幕由…提供, collapses repeated phrases, drops repeated lines, and retries without the prompt when Whisper echoes it.
 
 </details>

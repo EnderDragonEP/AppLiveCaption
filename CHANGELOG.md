@@ -3,6 +3,19 @@
 All notable changes to AppLiveCaption are listed here, newest first.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the version numbers follow [Semantic Versioning](https://semver.org/).
 
+## [1.3.1] - 2026-11-10
+
+### Added
+
+- **Show finished lines only.** **Settings → Captions → Show finished lines only** hides the gray line that keeps changing while someone is speaking, on the Live captions page and in the overlay. Captions then appear a sentence at a time.
+- **Hide the overlay when no one is speaking.** **Settings → Floating overlay → Hide when no one is speaking** makes the overlay (its text and its box) disappear 3, 5, 10 or 30 seconds after the last caption. It comes back as soon as someone speaks again. Pointing at it with the mouse brings it back too, captions and all. It only hides after speech: an overlay you just switched on stays up until something has been captioned.
+
+- **Update check on start-up.** A few seconds after it starts, the app asks GitHub once whether a newer version exists, and offers to open the download page if so (answer **Later** and it won't ask about that version again). It stays silent when you're up to date or offline, and nothing is downloaded or installed. This is the only request the app makes without being asked; turn it off with **Settings → About → Check for updates on start-up**.
+
+### Changed
+
+- **Long speech is split into sentences.** Someone who keeps talking, with only short pauses, used to get one long line, finished only after up to 18 seconds. A line now ends once a sentence is settled, the next one is under way and the speaker paused between them, so finished lines are shorter and come a few seconds after each sentence. (When recognition is already struggling to keep up, lines are left whole, as before.)
+
 ## [1.3.0] - 2026-10-30
 
 ### Added
@@ -71,6 +84,7 @@ The first release.
 - Portable: settings, history, logs, models and GPU support are kept next to the exe.
 - A manual check for updates in Settings → About.
 
+[1.3.1]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.3.0...v1.3.1
 [1.3.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.2.0...v1.3.0
 [1.2.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.1.0...v1.2.0
 [1.1.0]: https://github.com/EnderDragonEP/AppLiveCaption/compare/v1.0.0...v1.1.0

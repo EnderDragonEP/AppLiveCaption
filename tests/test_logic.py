@@ -22,7 +22,8 @@ from app.asr.backend import Transcript  # noqa: E402
 from app.asr.filters import HallucinationFilter, collapse_repeats, is_stock_phrase  # noqa: E402
 from app.asr import hardware  # noqa: E402
 from app.asr.hardware import GpuInfo, pick_compute_type, realtime_risk, suggest_model  # noqa: E402
-from app.asr.streaming import PartialStabilizer, StreamingTranscriber, _Utterance, tokenize  # noqa: E402
+from app.asr.streaming import (  # noqa: E402
+    PartialStabilizer, StreamingTranscriber, _Utterance, sentence_cuts, tokenize)
 from app.asr.textconv import CHINESE_OFF, CHINESE_SIMPLIFIED, CHINESE_TRADITIONAL, ChineseConverter  # noqa: E402
 from app.audio.buffer import AudioBuffer  # noqa: E402
 from app.audio.vad import FRAME  # noqa: E402
@@ -100,9 +101,175 @@ class FakeBackend:
         self.texts = list(texts)
         self.calls: list[dict] = []
 
-    def transcribe(self, audio, language, prompt, final, translate=False):
+    def transcribe(self, audio, language, prompt, final, translate=False, timestamps=False):
         self.calls.append({"prompt": prompt, "final": final, "translate": translate})
         return Transcript(text=self.texts.pop(0), language="zh", language_probability=0.9, avg_logprob=-0.2)
+
+
+class SentenceCutTests(unittest.TestCase):
+    """Cutting a long utterance after a sentence (app/asr/streaming.py)."""
+
+    SEGMENTS = [(0.0, 3.4, "今天要帶大家去逛夜市"), (3.4, 6.0, "第一站是基隆")]
+
+    def test_cut_after_a_settled_sentence(self):
+        self.assertEqual(sentence_cuts(self.SEGMENTS, "今天要帶大家去逛夜市第一站", 6.0), [3.4])
+        # Punctuation and case don't matter for "settled".
+        english = [(0.0, 3.0, " Welcome back to the channel."), (3.0, 6.0, " Today we")]
+        self.assertEqual(sentence_cuts(english, "welcome back to the channel today", 6.0), [3.0])
+
+    def test_no_cut_while_it_can_still_change(self):
+        self.assertEqual(sentence_cuts(self.SEGMENTS, "今天要帶大家", 6.0), [])  # the sentence isn't settled yet
+        self.assertEqual(sentence_cuts(self.SEGMENTS, "", 6.0), [])
+        self.assertEqual(sentence_cuts(self.SEGMENTS[:1], "今天要帶大家去逛夜市", 6.0), [])  # nothing follows it
+        self.assertEqual(sentence_cuts(self.SEGMENTS, "今天要帶大家去逛夜市第一站", 4.0), [])  # too little follows
+        self.assertEqual(sentence_cuts([], "", 6.0), [])
+
+    def test_short_segments_are_joined_and_later_ends_are_offered_too(self):
+        segments = [(0.0, 1.2, "大家好"), (1.2, 3.0, "歡迎回來"), (3.0, 6.0, "今天要去夜市"), (6.0, 8.0, "第一站")]
+        self.assertEqual(sentence_cuts(segments, "大家好歡迎回來今天要去夜市第一", 8.0), [3.0, 6.0])
+        self.assertEqual(sentence_cuts(segments, "大家好歡迎回來今天", 8.0), [3.0])
+        self.assertEqual(sentence_cuts(segments, "大家好", 8.0), [])  # only the too-short part is settled
+        self.assertEqual(sentence_cuts(segments[:2], "大家好歡迎回來", 8.0), [])  # 1.2 s alone is too short
+
+
+class SegmentBackend:
+    """Partials come as two segments (a sentence, then the start of the next); finals as one text."""
+
+    def __init__(self):
+        self.finals: list[int] = []
+        self.timestamps: list[bool] = []
+
+    def transcribe(self, audio, language, prompt, final, translate=False, timestamps=False):
+        if final:
+            self.finals.append(audio.size)
+            return Transcript(text="第一句話說完了", language="zh", language_probability=0.9, avg_logprob=-0.2)
+        self.timestamps.append(timestamps)
+        # Simplified, as Whisper writes it before the app's conversion to Traditional.
+        return Transcript(text="第一句话说完了第二句", language="zh", language_probability=0.9, avg_logprob=-0.2,
+                          segments=[(0.0, 3.0, "第一句话说完了"), (3.0, 5.0, "第二句")])
+
+
+class SentenceSplitTests(unittest.TestCase):
+    def transcriber(self, backend, seconds=5.0, pause_at=None, pause_frames=4, **kw):
+        with mock.patch("app.asr.streaming.StreamingVAD"):
+            st = StreamingTranscriber(backend, **kw)
+        n = int(seconds * 16000 / FRAME)
+        probs = [0.9] * n
+        if pause_at is not None:
+            first = int(pause_at * 16000 / FRAME)
+            probs[first:first + pause_frames] = [0.1] * pause_frames
+        st._utt = _Utterance(start_pos=1600, frames=[np.zeros(FRAME, np.float32)] * n, probs=probs, language="zh")
+        return st, n
+
+    def test_a_settled_sentence_becomes_a_final_and_the_rest_carries_on(self):
+        backend = SegmentBackend()
+        # The pause is a little after Whisper's 3.0 s; the captions are converted to Traditional Chinese, the
+        # segments aren't (the cut compares Whisper's own text).
+        st, n = self.transcriber(backend, pause_at=3.2)
+        quiet = int(3.2 * 16000 / FRAME) + 2  # the middle of the 4-frame pause
+        self.assertEqual([e.kind for e in st._partial()], ["partial"])  # seen once: not settled yet
+        events = st._partial()
+        self.assertEqual([(e.kind, e.text) for e in events], [("final", "第一句話說完了")])
+        self.assertEqual(backend.finals, [quiet * FRAME])  # cut in the pause, not through a word
+        self.assertAlmostEqual(events[0].end, (1600 + quiet * FRAME) / 16000)
+        rest = st._utt
+        self.assertEqual((rest.start_pos, len(rest.frames), rest.language), (1600 + quiet * FRAME, n - quiet, "zh"))
+        self.assertEqual(st.prompt_history, "第一句話說完了")
+
+    def test_no_cut_without_a_pause(self):
+        backend = SegmentBackend()
+        st, n = self.transcriber(backend)  # the speaker runs the two sentences together
+        for _ in range(3):
+            self.assertEqual([e.kind for e in st._partial()], ["partial"])
+        self.assertEqual((backend.finals, len(st._utt.frames)), ([], n))
+        st, _ = self.transcriber(backend, pause_at=4.2)  # a pause, but not at the sentence's end
+        st._partial()
+        self.assertEqual([e.kind for e in st._partial()], ["partial"])
+        st, _ = self.transcriber(backend, pause_at=3.2, pause_frames=1)  # one quiet frame: a consonant
+        st._partial()
+        self.assertEqual([e.kind for e in st._partial()], ["partial"])
+
+    def test_no_cut_while_recognition_struggles(self):
+        backend = SegmentBackend()
+        for slow in ({"_partial_cost": 1.5}, {"last_latency": 3.0}):
+            st, _ = self.transcriber(backend, pause_at=3.2)
+            st._partial()
+            st.__dict__.update(slow)
+            with mock.patch.object(st, "_decode", wraps=st._decode) as decode:
+                decode.side_effect = lambda *a, **k: (st.backend.transcribe(
+                    np.zeros(1), "zh", None, False, timestamps=True), slow.get("_partial_cost", 0.1))
+                self.assertEqual([e.kind for e in st._partial()], ["partial"], slow)
+        self.assertEqual(backend.finals, [])
+
+    def test_a_cut_keeps_the_partial_pace(self):
+        backend = SegmentBackend()
+        st, _ = self.transcriber(backend, pause_at=3.2)
+        st._partial()
+        before = time.monotonic()
+        self.assertEqual([e.kind for e in st._partial()], ["final"])
+        self.assertGreaterEqual(st._last_partial_at, before)  # (no immediate extra partial after the final)
+
+    def test_timestamps_only_once_a_cut_is_possible(self):
+        backend = SegmentBackend()
+        st, _ = self.transcriber(backend, seconds=3.0)
+        st._partial()
+        st, _ = self.transcriber(backend, seconds=3.6)
+        st._partial()
+        self.assertEqual(backend.timestamps, [False, True])
+
+    def test_only_partials_that_may_be_cut_get_an_open_ended_prompt(self):
+        st, _ = self.transcriber(SegmentBackend())
+        st.prompt_history = "歡迎回到我們的頻道。"
+        self.assertEqual(st._prompt("zh", open_ended=True), "歡迎回到我們的頻道")
+        self.assertEqual(st._prompt("zh"), "歡迎回到我們的頻道。")  # finals and short partials keep it
+        st.prompt_history = 'He said "see you next time."'
+        self.assertEqual(st._prompt("en", open_ended=True), 'He said "see you next time')
+        backend = SegmentBackend()
+        backend.prompts = []
+        real = backend.transcribe
+        backend.transcribe = lambda audio, lang, prompt, final, *a, **k: (backend.prompts.append((final, prompt)),
+                                                                           real(audio, lang, prompt, final, *a, **k))[1]
+        st, _ = self.transcriber(backend, pause_at=3.2)
+        st.prompt_history = "大家好。"
+        st._partial()
+        st._partial()
+        self.assertEqual(backend.prompts, [(False, "大家好"), (False, "大家好"), (True, "大家好。")])
+
+
+class CaptionModelTests(unittest.TestCase):
+    def test_finished_lines_only(self):
+        from app.ui.caption_model import CaptionModel
+
+        model = CaptionModel()
+        model.add_final("one")
+        model.add_final("two")
+        model.set_partial("thr", "")
+        self.assertEqual(model.last_lines(2), (["two"], "thr"))
+        model.set_show_partial(False)
+        self.assertEqual(model.last_lines(2), (["one", "two"], ""))
+        self.assertEqual(model.partial, "thr")  # (still there for keyword alerts)
+
+    def test_last_activity_follows_speech(self):
+        from app.ui import caption_model
+
+        clock = iter([10.0, 20.0, 30.0, 40.0])
+        model = caption_model.CaptionModel()
+        self.assertEqual(model.last_activity, 0.0)
+        with mock.patch.object(caption_model, "monotonic", lambda: next(clock)):  # (this module's clock only)
+            model.set_partial("hel", "")
+            self.assertEqual(model.last_activity, 10.0)
+            model.add_final("")  # the line was dropped: no speech
+            model.set_partial("", "")
+            self.assertEqual(model.last_activity, 10.0)
+            model.add_final("hello")
+            self.assertEqual(model.last_activity, 20.0)
+            model.show_partial = False
+            model.set_partial("wor", "")  # hidden, but someone is speaking: the overlay must stay up
+            self.assertEqual(model.last_activity, 30.0)
+            model.add_final("world")
+            self.assertEqual(model.last_activity, 40.0)
+        model.clear()
+        self.assertEqual(model.last_activity, 0.0)
 
 
 class GpuGenerationTests(unittest.TestCase):

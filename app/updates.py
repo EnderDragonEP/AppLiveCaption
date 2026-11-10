@@ -1,7 +1,10 @@
 """Checks GitHub for a newer release, without blocking the UI.
 
-Only runs when the user asks (Settings > About, or the tray menu); the app
-makes no network requests on its own.
+Runs when the user asks (Settings > About, or the tray menu) and, unless
+Settings > Check for updates on start-up is turned off, once shortly after
+the app starts. That start-up check is the only network request the app makes
+on its own: one GET to the GitHub API, which sends nothing but the app's name
+and version (the User-Agent). Nothing is downloaded or installed.
 """
 
 from __future__ import annotations
